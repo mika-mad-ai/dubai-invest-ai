@@ -33,6 +33,7 @@ export interface Property {
   id: string;
   title: string;
   location: string;
+  districtId?: string;
   price: number;
   yield: number;
   type: string;
@@ -41,6 +42,10 @@ export interface Property {
   baths: number;
   sqm: number;
   completion: string;
+  serviceChargesSqft?: number;
+  marketPriceSqft?: number;
+  liquidity?: 'High' | 'Medium' | 'Low';
+  catalysts?: string[];
 }
 
 export interface SimulationParams {
@@ -51,7 +56,9 @@ export interface SimulationParams {
   duration: number;
   strategy: RentalStrategy;
   riskTolerance: number;
+  serviceChargesSqft?: number;
   selectedPropertyId?: string;
+  taxResidence?: string;
 }
 
 export interface DistrictPath {
