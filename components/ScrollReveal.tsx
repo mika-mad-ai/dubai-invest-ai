@@ -45,18 +45,25 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({
     };
   }, [threshold]);
 
-  const getAnimationClass = () => {
-    switch (animation) {
-      case 'slide-left': return isVisible ? 'slide-left-visible' : 'slide-left-hidden';
-      case 'slide-right': return isVisible ? 'slide-right-visible' : 'slide-right-hidden';
-      default: return isVisible ? 'reveal-visible' : 'reveal-hidden';
+  // Génère les classes Tailwind dynamiquement selon l'état et le type d'animation
+  const getTransformClasses = () => {
+    if (!isVisible) {
+        switch (animation) {
+            case 'fade-up': return 'opacity-0 translate-y-8';
+            case 'slide-left': return 'opacity-0 -translate-x-8';
+            case 'slide-right': return 'opacity-0 translate-x-8';
+            case 'zoom-in': return 'opacity-0 scale-95';
+            default: return 'opacity-0';
+        }
     }
+    // État visible (Reset des transformations)
+    return 'opacity-100 translate-y-0 translate-x-0 scale-100';
   };
 
   return (
     <div
       ref={ref}
-      className={`${className} ${getAnimationClass()}`}
+      className={`transition-all duration-1000 ease-out ${getTransformClasses()} ${className}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}
