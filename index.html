@@ -7,7 +7,11 @@
     <title>DubaiInvest AI Advisor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Spectral:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- IMPORTANT : LEAFLET CSS (Requis pour que la carte s'affiche correctement) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -27,33 +31,24 @@
                 900: '#3A2A10',
               },
               midnight: {
-                800: '#111827',
-                900: '#0b1224',
-                950: '#040814',
-              },
-              aqua: {
-                100: '#c8f5ff',
-                300: '#6edcf2',
-                500: '#17b4d4',
-              },
-              ink: '#0B1021',
+                800: '#1e293b',
+                900: '#0f172a',
+                950: '#020617',
+              }
             },
             fontFamily: {
-              sans: ['"Space Grotesk"', 'sans-serif'],
-              serif: ['"Spectral"', 'serif'],
+              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+              serif: ['"Playfair Display"', 'serif'],
             },
             backgroundImage: {
-              'luxury-gradient': 'radial-gradient(circle at 20% 30%, rgba(87, 226, 255, 0.55), transparent 38%), radial-gradient(circle at 80% 25%, rgba(255, 157, 232, 0.4), transparent 35%), radial-gradient(circle at 50% 70%, rgba(120, 160, 255, 0.35), transparent 40%), linear-gradient(160deg, #f5f7ff 0%, #e9f4ff 25%, #f4ecff 55%, #e8f6ff 100%)',
-              'gold-gradient': 'linear-gradient(135deg, #f5edc3 0%, #d4af37 50%, #b0891f 100%)',
-              'card-sheen': 'linear-gradient(120deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.02) 35%, rgba(255,255,255,0.12) 70%, rgba(255,255,255,0.02) 100%)',
+              'luxury-gradient': 'linear-gradient(to bottom, #020617 0%, #0f172a 100%)',
+              'gold-gradient': 'linear-gradient(135deg, #F5EBC0 0%, #D4AF37 50%, #B08D26 100%)',
             },
             boxShadow: {
-              'glow': '0 0 30px -8px rgba(212, 175, 55, 0.4)',
-              'aqua': '0 10px 50px -18px rgba(23,180,212,0.4)',
+              'glow': '0 0 20px -5px rgba(212, 175, 55, 0.3)',
             },
             animation: {
               'slow-zoom': 'slowZoom 25s linear infinite alternate',
-              'sheen': 'sheen 6s ease-in-out infinite',
               'fade-up': 'fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards',
               'fade-in': 'fadeIn 1.5s ease-out forwards',
               'fall': 'fall 2s linear infinite',
@@ -67,62 +62,18 @@
       }
     </script>
     <style>
-      body { background: #f0f6ff; color: #0b1021; overflow-x: hidden; }
-      .page-surface {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        background:
-          radial-gradient(circle at 15% 15%, rgba(87,226,255,0.22), transparent 32%),
-          radial-gradient(circle at 85% 10%, rgba(255,157,232,0.22), transparent 30%),
-          radial-gradient(circle at 50% 70%, rgba(120,160,255,0.18), transparent 42%),
-          linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 45%);
-        mask-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.7), transparent 78%);
-        z-index: -2;
-      }
-      .aurora {
-        position: fixed;
-        inset: -30% -20%;
-        pointer-events: none;
-        background:
-          radial-gradient(circle at 20% 30%, rgba(87,226,255,0.22), transparent 32%),
-          radial-gradient(circle at 65% 20%, rgba(255,157,232,0.22), transparent 30%),
-          radial-gradient(circle at 50% 65%, rgba(120,160,255,0.2), transparent 40%);
-        filter: blur(80px);
-        opacity: 0.65;
-        mix-blend-mode: screen;
-        animation: auroraMove 22s ease-in-out infinite alternate;
-        z-index: -1;
-      }
-      .page-grid {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        background:
-          linear-gradient(90deg, rgba(12,16,35,0.06) 1px, transparent 1px),
-          linear-gradient(0deg, rgba(12,16,35,0.06) 1px, transparent 1px);
-        background-size: 120px 120px;
-        mix-blend-mode: multiply;
-        opacity: 0.08;
-        z-index: -3;
+      body {
+        background-color: #020617;
+        color: #e2e8f0;
+        overflow-x: hidden;
       }
       .scrollbar-hide::-webkit-scrollbar { display: none; }
       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       .glass-panel {
-        background: linear-gradient(145deg, rgba(12, 16, 35, 0.85), rgba(12, 16, 35, 0.7));
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        box-shadow: 0 20px 70px -35px rgba(0,0,0,0.8);
-        position: relative;
-      }
-      .glass-panel::after {
-        content: '';
-        position: absolute;
-        inset: 1px;
-        border-radius: inherit;
-        border: 1px solid rgba(255,255,255,0.04);
-        pointer-events: none;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
       }
       .modern-slider {
         -webkit-appearance: none;
@@ -141,7 +92,7 @@
         border: 3px solid #D4AF37;
         border-radius: 50%;
         cursor: pointer;
-        box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4);
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
       }
       .loader {
         border: 3px solid rgba(255, 255, 255, 0.1);
@@ -159,28 +110,31 @@
       @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
       @keyframes blink { 0%, 96%, 100% { opacity: 1; transform: scaleY(1); } 98% { opacity: 0.5; transform: scaleY(0.1); } }
       @keyframes soundWave { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.5); } }
-      @keyframes sheen { 0% { transform: translateX(-150%); } 50% { transform: translateX(150%); } 100% { transform: translateX(150%); } }
-      @keyframes auroraMove {
-        0% { transform: translate3d(-15%, -8%, 0) rotate(-3deg) scale(1); filter: blur(78px); }
-        40% { transform: translate3d(12%, 10%, 0) rotate(4deg) scale(1.08); filter: blur(85px); }
-        70% { transform: translate3d(-5%, 6%, 0) rotate(-2deg) scale(1.04); filter: blur(80px); }
-        100% { transform: translate3d(6%, -4%, 0) rotate(2deg) scale(1.02); filter: blur(82px); }
+      
+      /* Leaflet specific overrides for dark mode */
+      .leaflet-container {
+        background: #0f172a !important;
+        font-family: "Plus Jakarta Sans", sans-serif !important;
+      }
+      .leaflet-control-attribution {
+        background: rgba(15, 23, 42, 0.8) !important;
+        color: #64748b !important;
+      }
+      .leaflet-control-attribution a {
+        color: #94a3b8 !important;
+      }
+      /* Custom Tooltip Style */
+      .leaflet-tooltip-custom {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: white !important;
+        font-weight: bold !important;
+        font-family: "Playfair Display", serif !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.8);
       }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
-  }
-}
-</script>
-</head>
+  </head>
   <body class="antialiased selection:bg-gold-500 selection:text-white">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>

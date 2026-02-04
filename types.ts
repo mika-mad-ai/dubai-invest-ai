@@ -54,6 +54,21 @@ export interface SimulationParams {
   selectedPropertyId?: string;
 }
 
+export interface DistrictPath {
+  lat: number;
+  lng: number;
+}
+
+export interface DistrictData {
+  id: string;
+  name: string;
+  pricePerSqft: number;
+  growthPotential: 'High' | 'Medium' | 'Low';
+  projectsCount: number;
+  paths: DistrictPath[];
+  growthJustification: string[];
+}
+
 export interface ChartDataPoint {
   year: string;
   investedAmount: number;
