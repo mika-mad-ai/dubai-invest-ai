@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Property } from '../types';
 import { MapPinIcon, CheckIcon, TrendingUpIcon } from './Icons';
 
@@ -10,6 +10,19 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSelect, onContact }) => {
+  const photos = property.images && property.images.length > 0 ? property.images : (property.image ? [property.image] : []);
+  const [photoIdx, setPhotoIdx] = useState(0);
+
+  const prevPhoto = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPhotoIdx(i => (i - 1 + photos.length) % photos.length);
+  }, [photos.length]);
+
+  const nextPhoto = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPhotoIdx(i => (i + 1) % photos.length);
+  }, [photos.length]);
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(price);
   };
@@ -45,11 +58,39 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSel
       {/* Image Section */}
       <div className="h-[220px] overflow-hidden relative shrink-0">
         <div className="absolute inset-0 bg-gradient-to-t from-midnight-950 via-midnight-950/20 to-transparent z-10" />
-        <img 
-          src={property.image} 
-          alt={property.title} 
+        <img
+          src={photos[photoIdx] || property.image}
+          alt={property.title}
           className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
         />
+
+        {/* Carousel arrows — only if multiple photos */}
+        {photos.length > 1 && (
+          <>
+            <button
+              onClick={prevPhoto}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/75 text-white rounded-full w-7 h-7 flex items-center justify-center transition-colors backdrop-blur-sm"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <button
+              onClick={nextPhoto}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-black/75 text-white rounded-full w-7 h-7 flex items-center justify-center transition-colors backdrop-blur-sm"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </button>
+            {/* Dot indicators */}
+            <div className="absolute bottom-14 left-1/2 -translate-x-1/2 z-20 flex gap-1">
+              {photos.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={(e) => { e.stopPropagation(); setPhotoIdx(i); }}
+                  className={`w-1.5 h-1.5 rounded-full transition-all ${i === photoIdx ? 'bg-white scale-125' : 'bg-white/40'}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
         
         {/* Deal Score Badge - VERY VISIBLE */}
         {isGoodDeal && (
