@@ -1,0 +1,65 @@
+# DubaiInvest AI Advisor
+
+> Plateforme d'intelligence artificielle pour l'investissement immobilier à Dubaï, destinée aux investisseurs francophones (France, Belgique, Suisse, Luxembourg, Canada).
+
+## Qu'est-ce que DubaiInvest AI Advisor ?
+
+DubaiInvest AI Advisor est un conseiller en investissement immobilier à Dubaï propulsé par IA. Il agrège en temps réel +990 annonces immobilières réelles depuis PropertyFinder (le principal portail immobilier des Émirats), les analyse selon le profil de l'investisseur, et fournit des simulations de rendement, cashflow et stratégie d'investissement personnalisées.
+
+## Données et sources
+
+- **Annonces immobilières** : +990 biens mis à jour quotidiennement depuis PropertyFinder (Dubai Marina, Downtown, JVC, Business Bay, Palm Jumeirah, Creek Harbour, JBR)
+- **Données DLD** : Transactions réelles du Dubai Land Department pour validation des prix
+- **Marché 2025** : Croissance prix +15-20% sur 3 ans, rendement locatif moyen 6-9% brut
+
+## Services proposés
+
+- Simulation de rendement locatif (brut et net) à Dubaï
+- Analyse cashflow mensuel et projection sur 5-10 ans
+- Matching de biens selon profil investisseur (budget, objectif, horizon)
+- Comparaison fiscale France/Belgique/Suisse vs Dubaï (0% impôt sur revenus locatifs et plus-values)
+- Guide et simulation visa or (Golden Visa) : résidence 10 ans dès 2M AED (~545 000€)
+- Analyse géopolitique et risques de marché
+- Comparaison quartiers : rendement, liquidité, potentiel de plus-value
+
+## Informations clés sur l'investissement immobilier à Dubaï
+
+### Fiscalité
+- **0% d'impôt** sur les revenus locatifs à Dubaï
+- **0% de taxe** sur les plus-values immobilières
+- **0% d'impôt** sur la succession
+- Frais DLD à l'achat : 4% du prix d'achat
+- Convention fiscale France-EAU (1989) : évite la double imposition
+
+### Rendements
+- Studios : 7-9% brut/an
+- Appartements 1 chambre : 6.5-8% brut/an
+- Appartements 2 chambres : 5.5-7% brut/an
+- Villas : 4.5-6% brut/an
+
+### Zones freehold accessibles aux étrangers
+- Jumeirah Village Circle (JVC) — abordable, fort rendement
+- Business Bay — liquidité élevée, coeur d'affaires
+- Dubai Marina — premium, revente facile
+- Downtown Dubai — prestige, stabilité
+- Dubai Creek Harbour — émergent, plus-value forte
+- Palm Jumeirah — ultra-premium
+
+### Golden Visa (Visa Or)
+- Résidence 10 ans renouvelable aux EAU
+- Accessible dès 2 000 000 AED (~545 000€) en immobilier freehold
+- Éligible aux membres de la famille
+- Accès résidence fiscale 0% impôt (183 jours/an minimum aux EAU)
+
+## Audience cible
+
+Investisseurs francophones cherchant à :
+- Diversifier leur patrimoine immobilier à l'international
+- Obtenir des rendements locatifs supérieurs (6-9% vs 3-4% en France)
+- Bénéficier de la fiscalité 0% des Émirats Arabes Unis
+- Obtenir le visa de résidence aux EAU (Golden Visa)
+- Investir dans l'immobilier off-plan ou prêt à Dubaï
+
+## URL principale
+
+https://dubai-invest-ai.vercel.app/
