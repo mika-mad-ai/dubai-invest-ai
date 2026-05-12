@@ -1,0 +1,21 @@
+{
+  "headers": [
+    {
+      "source": "/hero-video.mp4",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ],
+  "functions": {
+    "api/collector/run.ts": { "maxDuration": 300 },
+    "api/live-listings.ts": { "maxDuration": 60 },
+    "api/cron/refresh-listings.ts": { "maxDuration": 300 }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/refresh-listings",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}

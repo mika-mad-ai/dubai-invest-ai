@@ -21,10 +21,13 @@ export interface UserProfile {
   initialInvestment: string;
   monthlyContribution: string;
   duration: string;
-  // Nouveaux critères
+  // Critères stratégiques
   propertyStatus: PropertyStatus;
   riskLevel: number; // 1 à 5
   roiDelay: string; // Mois avant revenus
+  objective?: string; // rental_income | capital_gains | secondary_residence | golden_visa | diversification
+  zonePreference?: string; // high_yield | capital_appreciation | premium_lifestyle | emerging | balanced
+  investmentHorizon?: string; // short | medium | long | permanent
 }
 
 export type RentalStrategy = 'long_term' | 'short_term';
@@ -38,6 +41,10 @@ export interface Property {
   yield: number;
   type: string;
   image: string;
+  images?: string[];
+  amenities?: string[];
+  lat?: number | null;
+  lng?: number | null;
   beds: number;
   baths: number;
   sqm: number;
@@ -46,6 +53,8 @@ export interface Property {
   marketPriceSqft?: number;
   liquidity?: 'High' | 'Medium' | 'Low';
   catalysts?: string[];
+  sourceUrl?: string;
+  source?: 'propertyfinder' | 'bayut' | 'internal';
 }
 
 export interface SimulationParams {

@@ -89,6 +89,25 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSel
             </div>
         </div>
 
+        {/* Amenities */}
+        {property.amenities && property.amenities.length > 0 && (
+          <div className="mb-4">
+            <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1.5">Équipements</p>
+            <div className="flex flex-wrap gap-1">
+              {property.amenities.slice(0, 6).map((a, i) => (
+                <span key={i} className="text-[8px] px-1.5 py-0.5 rounded bg-white/5 text-slate-300 border border-white/10">
+                  {a}
+                </span>
+              ))}
+              {property.amenities.length > 6 && (
+                <span className="text-[8px] px-1.5 py-0.5 rounded bg-white/5 text-slate-500 border border-white/10">
+                  +{property.amenities.length - 6}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Catalysts - Future Growth Tags */}
         {property.catalysts && property.catalysts.length > 0 && (
             <div className="mb-4">
@@ -128,6 +147,20 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSel
                 Dossier
             </button>
             </div>
+
+            {property.sourceUrl && property.source && property.source !== 'internal' && (
+              <a
+                href={property.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-1 text-[10px] uppercase tracking-widest text-cyan-300 hover:text-cyan-200 transition-colors"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Voir l'annonce sur PropertyFinder
+              </a>
+            )}
         </div>
       </div>
     </div>
