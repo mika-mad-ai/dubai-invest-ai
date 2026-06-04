@@ -14,6 +14,13 @@
       ]
     },
     {
+      "source": "/sitemap_index.xml",
+      "headers": [
+        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
+        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=3600" }
+      ]
+    },
+    {
       "source": "/robots.txt",
       "headers": [
         { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
@@ -31,21 +38,61 @@
       "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
         { "key": "X-XSS-Protection", "value": "1; mode=block" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
       ]
     }
   ],
+  "rewrites": [
+    {
+      "source": "/analyse-geopolitique-dubai",
+      "destination": "/analyse-geopolitique-dubai.html"
+    },
+    {
+      "source": "/guide-visa-or-dubai",
+      "destination": "/guide-visa-or-dubai.html"
+    },
+    {
+      "source": "/meilleurs-quartiers-dubai-investissement",
+      "destination": "/meilleurs-quartiers-dubai-investissement.html"
+    },
+    {
+      "source": "/llms.txt",
+      "destination": "/api/llms-txt"
+    },
+    {
+      "source": "/rapport-immobilier-dubai-:slug",
+      "destination": "/api/rapport?slug=rapport-immobilier-dubai-:slug"
+    }
+  ],
   "functions": {
     "api/collector/run.ts": { "maxDuration": 300 },
     "api/live-listings.ts": { "maxDuration": 60 },
-    "api/cron/refresh-listings.ts": { "maxDuration": 300 }
+    "api/cron/refresh-listings.ts": { "maxDuration": 300 },
+    "api/cron/seo-geo-optimizer.ts": { "maxDuration": 60 },
+    "api/cron/monthly-report.ts": { "maxDuration": 120 },
+    "api/cron/mention-monitor.ts": { "maxDuration": 120 },
+    "api/llms-txt.ts": { "maxDuration": 10 },
+    "api/seo-content.ts": { "maxDuration": 10 },
+    "api/rapport.ts": { "maxDuration": 10 },
+    "api/haro-webhook.ts": { "maxDuration": 60 }
   },
   "crons": [
     {
       "path": "/api/cron/refresh-listings",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/seo-geo-optimizer",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/mention-monitor",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/monthly-report",
+      "schedule": "0 5 1 * *"
     }
   ]
 }
