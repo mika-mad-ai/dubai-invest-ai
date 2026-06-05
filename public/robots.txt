@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://dubai-invest-ai.vercel.app/sitemap.xml
+Sitemap: https://dubainvest.eu/sitemap.xml
 
 # Allow major AI crawlers for GEO (Generative Engine Optimization)
 User-agent: GPTBot
