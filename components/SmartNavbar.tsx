@@ -11,74 +11,150 @@ interface SmartNavbarProps {
 
 const SmartNavbar: React.FC<SmartNavbarProps> = ({ message, isStreaming, hasProfile, onReset, exchangeRate }) => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [lineAngle, setLineAngle] = useState(0);
 
-  // Détecter le scroll pour adapter l'opacité de la navbar
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Définition dynamique des classes de fond
-  // On utilise un dégradé vers le bas quand on est en haut, et un fond solide/flou dès qu'on scroll
-  const navbarBgClass = (hasProfile || isScrolled)
-    ? 'bg-midnight-950/95 backdrop-blur-xl border-white/5 shadow-2xl py-4'
-    : 'bg-gradient-to-b from-black/90 via-black/40 to-transparent border-transparent py-6';
+  useEffect(() => {
+    let id: number;
+    const animate = () => {
+      setLineAngle(a => (a + 0.4) % 360);
+      id = requestAnimationFrame(animate);
+    };
+    id = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const scrolled = hasProfile || isScrolled;
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 border-b ${navbarBgClass}`}>
-      <div className="max-w-[1600px] mx-auto px-4 md:px-8 flex items-center justify-between gap-4">
-         
-         {/* LEFT: LOGO */}
-         <div className="flex items-center gap-3 shrink-0">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-glow transition-all duration-500 ${hasProfile ? 'bg-gold-gradient' : 'bg-gold-400'}`}>
-              <span className={`font-serif font-bold text-xl ${hasProfile ? 'text-midnight-950' : 'text-midnight-950'}`}>D</span>
+    <nav
+      className="fixed top-0 left-0 w-full z-50 transition-all duration-500"
+      style={{
+        background: scrolled
+          ? 'rgba(5,5,5,0.92)'
+          : 'linear-gradient(to bottom, rgba(5,5,5,0.20) 0%, transparent 100%)',
+        backdropFilter: scrolled ? 'blur(24px)' : 'blur(0px)',
+        WebkitBackdropFilter: scrolled ? 'blur(24px)' : 'blur(0px)',
+        borderBottom: scrolled ? '1px solid rgba(212,175,55,0.14)' : '1px solid transparent',
+        boxShadow: scrolled ? '0 4px 40px rgba(0,0,0,0.5)' : 'none',
+        padding: scrolled ? '4px 0' : '10px 0',
+      }}
+    >
+      {/* Animated top line */}
+      <div
+        className="absolute top-0 left-0 right-0 h-px"
+        style={{
+          background: scrolled
+            ? `linear-gradient(${lineAngle}deg, transparent 0%, #D4AF37 30%, #f0c060 50%, #00F2FF 70%, transparent 100%)`
+            : 'none',
+          transition: 'opacity 0.3s',
+        }}
+      />
+
+      <div className="max-w-[1600px] mx-auto px-6 md:px-10 flex items-center justify-between gap-4">
+
+        {/* LOGO */}
+        <div className="flex items-center shrink-0">
+          <img
+            src="/logo.png"
+            alt="DubaiInvest"
+            className="h-14 md:h-28 w-auto object-contain logo-holo"
+          />
+        </div>
+
+        {/* CENTER: AI BUBBLE */}
+        <div
+          className={`flex-1 flex items-center justify-center max-w-2xl mx-auto transition-all duration-700 ${
+            hasProfile ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
+          }`}
+        >
+          <div className="w-12 h-12 mr-4 shrink-0" style={{ filter: 'drop-shadow(0 0 10px rgba(212,168,67,0.55))' }}>
+            <RobotAvatarIcon
+              className="w-full h-full"
+              isSpeaking={isStreaming}
+            />
+          </div>
+
+          <div className="relative flex-1 hidden md:block">
+            <div
+              className="rounded-2xl px-4 py-3 relative transition-all duration-300"
+              style={{
+                background: 'rgba(10,10,18,0.80)',
+                border: isStreaming ? '1px solid rgba(212,175,55,0.55)' : '1px solid rgba(212,175,55,0.18)',
+                boxShadow: isStreaming ? '0 0 20px rgba(212,175,55,0.18)' : 'none',
+                backdropFilter: 'blur(16px)',
+              }}
+            >
+              {/* Bubble tail */}
+              <div
+                className="absolute top-1/2 -translate-y-1/2 -left-[7px] w-3.5 h-3.5 rotate-45"
+                style={{
+                  background: 'rgba(10,10,18,0.80)',
+                  borderLeft: '1px solid rgba(212,175,55,0.18)',
+                  borderBottom: '1px solid rgba(212,175,55,0.18)',
+                }}
+              />
+              <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'rgba(232,228,220,0.85)', fontFamily: '"Manrope", sans-serif' }}>
+                {message}
+                {isStreaming && (
+                  <span
+                    className="inline-block w-1 h-3 ml-1 align-middle"
+                    style={{ background: '#d4a843', animation: 'pulse 1s ease-in-out infinite' }}
+                  />
+                )}
+              </p>
             </div>
-            <span className="font-serif text-xl tracking-wide text-white">
-              Dubai<span className="text-gold-400 italic">Invest</span>
+          </div>
+        </div>
+
+        {/* RIGHT: EXCHANGE RATE + RESET */}
+        <div
+          className={`shrink-0 flex items-center gap-5 transition-all duration-500 ${
+            hasProfile ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          <div className="hidden lg:flex flex-col items-end" style={{ borderRight: '1px solid rgba(212,175,55,0.15)', paddingRight: '20px' }}>
+            <span className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(212,175,55,0.60)' }}>
+              Taux de Change
             </span>
-         </div>
+            <span className="text-xs font-mono mt-0.5" style={{ color: '#D4AF37' }}>
+              1 EUR = {exchangeRate.toFixed(2)} AED
+            </span>
+          </div>
 
-         {/* CENTER: ROBOT & BUBBLE (VISIBLE ONLY IF PROFILE CREATED) */}
-         <div className={`flex-1 flex items-center justify-center max-w-3xl mx-auto transition-all duration-700 ${hasProfile ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10 pointer-events-none'}`}>
-            {/* Robot Avatar */}
-            <div className="w-14 h-14 mr-4 relative shrink-0">
-                <RobotAvatarIcon className="w-full h-full filter drop-shadow-[0_0_10px_rgba(212,175,55,0.5)]" isSpeaking={isStreaming} />
-            </div>
-
-            {/* Speech Bubble */}
-            <div className="relative flex-1 hidden md:block">
-                <div className="bg-black/60 border border-gold-500/30 rounded-2xl p-3 shadow-lg backdrop-blur-md relative">
-                   {/* Tail */}
-                   <div className="absolute top-1/2 -translate-y-1/2 -left-2 w-4 h-4 bg-black/60 border-l border-b border-gold-500/30 transform rotate-45"></div>
-                   
-                   <p className="text-xs text-slate-200 leading-relaxed font-medium line-clamp-2">
-                      {message}
-                      {isStreaming && <span className="inline-block w-1.5 h-3 ml-1 bg-gold-400 animate-pulse align-middle"></span>}
-                   </p>
-                </div>
-            </div>
-         </div>
-
-         {/* RIGHT: ACTIONS */}
-         <div className={`shrink-0 flex items-center gap-6 transition-all duration-500 ${hasProfile ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-            {hasProfile && (
-              <>
-                <div className="hidden lg:flex flex-col items-end border-r border-white/10 pr-6">
-                  <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Taux de Change</span>
-                  <span className="text-gold-100/80 text-xs font-mono">1 EUR = {exchangeRate.toFixed(2)} AED</span>
-                </div>
-                <button 
-                  onClick={onReset}
-                  className="text-white hover:text-gold-400 transition-colors text-[10px] font-bold uppercase tracking-widest border border-white/10 px-4 py-2 rounded hover:bg-white/5 active:scale-95"
-                >
-                  Nouveau
-                </button>
-              </>
-            )}
-         </div>
+          <button
+            onClick={onReset}
+            className="text-[10px] font-semibold uppercase tracking-widest transition-all duration-300"
+            style={{
+              color: 'rgba(232,228,220,0.7)',
+              border: '1px solid rgba(212,168,67,0.25)',
+              borderRadius: '8px',
+              padding: '8px 18px',
+              background: 'transparent',
+            }}
+            onMouseEnter={e => {
+              const el = e.currentTarget;
+              el.style.color = '#d4a843';
+              el.style.borderColor = 'rgba(212,168,67,0.7)';
+              el.style.boxShadow = '0 0 16px rgba(212,168,67,0.2)';
+              el.style.background = 'rgba(212,168,67,0.06)';
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget;
+              el.style.color = 'rgba(232,228,220,0.7)';
+              el.style.borderColor = 'rgba(212,168,67,0.25)';
+              el.style.boxShadow = 'none';
+              el.style.background = 'transparent';
+            }}
+          >
+            Nouveau
+          </button>
+        </div>
       </div>
     </nav>
   );
