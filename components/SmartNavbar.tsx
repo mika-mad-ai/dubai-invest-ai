@@ -61,7 +61,7 @@ const SmartNavbar: React.FC<SmartNavbarProps> = ({ message, isStreaming, hasProf
         {/* LOGO */}
         <div className="flex items-center shrink-0">
           <img
-            src="/logo.png"
+            src="/NewLogoDubAInvestV2.png"
             alt="DubaiInvest"
             className="h-14 md:h-28 w-auto object-contain logo-holo"
           />

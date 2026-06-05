@@ -32,7 +32,7 @@ const Footer: React.FC = () => (
 
         {/* Brand */}
         <div>
-          <img src="/logo.png" alt="DubaiInvest" style={{ height: 56, marginBottom: 16 }} />
+          <img src="/NewLogoDubAInvestV2.png" alt="DubaiInvest" style={{ height: 56, marginBottom: 16 }} />
           <p style={{ color: 'rgba(180,170,155,0.7)', fontSize: 13, lineHeight: 1.6, maxWidth: 280 }}>
             Plateforme IA d'analyse et de simulation pour investisseurs immobiliers francophones à Dubaï.
           </p>
