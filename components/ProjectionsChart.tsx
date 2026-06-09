@@ -36,8 +36,8 @@ const ProjectionsChart: React.FC<ProjectionsChartProps> = ({ data, className }) 
           >
             <defs>
               <linearGradient id="colorDubaiRange" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#D4AF37" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#D4AF37" stopOpacity={0.05}/>
+                <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#22d3ee" stopOpacity={0.05}/>
               </linearGradient>
               <linearGradient id="colorFranceRange" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.2}/>
@@ -84,7 +84,7 @@ const ProjectionsChart: React.FC<ProjectionsChartProps> = ({ data, className }) 
             <Area 
               type="monotone" 
               dataKey="scenarioOptimiste" 
-              stroke="#D4AF37" 
+              stroke="#22d3ee" 
               strokeWidth={3}
               fill="transparent" 
               animationDuration={1500}

@@ -156,7 +156,7 @@ const GrowthVisualizer: React.FC<GrowthVisualizerProps> = ({ data, duration }) =
              className="absolute transition-all duration-500 ease-out z-30 -translate-y-full mb-4"
              style={{ bottom: `${dubaiHeightPercent}%` }}
            >
-              <div className="bg-gold-500/90 text-midnight-950 text-base font-bold px-3 py-1 rounded-lg border border-gold-300 shadow-[0_0_20px_rgba(212,175,55,0.4)] backdrop-blur whitespace-nowrap transform scale-110">
+              <div className="bg-gold-500/90 text-midnight-950 text-base font-bold px-3 py-1 rounded-lg border border-gold-300 shadow-[0_0_20px_rgba(34,211,238,0.4)] backdrop-blur whitespace-nowrap transform scale-110">
                 {formatCurrency(currentYearData.scenarioOptimiste)}
               </div>
            </div>
@@ -166,7 +166,7 @@ const GrowthVisualizer: React.FC<GrowthVisualizerProps> = ({ data, duration }) =
              className="w-24 md:w-32 transition-all duration-700 ease-linear origin-bottom relative flex items-end justify-center"
              style={{ height: `${dubaiHeightPercent}%` }}
            >
-              <BurjKhalifaIcon className="w-full h-full text-gold-400 drop-shadow-[0_0_30px_rgba(212,175,55,0.5)]" />
+              <BurjKhalifaIcon className="w-full h-full text-gold-400 drop-shadow-[0_0_30px_rgba(34,211,238,0.5)]" />
               {/* Glow base */}
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-1/3 bg-gold-500/10 blur-xl rounded-full pointer-events-none"></div>
            </div>

@@ -2,14 +2,14 @@
   "name": "dubai-invest-ai",
   "private": true,
   "version": "1.0.0",
-  "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "node scripts/generate-sitemaps.mjs && tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
+    "framer-motion": "^12.38.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.562.0",
     "react": "^19.0.0",

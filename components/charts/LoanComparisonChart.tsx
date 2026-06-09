@@ -49,7 +49,7 @@ const LoanComparisonChart: React.FC<LoanComparisonProps> = ({ loanAmount, durati
       rate: rates.dubai,
       interest: Math.round(dubaiMetrics.totalInterest),
       monthly: Math.round(dubaiMetrics.monthly),
-      fill: '#D4AF37' // Gold
+      fill: '#22d3ee' // Gold
     }
   ];
 

@@ -1,0 +1,385 @@
+{
+  "exportFormatVersion": 2,
+  "exportTime": "2026-05-21 10:00:00",
+  "containerVersion": {
+    "path": "accounts/0/containers/0/versions/0",
+    "accountId": "0",
+    "containerId": "0",
+    "containerVersionId": "0",
+    "container": {
+      "path": "accounts/0/containers/0",
+      "accountId": "0",
+      "containerId": "0",
+      "name": "DubaiInvest AI Advisor",
+      "publicId": "GTM-NDKCGWML",
+      "usageContext": ["WEB"]
+    },
+
+    "variable": [
+      {
+        "accountId": "0", "containerId": "0", "variableId": "1",
+        "name": "DLV - step_id",
+        "type": "v",
+        "parameter": [
+          {"type": "integer",  "key": "dataLayerVersion", "value": "2"},
+          {"type": "boolean",  "key": "setDefaultValue",  "value": "false"},
+          {"type": "template", "key": "name",             "value": "step_id"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "variableId": "2",
+        "name": "DLV - step_index",
+        "type": "v",
+        "parameter": [
+          {"type": "integer",  "key": "dataLayerVersion", "value": "2"},
+          {"type": "boolean",  "key": "setDefaultValue",  "value": "false"},
+          {"type": "template", "key": "name",             "value": "step_index"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "variableId": "3",
+        "name": "DLV - step_total",
+        "type": "v",
+        "parameter": [
+          {"type": "integer",  "key": "dataLayerVersion", "value": "2"},
+          {"type": "boolean",  "key": "setDefaultValue",  "value": "false"},
+          {"type": "template", "key": "name",             "value": "step_total"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "variableId": "4",
+        "name": "DLV - option_value",
+        "type": "v",
+        "parameter": [
+          {"type": "integer",  "key": "dataLayerVersion", "value": "2"},
+          {"type": "boolean",  "key": "setDefaultValue",  "value": "false"},
+          {"type": "template", "key": "name",             "value": "option_value"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "variableId": "5",
+        "name": "DLV - objective",
+        "type": "v",
+        "parameter": [
+          {"type": "integer",  "key": "dataLayerVersion", "value": "2"},
+          {"type": "boolean",  "key": "setDefaultValue",  "value": "false"},
+          {"type": "template", "key": "name",             "value": "objective"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "variableId": "6",
+        "name": "DLV - budget",
+        "type": "v",
+        "parameter": [
+          {"type": "integer",  "key": "dataLayerVersion", "value": "2"},
+          {"type": "boolean",  "key": "setDefaultValue",  "value": "false"},
+          {"type": "template", "key": "name",             "value": "budget"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "variableId": "7",
+        "name": "DLV - horizon",
+        "type": "v",
+        "parameter": [
+          {"type": "integer",  "key": "dataLayerVersion", "value": "2"},
+          {"type": "boolean",  "key": "setDefaultValue",  "value": "false"},
+          {"type": "template", "key": "name",             "value": "horizon"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "variableId": "8",
+        "name": "DLV - zone",
+        "type": "v",
+        "parameter": [
+          {"type": "integer",  "key": "dataLayerVersion", "value": "2"},
+          {"type": "boolean",  "key": "setDefaultValue",  "value": "false"},
+          {"type": "template", "key": "name",             "value": "zone"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "variableId": "9",
+        "name": "DLV - property_name",
+        "type": "v",
+        "parameter": [
+          {"type": "integer",  "key": "dataLayerVersion", "value": "2"},
+          {"type": "boolean",  "key": "setDefaultValue",  "value": "false"},
+          {"type": "template", "key": "name",             "value": "property_name"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "variableId": "10",
+        "name": "DLV - property_price",
+        "type": "v",
+        "parameter": [
+          {"type": "integer",  "key": "dataLayerVersion", "value": "2"},
+          {"type": "boolean",  "key": "setDefaultValue",  "value": "false"},
+          {"type": "template", "key": "name",             "value": "property_price"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "variableId": "11",
+        "name": "DLV - property_location",
+        "type": "v",
+        "parameter": [
+          {"type": "integer",  "key": "dataLayerVersion", "value": "2"},
+          {"type": "boolean",  "key": "setDefaultValue",  "value": "false"},
+          {"type": "template", "key": "name",             "value": "property_location"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "variableId": "12",
+        "name": "DLV - property_yield",
+        "type": "v",
+        "parameter": [
+          {"type": "integer",  "key": "dataLayerVersion", "value": "2"},
+          {"type": "boolean",  "key": "setDefaultValue",  "value": "false"},
+          {"type": "template", "key": "name",             "value": "property_yield"}
+        ]
+      }
+    ],
+
+    "trigger": [
+      {
+        "accountId": "0", "containerId": "0", "triggerId": "101",
+        "name": "CE - funnel_start",
+        "type": "customEvent",
+        "parameter": [
+          {"type": "template", "key": "eventName", "value": "funnel_start"},
+          {"type": "boolean",  "key": "useRegex",  "value": "false"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "triggerId": "102",
+        "name": "CE - funnel_step_complete",
+        "type": "customEvent",
+        "parameter": [
+          {"type": "template", "key": "eventName", "value": "funnel_step_complete"},
+          {"type": "boolean",  "key": "useRegex",  "value": "false"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "triggerId": "103",
+        "name": "CE - funnel_complete",
+        "type": "customEvent",
+        "parameter": [
+          {"type": "template", "key": "eventName", "value": "funnel_complete"},
+          {"type": "boolean",  "key": "useRegex",  "value": "false"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "triggerId": "104",
+        "name": "CE - property_interest_click",
+        "type": "customEvent",
+        "parameter": [
+          {"type": "template", "key": "eventName", "value": "property_interest_click"},
+          {"type": "boolean",  "key": "useRegex",  "value": "false"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "triggerId": "105",
+        "name": "CE - lead_form_submit",
+        "type": "customEvent",
+        "parameter": [
+          {"type": "template", "key": "eventName", "value": "lead_form_submit"},
+          {"type": "boolean",  "key": "useRegex",  "value": "false"}
+        ]
+      },
+      {
+        "accountId": "0", "containerId": "0", "triggerId": "106",
+        "name": "CE - lead_success",
+        "type": "customEvent",
+        "parameter": [
+          {"type": "template", "key": "eventName", "value": "lead_success"},
+          {"type": "boolean",  "key": "useRegex",  "value": "false"}
+        ]
+      }
+    ],
+
+    "tag": [
+      {
+        "accountId": "0", "containerId": "0", "tagId": "1",
+        "name": "GA4 - Configuration",
+        "type": "gaawc",
+        "parameter": [
+          {"type": "template", "key": "measurementId", "value": "G-H0945BPDYL"},
+          {"type": "boolean",  "key": "sendPageView",  "value": "true"}
+        ],
+        "firingTriggerId": ["2147479553"],
+        "tagFiringOption": "oncePerLoad",
+        "monitoringMetadata": {"type": "map"}
+      },
+
+      {
+        "accountId": "0", "containerId": "0", "tagId": "2",
+        "name": "GA4 - funnel_start",
+        "type": "gaawe",
+        "parameter": [
+          {"type": "tag_reference", "key": "measurementId", "value": "GA4 - Configuration"},
+          {"type": "template",      "key": "eventName",     "value": "funnel_start"}
+        ],
+        "firingTriggerId": ["101"],
+        "tagFiringOption": "oncePerEvent",
+        "monitoringMetadata": {"type": "map"}
+      },
+
+      {
+        "accountId": "0", "containerId": "0", "tagId": "3",
+        "name": "GA4 - funnel_step_complete",
+        "type": "gaawe",
+        "parameter": [
+          {"type": "tag_reference", "key": "measurementId", "value": "GA4 - Configuration"},
+          {"type": "template",      "key": "eventName",     "value": "funnel_step_complete"},
+          {
+            "type": "list",
+            "key": "eventParameters",
+            "list": [
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "step_id"},
+                {"type": "template", "key": "value", "value": "{{DLV - step_id}}"}
+              ]},
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "step_index"},
+                {"type": "template", "key": "value", "value": "{{DLV - step_index}}"}
+              ]},
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "step_total"},
+                {"type": "template", "key": "value", "value": "{{DLV - step_total}}"}
+              ]},
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "option_value"},
+                {"type": "template", "key": "value", "value": "{{DLV - option_value}}"}
+              ]}
+            ]
+          }
+        ],
+        "firingTriggerId": ["102"],
+        "tagFiringOption": "oncePerEvent",
+        "monitoringMetadata": {"type": "map"}
+      },
+
+      {
+        "accountId": "0", "containerId": "0", "tagId": "4",
+        "name": "GA4 - funnel_complete",
+        "type": "gaawe",
+        "parameter": [
+          {"type": "tag_reference", "key": "measurementId", "value": "GA4 - Configuration"},
+          {"type": "template",      "key": "eventName",     "value": "funnel_complete"},
+          {
+            "type": "list",
+            "key": "eventParameters",
+            "list": [
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "objective"},
+                {"type": "template", "key": "value", "value": "{{DLV - objective}}"}
+              ]},
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "budget"},
+                {"type": "template", "key": "value", "value": "{{DLV - budget}}"}
+              ]},
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "horizon"},
+                {"type": "template", "key": "value", "value": "{{DLV - horizon}}"}
+              ]},
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "zone"},
+                {"type": "template", "key": "value", "value": "{{DLV - zone}}"}
+              ]}
+            ]
+          }
+        ],
+        "firingTriggerId": ["103"],
+        "tagFiringOption": "oncePerEvent",
+        "monitoringMetadata": {"type": "map"}
+      },
+
+      {
+        "accountId": "0", "containerId": "0", "tagId": "5",
+        "name": "GA4 - property_interest_click",
+        "type": "gaawe",
+        "parameter": [
+          {"type": "tag_reference", "key": "measurementId", "value": "GA4 - Configuration"},
+          {"type": "template",      "key": "eventName",     "value": "property_interest_click"},
+          {
+            "type": "list",
+            "key": "eventParameters",
+            "list": [
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "property_name"},
+                {"type": "template", "key": "value", "value": "{{DLV - property_name}}"}
+              ]},
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "property_price"},
+                {"type": "template", "key": "value", "value": "{{DLV - property_price}}"}
+              ]},
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "property_location"},
+                {"type": "template", "key": "value", "value": "{{DLV - property_location}}"}
+              ]},
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "property_yield"},
+                {"type": "template", "key": "value", "value": "{{DLV - property_yield}}"}
+              ]}
+            ]
+          }
+        ],
+        "firingTriggerId": ["104"],
+        "tagFiringOption": "oncePerEvent",
+        "monitoringMetadata": {"type": "map"}
+      },
+
+      {
+        "accountId": "0", "containerId": "0", "tagId": "6",
+        "name": "GA4 - lead_form_submit",
+        "type": "gaawe",
+        "parameter": [
+          {"type": "tag_reference", "key": "measurementId", "value": "GA4 - Configuration"},
+          {"type": "template",      "key": "eventName",     "value": "lead_form_submit"},
+          {
+            "type": "list",
+            "key": "eventParameters",
+            "list": [
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "property_name"},
+                {"type": "template", "key": "value", "value": "{{DLV - property_name}}"}
+              ]},
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "property_price"},
+                {"type": "template", "key": "value", "value": "{{DLV - property_price}}"}
+              ]}
+            ]
+          }
+        ],
+        "firingTriggerId": ["105"],
+        "tagFiringOption": "oncePerEvent",
+        "monitoringMetadata": {"type": "map"}
+      },
+
+      {
+        "accountId": "0", "containerId": "0", "tagId": "7",
+        "name": "GA4 - lead_success",
+        "type": "gaawe",
+        "parameter": [
+          {"type": "tag_reference", "key": "measurementId", "value": "GA4 - Configuration"},
+          {"type": "template",      "key": "eventName",     "value": "lead_success"},
+          {
+            "type": "list",
+            "key": "eventParameters",
+            "list": [
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "property_name"},
+                {"type": "template", "key": "value", "value": "{{DLV - property_name}}"}
+              ]},
+              {"type": "map", "map": [
+                {"type": "template", "key": "name",  "value": "property_price"},
+                {"type": "template", "key": "value", "value": "{{DLV - property_price}}"}
+              ]}
+            ]
+          }
+        ],
+        "firingTriggerId": ["106"],
+        "tagFiringOption": "oncePerEvent",
+        "monitoringMetadata": {"type": "map"}
+      }
+    ]
+  }
+}

@@ -37,7 +37,7 @@ const ExchangeRateChart: React.FC<ExchangeRateChartProps> = ({ data, currentRate
               contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '4px', color: '#fff', fontSize: '12px' }}
               formatter={(value: number) => [`1 EUR = ${value.toFixed(2)} AED`, 'Taux']}
             />
-            <ReferenceLine y={currentRate} stroke="#D4AF37" strokeDasharray="3 3" label={{ position: 'right', value: 'Spot', fill: '#D4AF37', fontSize: 10 }} />
+            <ReferenceLine y={currentRate} stroke="#22d3ee" strokeDasharray="3 3" label={{ position: 'right', value: 'Spot', fill: '#22d3ee', fontSize: 10 }} />
             <Area 
               type="monotone" 
               dataKey="rate" 

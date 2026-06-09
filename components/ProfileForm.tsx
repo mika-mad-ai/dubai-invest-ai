@@ -134,7 +134,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ onSubmit, isLoading }) => {
           <input 
             type="range" min="0" max="60" step="3"
             className="modern-slider slider-gold"
-            style={getSliderBackground(parseInt(profile.roiDelay), 0, 60, '#D4AF37')}
+            style={getSliderBackground(parseInt(profile.roiDelay), 0, 60, '#22d3ee')}
             value={profile.roiDelay}
             onChange={(e) => handleChange('roiDelay', e.target.value)}
           />
@@ -154,7 +154,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ onSubmit, isLoading }) => {
             <input 
               type="range" min="150000" max="10000000" step="25000"
               className="modern-slider slider-gold"
-              style={getSliderBackground(parseInt(profile.totalBudget), 150000, 10000000, '#D4AF37')}
+              style={getSliderBackground(parseInt(profile.totalBudget), 150000, 10000000, '#22d3ee')}
               value={profile.totalBudget}
               onChange={(e) => handleChange('totalBudget', e.target.value)}
             />
@@ -194,7 +194,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ onSubmit, isLoading }) => {
         <button 
           type="submit" 
           disabled={isLoading || !profile.name || !profile.email}
-          className="w-full py-6 bg-gold-gradient text-midnight-950 text-xs tracking-[0.4em] uppercase font-black hover:shadow-[0_0_40px_rgba(212,175,55,0.4)] disabled:opacity-50 transition-all rounded-2xl active:scale-[0.98] flex items-center justify-center gap-4"
+          className="w-full py-6 bg-gold-gradient text-midnight-950 text-xs tracking-[0.4em] uppercase font-black hover:shadow-[0_0_40px_rgba(34,211,238,0.4)] disabled:opacity-50 transition-all rounded-2xl active:scale-[0.98] flex items-center justify-center gap-4"
         >
           {isLoading ? 'Modélisation du Risque...' : 'Lancer l\'Expertise Stratégique'} <ArrowRightIcon className="w-5 h-5" />
         </button>

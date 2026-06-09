@@ -118,9 +118,9 @@ export const RobotAvatarIcon = ({ className, isSpeaking }: { className?: string,
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className={className} fill="none">
     <defs>
       <linearGradient id="robotGradient" x1="0" y1="0" x2="100" y2="100">
-        <stop offset="0%" stopColor="#F5EBC0" />
-        <stop offset="50%" stopColor="#D4AF37" />
-        <stop offset="100%" stopColor="#B08D26" />
+        <stop offset="0%" stopColor="#cffafe" />
+        <stop offset="50%" stopColor="#22d3ee" />
+        <stop offset="100%" stopColor="#0f766e" />
       </linearGradient>
       <filter id="glow">
         <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
@@ -164,10 +164,10 @@ export const RobotAvatarIcon = ({ className, isSpeaking }: { className?: string,
 
         {/* Antennas */}
         <line x1="25" y1="30" x2="15" y2="20" stroke="url(#robotGradient)" strokeWidth="2" />
-        <circle cx="15" cy="20" r="3" fill="#D4AF37" />
+        <circle cx="15" cy="20" r="3" fill="#22d3ee" />
         
         <line x1="75" y1="30" x2="85" y2="20" stroke="url(#robotGradient)" strokeWidth="2" />
-        <circle cx="85" cy="20" r="3" fill="#D4AF37" />
+        <circle cx="85" cy="20" r="3" fill="#22d3ee" />
     </g>
   </svg>
 );
