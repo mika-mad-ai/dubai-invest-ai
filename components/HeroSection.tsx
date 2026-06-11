@@ -391,9 +391,10 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
             </div>
 
             {/* Title — splits vertically as video expands */}
-            <div className="relative z-10 flex flex-col items-center gap-3 px-6 text-center pointer-events-none select-none">
-              <motion.h1
+            <h1 className="relative z-10 flex flex-col items-center gap-3 px-6 text-center pointer-events-none select-none" style={{ margin: 0, fontWeight: 700 }}>
+              <motion.span
                 style={{
+                  display: 'block',
                   fontFamily: '"Sora",sans-serif',
                   fontSize: 'clamp(2rem,5.5vw,4.5rem)',
                   fontWeight: 700,
@@ -410,9 +411,10 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
                 }}
               >
                 Trouvons le meilleur
-              </motion.h1>
-              <motion.h1
+              </motion.span>
+              <motion.span
                 style={{
+                  display: 'block',
                   fontFamily: '"Sora",sans-serif',
                   fontStyle: 'italic',
                   fontSize: 'clamp(2rem,5.5vw,4.5rem)',
@@ -430,23 +432,23 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
                 }}
               >
                 investissement locatif à Dubaï
-              </motion.h1>
+              </motion.span>
+            </h1>
 
-              {/* Scroll hint */}
+            {/* Scroll hint */}
+            <motion.div
+              style={{ opacity: 1 - scrollProgress * 3, transform: `translateY(${titleShift * 0.4}px)`, transition: 'none' }}
+              className="relative z-10 flex flex-col items-center gap-2 mt-4 px-6 pointer-events-none select-none"
+            >
+              <span style={{ color: 'rgba(0,242,255,0.65)', fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+                Faites défiler pour découvrir
+              </span>
               <motion.div
-                style={{ opacity: 1 - scrollProgress * 3, transform: `translateY(${titleShift * 0.4}px)`, transition: 'none' }}
-                className="flex flex-col items-center gap-2 mt-4"
-              >
-                <span style={{ color: 'rgba(0,242,255,0.65)', fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-                  Faites défiler pour découvrir
-                </span>
-                <motion.div
-                  animate={{ y: [0, 6, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                  style={{ width: 1, height: 28, background: 'linear-gradient(to bottom, rgba(0,242,255,0.7), transparent)' }}
-                />
-              </motion.div>
-            </div>
+                animate={{ y: [0, 6, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                style={{ width: 1, height: 28, background: 'linear-gradient(to bottom, rgba(0,242,255,0.7), transparent)' }}
+              />
+            </motion.div>
           </div>
 
           {/* ── Content revealed after full expansion ── */}

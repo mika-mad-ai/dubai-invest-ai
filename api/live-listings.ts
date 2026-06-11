@@ -16,7 +16,7 @@
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const TABLE = 'listings';
-const EUR_TO_AED = 4.15;
+const EUR_TO_AED = 4.24;
 const AED_TO_EUR = 1 / EUR_TO_AED;
 
 const PF_HEADERS = {

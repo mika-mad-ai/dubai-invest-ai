@@ -22,7 +22,7 @@ import { GoogleGenAI } from '@google/genai';
 const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const GEMINI_KEY = process.env.API_KEY!;
-const AED_TO_EUR = 1 / 4.15;
+const AED_TO_EUR = 1 / 4.24;
 const CRON_SECRET = process.env.CRON_SECRET ?? '';
 
 // ─── Zone display names ──────────────────────────────────────────────────────

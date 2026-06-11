@@ -37,8 +37,8 @@ const MARKET_PRICE_BY_DISTRICT: Record<string, number> = {
   other: 5000
 };
 
-// Taux de change AED → EUR (1 AED ≈ 0.241 EUR, soit 1 EUR ≈ 4.15 AED)
-const AED_TO_EUR = 1 / 4.15;
+// Taux de change AED → EUR (1 AED ≈ 0.236 EUR, soit 1 EUR ≈ 4.24 AED)
+const AED_TO_EUR = 1 / 4.24;
 
 const APIFY_BASE = 'https://api.apify.com/v2';
 

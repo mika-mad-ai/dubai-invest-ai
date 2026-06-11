@@ -93,7 +93,7 @@ function App() {
   const [simParams, setSimParams] = useState<SimulationParams>({
     rentalYield: 8.0,
     appreciation: 5.0,
-    exchangeRate: 4.0, 
+    exchangeRate: 4.24,
     occupancy: 90,
     duration: 10,
     strategy: 'long_term',
