@@ -63,7 +63,7 @@ const SmartNavbar: React.FC<SmartNavbarProps> = ({ message, isStreaming, hasProf
           <img
             src="/NewLogoDubAInvestV2.png"
             alt="DubaiInvest"
-            className="h-14 md:h-28 w-auto object-contain logo-holo"
+            className={`w-auto object-contain logo-holo transition-all duration-500 ${scrolled ? 'h-12 md:h-16' : 'h-14 md:h-28'}`}
           />
         </div>
 

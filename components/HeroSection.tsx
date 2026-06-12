@@ -209,10 +209,9 @@ interface HeroSectionProps {
 const BG_IMAGE = 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=55&w=1280&auto=format&fit=crop';
 
 export default function HeroSection({ avgYield, avgPrice, totalTransactions, onCTAClick }: HeroSectionProps) {
+  const sectionRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showContent,    setShowContent]     = useState(false);
-  const [fullyExpanded,  setFullyExpanded]   = useState(false);
-  const [touchStartY,    setTouchStartY]     = useState(0);
   const [isMobile,       setIsMobile]        = useState(false);
   const [metricsReady,   setMetricsReady]    = useState(false);
   const [shouldLoadVideo, setShouldLoadVideo] = useState(true);
@@ -246,57 +245,36 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
     return () => clearTimeout(t);
   }, [videoLoaded]);
 
-  // Scroll / touch event handling
+  // Native scroll drives the expansion — the hero section is taller than the
+  // viewport and its inner stage is position:sticky, so wheel, keyboard,
+  // touch and scrollbar all work without hijacking any event.
   useEffect(() => {
-    const onWheel = (e: Event) => {
-      const we = e as WheelEvent;
-      if (fullyExpanded && we.deltaY < 0 && window.scrollY <= 5) {
-        setFullyExpanded(false); e.preventDefault();
-      } else if (!fullyExpanded) {
-        e.preventDefault();
-        const next = Math.min(Math.max(scrollProgress + we.deltaY * 0.0009, 0), 1);
-        setScrollProgress(next);
-        if (next >= 1) { setFullyExpanded(true); setShowContent(true); }
-        else if (next < 0.75) setShowContent(false);
-      }
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const el = sectionRef.current;
+      if (!el) return;
+      const dist = el.offsetHeight - window.innerHeight;
+      const p = dist > 0 ? Math.min(Math.max((window.scrollY - el.offsetTop) / dist, 0), 1) : 1;
+      setScrollProgress(p);
+      setShowContent(p >= 0.85);
     };
-
-    const onTouchStart = (e: Event) => {
-      setTouchStartY((e as TouchEvent).touches[0].clientY);
-    };
-
-    const onTouchMove = (e: Event) => {
-      const te = e as TouchEvent;
-      if (!touchStartY) return;
-      const delta = touchStartY - te.touches[0].clientY;
-      if (fullyExpanded && delta < -20 && window.scrollY <= 5) {
-        setFullyExpanded(false); e.preventDefault();
-      } else if (!fullyExpanded) {
-        e.preventDefault();
-        const next = Math.min(Math.max(scrollProgress + delta * (delta < 0 ? 0.008 : 0.005), 0), 1);
-        setScrollProgress(next);
-        if (next >= 1) { setFullyExpanded(true); setShowContent(true); }
-        else if (next < 0.75) setShowContent(false);
-        setTouchStartY(te.touches[0].clientY);
-      }
-    };
-
-    const onTouchEnd = () => setTouchStartY(0);
-    const onScroll   = () => { if (!fullyExpanded) window.scrollTo(0, 0); };
-
-    window.addEventListener('wheel',      onWheel,      { passive: false });
-    window.addEventListener('scroll',     onScroll);
-    window.addEventListener('touchstart', onTouchStart, { passive: false });
-    window.addEventListener('touchmove',  onTouchMove,  { passive: false });
-    window.addEventListener('touchend',   onTouchEnd);
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
     return () => {
-      window.removeEventListener('wheel',      onWheel);
-      window.removeEventListener('scroll',     onScroll);
-      window.removeEventListener('touchstart', onTouchStart);
-      window.removeEventListener('touchmove',  onTouchMove);
-      window.removeEventListener('touchend',   onTouchEnd);
+      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
     };
-  }, [scrollProgress, fullyExpanded, touchStartY]);
+  }, []);
+
+  const skipToContent = () => {
+    const el = sectionRef.current;
+    if (!el) return;
+    window.scrollTo({ top: el.offsetTop + el.offsetHeight - window.innerHeight, behavior: 'smooth' });
+  };
 
   // Video dimensions
   const videoW   = 320 + scrollProgress * (isMobile ? 600 : 1220);
@@ -310,9 +288,12 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
   ];
 
   return (
-    <div className="overflow-x-hidden" style={{ backgroundColor: '#050505' }}>
-      <section className="relative flex flex-col items-center justify-start min-h-[100dvh]">
-        <div className="relative w-full flex flex-col items-center min-h-[100dvh]">
+    // No overflow on this wrapper: it would break position:sticky below.
+    // Horizontal clipping is handled by the sticky stage itself + body{overflow-x:hidden}.
+    <div style={{ backgroundColor: '#050505' }}>
+      {/* Taller-than-viewport section: scrolling through it drives the expansion */}
+      <section ref={sectionRef} className="relative" style={{ height: '220vh' }}>
+        <div className="sticky top-0 w-full h-[100dvh] overflow-hidden">
 
           {/* Aurora background */}
           <LiquidAuroraCanvas />
@@ -332,7 +313,7 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
           )}
 
           {/* ── Expansion stage ── */}
-          <div className="flex flex-col items-center justify-center w-full h-[100dvh] relative" style={{ zIndex: 10 }}>
+          <div className="flex flex-col items-center justify-center w-full h-full relative" style={{ zIndex: 10 }}>
 
             {/* Video */}
             {/* Halo glow ring — behind the video */}
@@ -385,7 +366,7 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
               <motion.div
                 className="absolute inset-0"
                 style={{ background: '#050505' }}
-                animate={{ opacity: 0.45 - scrollProgress * 0.45 }}
+                animate={{ opacity: 0.68 - scrollProgress * 0.68 }}
                 transition={{ duration: 0.05 }}
               />
             </div>
@@ -406,6 +387,7 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
+                  filter: 'drop-shadow(0 2px 6px rgba(5,5,5,0.9)) drop-shadow(0 6px 24px rgba(5,5,5,0.7))',
                   margin: 0,
                   transition: 'none',
                 }}
@@ -427,6 +409,7 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
+                  filter: 'drop-shadow(0 2px 6px rgba(5,5,5,0.9)) drop-shadow(0 6px 24px rgba(5,5,5,0.7))',
                   margin: 0,
                   transition: 'none',
                 }}
@@ -435,12 +418,15 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
               </motion.span>
             </h1>
 
-            {/* Scroll hint */}
-            <motion.div
-              style={{ opacity: 1 - scrollProgress * 3, transform: `translateY(${titleShift * 0.4}px)`, transition: 'none' }}
-              className="relative z-10 flex flex-col items-center gap-2 mt-4 px-6 pointer-events-none select-none"
+            {/* Scroll hint — clickable to skip the expansion */}
+            <motion.button
+              type="button"
+              onClick={skipToContent}
+              aria-label="Passer l'animation et découvrir le contenu"
+              style={{ opacity: 1 - scrollProgress * 3, transform: `translateY(${titleShift * 0.4}px)`, transition: 'none', pointerEvents: scrollProgress > 0.3 ? 'none' : 'auto', background: 'transparent', border: 'none', cursor: 'pointer' }}
+              className="relative z-10 flex flex-col items-center gap-2 mt-4 px-6 select-none"
             >
-              <span style={{ color: 'rgba(0,242,255,0.65)', fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+              <span style={{ color: 'rgba(0,242,255,0.65)', fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem', letterSpacing: '0.14em', textTransform: 'uppercase', textShadow: '0 2px 8px rgba(5,5,5,0.9)' }}>
                 Faites défiler pour découvrir
               </span>
               <motion.div
@@ -448,10 +434,14 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
                 transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
                 style={{ width: 1, height: 28, background: 'linear-gradient(to bottom, rgba(0,242,255,0.7), transparent)' }}
               />
-            </motion.div>
+            </motion.button>
           </div>
 
-          {/* ── Content revealed after full expansion ── */}
+        </div>
+      </section>
+
+      {/* ── Content revealed after the sticky stage ── */}
+      <section className="relative w-full">
           <motion.div
             className="flex flex-col w-full"
             initial={{ opacity: 0 }}
@@ -507,8 +497,6 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
               </div>
             </div>
           </motion.div>
-
-        </div>
       </section>
 
       {/* Bottom fade */}

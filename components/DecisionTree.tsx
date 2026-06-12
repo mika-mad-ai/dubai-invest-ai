@@ -414,14 +414,14 @@ const OptionCard: React.FC<{
               animate={{ scale: 1, opacity: 1, rotate: 0 }}
               exit={{ scale: 0, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-              className="absolute -top-2.5 -right-2.5 w-6 h-6 rounded-full flex items-center justify-center"
+              className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
               style={{
                 background: 'linear-gradient(135deg, #67e8f9, #14b8a6)',
-                boxShadow: '0 0 14px rgba(20,184,166,0.8)',
+                boxShadow: '0 0 12px rgba(20,184,166,0.7)',
                 zIndex: 20,
               }}
             >
-              <CheckIcon className="w-3 h-3 text-[#0a0a0f]" />
+              <CheckIcon className="w-2.5 h-2.5 text-[#0a0a0f]" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -448,7 +448,7 @@ const OptionCard: React.FC<{
 
         {/* ── Label ── */}
         <motion.span
-          animate={{ color: isSelected ? '#67e8f9' : isActive ? 'rgba(240,235,224,0.88)' : 'rgba(240,235,224,0.28)' }}
+          animate={{ color: isSelected ? '#67e8f9' : isActive ? 'rgba(240,235,224,0.92)' : 'rgba(240,235,224,0.40)' }}
           className="font-semibold uppercase tracking-widest relative z-10"
           style={{ fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem', marginBottom: '0.4rem' }}
         >
@@ -457,7 +457,7 @@ const OptionCard: React.FC<{
 
         {/* ── Desc ── */}
         <motion.span
-          animate={{ color: isSelected ? 'rgba(103,232,249,0.65)' : 'rgba(240,235,224,0.28)' }}
+          animate={{ color: isSelected ? 'rgba(103,232,249,0.70)' : isActive ? 'rgba(240,235,224,0.58)' : 'rgba(240,235,224,0.30)' }}
           className="leading-relaxed relative z-10"
           style={{ fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem' }}
         >
@@ -474,7 +474,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
   useEffect(() => { gtm.funnelStart(); }, []);
   const [history, setHistory]     = useState<number[]>([]);
   const [paths, setPaths]         = useState<PathData[]>([]);
-  const isFirstMount              = useRef(true);
+  const [badgeVisible, setBadgeVisible] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollRef    = useRef<HTMLDivElement>(null);
@@ -488,6 +488,19 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
   });
 
   const projectedRoi = useMemo(() => calcProjectedRoi(profile), [profile]);
+
+  // Show the ROI badge only while the funnel is on screen — it floats in
+  // position:fixed and would otherwise overlap the hero above and the footer below
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setBadgeVisible(entry.isIntersecting),
+      { threshold: 0.05 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   if (itemsRef.current.length !== TREE_STEPS.length)
     itemsRef.current = Array(TREE_STEPS.length).fill(null).map(() => []);
@@ -535,7 +548,8 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
   }, [stepIndex, history]);
 
   useEffect(() => {
-    if (isFirstMount.current) { isFirstMount.current = false; return; }
+    // stepIndex 0 = initial render — never auto-scroll the page on mount
+    if (stepIndex === 0) return;
     if (stepIndex === TREE_STEPS.length && scrollRef.current) {
       setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350);
     } else {
@@ -558,14 +572,15 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
   const totalSteps = TREE_STEPS.length + 1;
 
   return (
-    <div className="w-full max-w-5xl mx-auto pb-40 px-4 relative" ref={containerRef}>
+    <div className="w-full max-w-5xl mx-auto pb-24 px-4 relative" ref={containerRef}>
 
       {/* ── ROI Badge ── */}
       <motion.div
         initial={{ opacity: 0, x: 30, scale: 0.8 }}
-        animate={{ opacity: 1, x: 0, scale: 1 }}
-        transition={{ delay: 0.6, duration: 0.6, type: 'spring', stiffness: 200 }}
+        animate={badgeVisible ? { opacity: 1, x: 0, scale: 1 } : { opacity: 0, x: 30, scale: 0.8 }}
+        transition={{ duration: 0.45, type: 'spring', stiffness: 200, damping: 24 }}
         className="fixed top-24 right-4 md:right-8 z-50"
+        style={{ pointerEvents: badgeVisible ? 'auto' : 'none' }}
       >
         <div className="relative overflow-hidden rounded-2xl" style={{
           background: 'rgba(6,10,18,0.92)',
@@ -711,7 +726,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
                     {step.question}
                   </h3>
                   {step.sub && (
-                    <p style={{ color: 'rgba(240,235,224,0.28)', fontSize: '0.7rem', fontFamily: '"Manrope",sans-serif', fontStyle: 'italic', lineHeight: 1.55 }}>
+                    <p style={{ color: 'rgba(240,235,224,0.48)', fontSize: '0.7rem', fontFamily: '"Manrope",sans-serif', fontStyle: 'italic', lineHeight: 1.55 }}>
                       {step.sub}
                     </p>
                   )}
