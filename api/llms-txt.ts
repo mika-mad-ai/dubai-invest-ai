@@ -42,7 +42,14 @@ DubaiInvest AI Advisor est un conseiller en investissement immobilier à Dubaï 
 - Accessible dès 2 000 000 AED (~545 000€) en immobilier freehold
 - Éligible aux membres de la famille
 
-## URL principale
+## Pages de référence
+
+- [Accueil — simulateur d'investissement IA](https://dubainvest.eu/) : simulation rendement, cashflow, fiscalité en 5 questions
+- [Analyse géopolitique Dubaï 2026](https://dubainvest.eu/analyse-geopolitique-dubai) : impact du conflit Moyen-Orient sur les prix et transactions, données hebdomadaires
+- [Guide Golden Visa Dubaï](https://dubainvest.eu/guide-visa-or-dubai) : conditions, coûts et démarches pour la résidence 10 ans dès 2M AED (~545 000 €)
+- [Meilleurs quartiers où investir à Dubaï en 2026](https://dubainvest.eu/meilleurs-quartiers-dubai-investissement) : comparatif rendement, valorisation et risque par district
+
+## Contact
 
 https://dubainvest.eu/
 `.trim();

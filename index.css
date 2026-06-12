@@ -1,0 +1,186 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --gold: #D4AF37;
+  --gold-glow: rgba(212,175,55,0.35);
+  --cyan: #00F2FF;
+  --cyan-glow: rgba(0,242,255,0.25);
+  --bg: #050505;
+  --surface: rgba(255,255,255,0.04);
+  --border: rgba(212,175,55,0.12);
+}
+body {
+  background-color: var(--bg);
+  color: rgba(240,235,224,0.88);
+  overflow-x: hidden;
+  font-family: 'Manrope', sans-serif;
+}
+h1, h2, h3, h4, .font-serif {
+  font-family: 'Sora', sans-serif;
+}
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.glass-panel {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212,175,55,0.12);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+}
+.glass-card {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212,175,55,0.12);
+  border-radius: 16px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+}
+.glass-card:hover {
+  border-color: rgba(212,175,55,0.38);
+  box-shadow: 0 8px 36px rgba(212,175,55,0.14);
+}
+.gold-text {
+  background: linear-gradient(135deg, #D4AF37 0%, #f0c060 45%, #00F2FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gold-border-glow {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 20px var(--gold-glow);
+}
+.modern-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  outline: none;
+}
+.modern-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border: 3px solid #c49a2a;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(196,154,42,0.45);
+}
+.loader {
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid #d4a843;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+/* Classes utilitaires pour la perspective 3D */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* Smooth scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.30); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,0.55); }
+::selection { background: rgba(212,175,55,0.28); color: #050505; }
+
+/* Card shimmer animation */
+@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(200%); } }
+
+/* ═══ LOGO HOLO GLOW ═══ */
+@keyframes holoPulse {
+  0%   { filter: drop-shadow(0 0 4px rgba(255,255,255,0.95)) drop-shadow(0 0 10px rgba(212,175,55,1.0)) drop-shadow(0 0 22px rgba(212,175,55,0.55)) drop-shadow(0 0 40px rgba(0,242,255,0.20)); }
+  50%  { filter: drop-shadow(0 0 4px rgba(255,255,255,0.90)) drop-shadow(0 0 10px rgba(0,242,255,0.90)) drop-shadow(0 0 22px rgba(0,242,255,0.50)) drop-shadow(0 0 40px rgba(212,175,55,0.20)); }
+  100% { filter: drop-shadow(0 0 4px rgba(255,255,255,0.95)) drop-shadow(0 0 10px rgba(212,175,55,1.0)) drop-shadow(0 0 22px rgba(212,175,55,0.55)) drop-shadow(0 0 40px rgba(0,242,255,0.20)); }
+}
+.logo-holo { animation: holoPulse 3.5s ease-in-out infinite; }
+
+/* ═══ AURORA BACKGROUND ANIMATIONS ═══ */
+@keyframes aurora1 {
+  0%,100% { transform: translate(0px,0px) scale(1); }
+  25%      { transform: translate(55px, 35px) scale(1.08); }
+  50%      { transform: translate(25px, 70px) scale(0.95); }
+  75%      { transform: translate(-35px, 25px) scale(1.05); }
+}
+@keyframes aurora2 {
+  0%,100% { transform: translate(0px,0px) scale(1); }
+  33%      { transform: translate(-50px, 55px) scale(1.1); }
+  66%      { transform: translate(40px, -35px) scale(0.92); }
+}
+@keyframes aurora3 {
+  0%,100% { transform: translate(0px,0px) rotate(0deg); }
+  40%      { transform: translate(65px,-45px) rotate(8deg); }
+  80%      { transform: translate(-25px, 50px) rotate(-5deg); }
+}
+@keyframes aurora4 {
+  0%,100% { transform: translate(0px,0px) scale(1); opacity:1; }
+  50%      { transform: translate(-55px,-30px) scale(1.18); opacity:0.7; }
+}
+@keyframes aurora5 {
+  0%,100% { transform: translate(0px,0px); }
+  30%      { transform: translate(40px,-60px); }
+  70%      { transform: translate(-45px,30px); }
+}
+@keyframes light-scan {
+  0%   { left: -35%; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { left: 135%; opacity: 0; }
+}
+@keyframes light-scan-2 {
+  0%   { left: -35%; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { left: 135%; opacity: 0; }
+}
+@keyframes particle-rise {
+  0%   { transform: translateY(0px) scale(1);   opacity: var(--p-op); }
+  50%  { transform: translateY(-28px) scale(1.2); opacity: calc(var(--p-op) * 1.6); }
+  100% { transform: translateY(0px) scale(1);   opacity: var(--p-op); }
+}
+@keyframes grid-pulse {
+  0%,100% { opacity: 0.07; }
+  50%      { opacity: 0.13; }
+}
+.aurora-blob-1 { animation: aurora1 18s ease-in-out infinite; }
+.aurora-blob-2 { animation: aurora2 22s ease-in-out infinite; }
+.aurora-blob-3 { animation: aurora3 27s ease-in-out infinite; }
+.aurora-blob-4 { animation: aurora4 20s ease-in-out infinite; }
+.aurora-blob-5 { animation: aurora5 24s ease-in-out infinite; }
+.light-beam-1  { animation: light-scan   12s linear infinite; }
+.light-beam-2  { animation: light-scan-2 19s linear infinite 6s; }
+.bg-grid-pulse { animation: grid-pulse 4s ease-in-out infinite; }
+
+/* Leaflet specific overrides for dark mode */
+.leaflet-container {
+  background: #0f172a !important;
+  font-family: "Plus Jakarta Sans", sans-serif !important;
+}
+.leaflet-control-attribution {
+  background: rgba(15, 23, 42, 0.8) !important;
+  color: #64748b !important;
+}
+.leaflet-control-attribution a {
+  color: #94a3b8 !important;
+}
+/* Custom Tooltip Style */
+.leaflet-tooltip-custom {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: white !important;
+  font-weight: bold !important;
+  font-family: "Playfair Display", serif !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
