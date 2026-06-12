@@ -2,6 +2,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Message, Role } from '../types';
 import { SendIcon } from './Icons';
+import { useI18n } from '../i18n';
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -18,6 +19,7 @@ const SUGGESTED_QUESTIONS = [
 ];
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, isStreaming, groundingSources }) => {
+  const { t } = useI18n();
   const [input, setInput] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -50,8 +52,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
          <div className="flex items-center gap-2 overflow-hidden">
             <div className="shrink-0 w-2.5 h-2.5 bg-aqua-300 rounded-full animate-pulse shadow-[0_0_12px_rgba(23,180,212,0.7)]"></div>
             <div className="truncate">
-                <h3 className="font-serif text-white text-[13px] tracking-wide truncate">Conseil IA</h3>
-                <p className="text-[8px] text-slate-500 uppercase tracking-[0.24em] font-black">Live DLD</p>
+                <h3 className="font-serif text-white text-[13px] tracking-wide truncate">{t.chat.header}</h3>
+                <p className="text-[8px] text-slate-500 uppercase tracking-[0.24em] font-black">{t.chat.liveDld}</p>
             </div>
          </div>
       </div>
@@ -68,7 +70,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
          {messages.length === 0 && (
              <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-4 text-center px-4 opacity-50">
                  <div className="loader !m-0 !w-8 !h-8 !border-2"></div>
-                 <p className="text-[7px] uppercase tracking-[0.2em] font-black">Audit en cours...</p>
+                 <p className="text-[7px] uppercase tracking-[0.2em] font-black">{t.chat.auditing}</p>
              </div>
          )}
 
@@ -96,7 +98,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
          
          {groundingSources && groundingSources.length > 0 && !isStreaming && (
             <div className="mt-4 p-2 bg-gold-500/5 rounded-xl border border-gold-500/10 w-full overflow-hidden">
-               <p className="text-[7px] text-gold-400 font-black uppercase tracking-[0.3em] mb-1 opacity-60">Sources</p>
+               <p className="text-[7px] text-gold-400 font-black uppercase tracking-[0.3em] mb-1 opacity-60">{t.chat.sources}</p>
                <div className="flex flex-col gap-1">
                   {groundingSources.slice(0, 2).map((source, idx) => (
                     <a key={idx} href={source.uri} target="_blank" rel="noopener noreferrer" className="text-[8px] truncate block text-slate-500 hover:text-gold-400">
@@ -110,7 +112,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
          {isStreaming && (
             <div className="flex justify-start mb-4">
                 <div className="bg-gold-500/5 border border-gold-500/10 px-2 py-1 rounded-lg italic text-[7px] text-gold-400 uppercase tracking-widest font-black">
-                    IA Analyse...
+                    {t.chat.analyzing}
                 </div>
             </div>
          )}
@@ -136,7 +138,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="..."
+            placeholder={t.chat.placeholder}
             className={`flex-1 bg-black/50 border rounded-lg px-2 py-2 focus:bg-black outline-none transition-all text-[11px] text-white placeholder-slate-800 min-w-0
               ${isStreaming ? 'border-white/5 opacity-50' : 'border-white/10 focus:border-gold-500/40'}
             `}

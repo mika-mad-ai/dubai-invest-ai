@@ -27,6 +27,7 @@ import HeroSection from './components/HeroSection';
 import AITopPick, { scoreProperty } from './components/AITopPick';
 import Footer from './components/Footer';
 import { gtm } from './services/gtm';
+import { useI18n, fmt } from './i18n';
 
 // Données enrichies
 // ── Skeleton loaders ──────────────────────────────────────────────────────────
@@ -59,15 +60,16 @@ const AITopPickSkeleton: React.FC = () => (
     <div className="text-center space-y-3 max-w-sm mx-auto">
       <div className="h-3 w-24 mx-auto rounded" style={{ background: 'rgba(212,175,55,0.12)' }} />
       <div className="flex gap-1 items-center justify-center">
-        <span className="text-xs animate-pulse" style={{ color: 'rgba(212,175,55,0.55)' }}>Collecte des annonces en cours</span>
+        <span className="text-xs animate-pulse" style={{ color: 'rgba(212,175,55,0.55)' }}>{useI18n().t.app.skeletonCollecting}</span>
         <span className="text-xs" style={{ color: 'rgba(212,175,55,0.55)' }}>…</span>
       </div>
-      <p className="text-[10px]" style={{ color: 'rgba(180,175,165,0.35)' }}>PropertyFinder · Apify · ~60s</p>
+      <p className="text-[10px]" style={{ color: 'rgba(180,175,165,0.35)' }}>{useI18n().t.app.skeletonSource}</p>
     </div>
   </div>
 );
 
 function App() {
+  const { t, locale } = useI18n();
   const sectionClassName =
     "relative overflow-hidden rounded-3xl border border-white/[0.06] p-5 md:p-8 shadow-[0_18px_60px_rgba(0,0,0,0.5)] before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:bg-gradient-to-b before:from-[#D4AF37] before:via-[#00F2FF] before:to-transparent"
   const sectionStyle = { background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' };
@@ -273,7 +275,7 @@ function App() {
     setHasProfile(true);
 
     try {
-      chatSessionRef.current = createInvestmentChat(profile, simParams);
+      chatSessionRef.current = createInvestmentChat(profile, simParams, t.geminiLanguage);
       const prompt = generateInitialAnalysisPrompt(profile, simParams);
       const result = await chatSessionRef.current.sendMessage({ message: prompt });
       const sources = result.candidates?.[0]?.groundingMetadata?.groundingChunks?.map((chunk: any) => ({ title: chunk.web?.title || "Données DLD", uri: chunk.web?.uri })).filter((s: any) => s.uri) || [];
@@ -368,12 +370,12 @@ function App() {
     return () => { cancelled = true; };
   }, [hasProfile, userProfile]);
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
+  const formatCurrency = (val: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
 
   return (
     <div className="min-h-screen font-sans" style={{ background: '#050505', color: 'rgba(240,235,224,0.88)' }}>
       <SmartNavbar
-        message={isChatLoading ? "Analyse de votre profil en cours…" : `Bonjour ${userProfile?.name?.split(' ')[0] || ''} — votre simulation est prête. Posez-moi vos questions.`}
+        message={isChatLoading ? t.nav.aiAnalyzing : fmt(t.nav.aiReady, { name: userProfile?.name?.split(' ')[0] || '' })}
         isStreaming={isChatLoading}
         hasProfile={hasProfile}
         onReset={() => { setHasProfile(false); setUserProfile(null); setMessages([]); }}
@@ -420,8 +422,8 @@ function App() {
                     <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
                         <span className="text-2xl md:text-4xl font-serif text-gold-500 opacity-20 font-bold shrink-0">01</span>
                         <div>
-                            <h2 className="text-xl md:text-3xl font-serif text-white">Par quel quartier commencer ?</h2>
-                            <p className="text-xs text-slate-400 uppercase tracking-widest">Rendement · valorisation · risque · comparatif selon votre profil</p>
+                            <h2 className="text-xl md:text-3xl font-serif text-white">{t.app.s1Title}</h2>
+                            <p className="text-xs text-slate-400 uppercase tracking-widest">{t.app.s1Sub}</p>
                         </div>
                     </div>
                     <InvestmentDecisionCharts profile={userProfile!} />
@@ -432,17 +434,17 @@ function App() {
                     <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
                         <span className="text-2xl md:text-4xl font-serif text-gold-500 opacity-20 font-bold shrink-0">02</span>
                         <div>
-                            <h2 className="text-xl md:text-3xl font-serif text-white">Combien vaudra votre bien dans {simParams.duration} ans ?</h2>
-                            <p className="text-xs text-slate-400 uppercase tracking-widest">Projection de valeur vs épargne classique en France</p>
+                            <h2 className="text-xl md:text-3xl font-serif text-white">{fmt(t.app.s2Title, { n: simParams.duration })}</h2>
+                            <p className="text-xs text-slate-400 uppercase tracking-widest">{t.app.s2Sub}</p>
                         </div>
                     </div>
                     
                     <div className="glass-panel p-6 rounded-2xl border border-white/5 mb-6">
                         <div className="flex justify-between items-center mb-4">
                             <label className="text-sm font-bold text-white flex items-center gap-2">
-                                <TrendingUpIcon className="w-4 h-4 text-gold-400" /> Dans combien d'années récupérez-vous votre argent ?
+                                <TrendingUpIcon className="w-4 h-4 text-gold-400" /> {t.app.s2Slider}
                             </label>
-                            <span className="text-xl font-serif text-gold-400">{simParams.duration} ans</span>
+                            <span className="text-xl font-serif text-gold-400">{fmt(t.app.s2Years, { n: simParams.duration })}</span>
                         </div>
                         <input 
                             type="range" min="5" max="30" step="1" 
@@ -451,8 +453,8 @@ function App() {
                             className="modern-slider slider-gold"
                         />
                          <div className="flex justify-between text-[10px] text-slate-500 mt-2 uppercase font-bold">
-                            <span>Court Terme (5 ans)</span>
-                            <span>Retraite (30 ans)</span>
+                            <span>{t.app.s2Short}</span>
+                            <span>{t.app.s2Long}</span>
                          </div>
                     </div>
 
@@ -467,15 +469,15 @@ function App() {
                     <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
                         <span className="text-2xl md:text-4xl font-serif text-gold-500 opacity-20 font-bold shrink-0">03</span>
                         <div>
-                            <h2 className="text-xl md:text-3xl font-serif text-white">Ce que vous toucherez chaque mois</h2>
-                            <p className="text-xs text-slate-400 uppercase tracking-widest">Loyer net estimé après charges et frais de gestion</p>
+                            <h2 className="text-xl md:text-3xl font-serif text-white">{t.app.s3Title}</h2>
+                            <p className="text-xs text-slate-400 uppercase tracking-widest">{t.app.s3Sub}</p>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
                         {/* Strategy Selector */}
                          <div className="glass-panel p-6 rounded-2xl border border-white/5 flex flex-col justify-center">
-                            <label className="text-xs font-bold text-slate-300 uppercase tracking-widest mb-4">Comment souhaitez-vous louer ?</label>
+                            <label className="text-xs font-bold text-slate-300 uppercase tracking-widest mb-4">{t.app.s3How}</label>
                             <div className="flex p-1 bg-midnight-950 rounded-xl border border-white/10">
                                 <button
                                     onClick={() => setSimParams({...simParams, strategy: 'long_term'})}
@@ -485,7 +487,7 @@ function App() {
                                         : 'text-slate-500 hover:text-slate-300'
                                     }`}
                                 >
-                                    <span className="block text-lg mb-1">🏠</span> Location longue durée
+                                    <span className="block text-lg mb-1">🏠</span> {t.app.s3LongTerm}
                                 </button>
                                 <button
                                     onClick={() => setSimParams({...simParams, strategy: 'short_term'})}
@@ -495,7 +497,7 @@ function App() {
                                         : 'text-slate-500 hover:text-slate-300'
                                     }`}
                                 >
-                                     <span className="block text-lg mb-1">🏖️</span> Airbnb / courte durée
+                                     <span className="block text-lg mb-1">🏖️</span> {t.app.s3ShortTerm}
                                 </button>
                             </div>
                          </div>
@@ -503,11 +505,11 @@ function App() {
                          {/* Quick KPI */}
                          <div className="glass-panel p-6 rounded-2xl border border-white/5 flex items-center justify-between">
                              <div>
-                                <p className="text-[10px] text-slate-500 uppercase tracking-widest">Loyer net estimé par mois</p>
-                                <p className="text-3xl font-serif text-white mt-1">{formatCurrency(calculationResult.annualRent / 12)}<span className="text-sm text-slate-500">/mois</span></p>
+                                <p className="text-[10px] text-slate-500 uppercase tracking-widest">{t.app.s3NetRent}</p>
+                                <p className="text-3xl font-serif text-white mt-1">{formatCurrency(calculationResult.annualRent / 12)}<span className="text-sm text-slate-500">{t.app.s3PerMonth}</span></p>
                              </div>
                              <div className="text-right">
-                                <p className="text-[10px] text-slate-500 uppercase tracking-widest">Rendement net annuel</p>
+                                <p className="text-[10px] text-slate-500 uppercase tracking-widest">{t.app.s3NetYield}</p>
                                 <p className="text-3xl font-mono text-emerald-400 mt-1 font-bold">{((calculationResult.annualRent / calculationResult.propertyPrice) * 100).toFixed(2)}%</p>
                              </div>
                          </div>
@@ -524,8 +526,8 @@ function App() {
                     <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
                         <span className="text-2xl md:text-4xl font-serif text-gold-500 opacity-20 font-bold shrink-0">04</span>
                         <div>
-                            <h2 className="text-xl md:text-3xl font-serif text-white">Le coût complet de l'achat</h2>
-                            <p className="text-xs text-slate-400 uppercase tracking-widest">DLD 4 % · frais d'agence · charges annuelles · rien de caché</p>
+                            <h2 className="text-xl md:text-3xl font-serif text-white">{t.app.s4Title}</h2>
+                            <p className="text-xs text-slate-400 uppercase tracking-widest">{t.app.s4Sub}</p>
                         </div>
                     </div>
 
@@ -535,15 +537,15 @@ function App() {
                             <div className="flex items-start gap-4">
                                 <div className="p-3 bg-gold-500/10 rounded-full text-gold-400"><BuildingIcon className="w-6 h-6" /></div>
                                 <div>
-                                    <h4 className="text-white font-bold mb-1">DLD Fee (4 %) — obligatoire</h4>
-                                    <p className="text-xs text-slate-400 leading-relaxed">C'est l'équivalent des frais de notaire en France. Payé une seule fois à l'enregistrement auprès du Dubai Land Department.</p>
+                                    <h4 className="text-white font-bold mb-1">{t.app.s4DldTitle}</h4>
+                                    <p className="text-xs text-slate-400 leading-relaxed">{t.app.s4DldDesc}</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4">
                                 <div className="p-3 bg-blue-500/10 rounded-full text-blue-400"><EuroIcon className="w-6 h-6" /></div>
                                 <div>
-                                    <h4 className="text-white font-bold mb-1">Service Charges (charges annuelles)</h4>
-                                    <p className="text-xs text-slate-400 leading-relaxed">Charges de copropriété (ascenseur, piscine, sécurité, entretien). Estimées à {serviceChargesSqft} AED/sqft/an pour ce bien. Pas de taxe foncière à Dubaï.</p>
+                                    <h4 className="text-white font-bold mb-1">{t.app.s4ChargesTitle}</h4>
+                                    <p className="text-xs text-slate-400 leading-relaxed">{fmt(t.app.s4ChargesDesc, { n: serviceChargesSqft })}</p>
                                 </div>
                             </div>
                         </div>
@@ -556,8 +558,8 @@ function App() {
                     <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
                         <span className="text-2xl md:text-4xl font-serif text-gold-500 opacity-20 font-bold shrink-0">05</span>
                         <div>
-                            <h2 className="text-xl md:text-3xl font-serif text-white">Ce que vous économisez face à la France</h2>
-                            <p className="text-xs text-slate-400 uppercase tracking-widest">0 % d'impôt locatif à Dubaï · comparatif selon votre résidence fiscale</p>
+                            <h2 className="text-xl md:text-3xl font-serif text-white">{t.app.s5Title}</h2>
+                            <p className="text-xs text-slate-400 uppercase tracking-widest">{t.app.s5Sub}</p>
                         </div>
                     </div>
 
@@ -574,8 +576,8 @@ function App() {
                     <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
                         <span className="text-2xl md:text-4xl font-serif text-gold-500 opacity-20 font-bold shrink-0">06</span>
                         <div>
-                            <h2 className="text-xl md:text-3xl font-serif text-white">Où investir et quels biens vous correspondent ?</h2>
-                            <p className="text-xs text-slate-400 uppercase tracking-widest">Quartiers à potentiel · annonces sélectionnées selon votre profil</p>
+                            <h2 className="text-xl md:text-3xl font-serif text-white">{t.app.s6Title}</h2>
+                            <p className="text-xs text-slate-400 uppercase tracking-widest">{t.app.s6Sub}</p>
                         </div>
                     </div>
 
@@ -585,17 +587,17 @@ function App() {
                         <div>
                              <h3 className="text-xl font-serif text-white mb-6 pl-4 border-l-2 border-gold-500">
                                 {selectedDistrictId 
-                                    ? `Projets disponibles : ${properties.find(p => p.districtId === selectedDistrictId)?.location || 'Ce quartier'}` 
-                                    : 'Dernières Opportunités Détectées'}
+                                    ? fmt(t.app.s6Available, { loc: properties.find(p => p.districtId === selectedDistrictId)?.location || '—' }) 
+                                    : t.app.s6Latest}
                              </h3>
                              <div className="mb-4">
                                 {propertiesSource === 'live' && (
                                   <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded border text-emerald-400 border-emerald-500/40 bg-emerald-500/10">
-                                    Annonces réelles · PropertyFinder
+                                    {t.app.s6Live}
                                   </span>
                                 )}
                                 {propertiesLoading && (
-                                  <span className="ml-2 text-[10px] text-gold-400 animate-pulse">Collecte en cours…</span>
+                                  <span className="ml-2 text-[10px] text-gold-400 animate-pulse">{t.app.s6Collecting}</span>
                                 )}
                                 {propertiesStatus && !propertiesLoading && (
                                   <p className="mt-2 text-[10px] text-slate-400">{propertiesStatus}</p>
@@ -616,7 +618,7 @@ function App() {
                                     ))
                                 ) : (
                                     <div className="col-span-2 py-12 text-center text-slate-500 bg-white/5 rounded-xl border border-dashed border-white/10">
-                                        Aucune annonce disponible pour ce profil pour le moment.
+                                        {t.app.s6Empty}
                                     </div>
                                 )}
                              </div>

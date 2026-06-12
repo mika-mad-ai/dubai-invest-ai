@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useI18n } from '../i18n';
 import { ArrowRight, Sparkles, TrendingUp, Building2, BarChart3, Send, Bot } from 'lucide-react';
 
 // ── Liquid Aurora Canvas ───────────────────────────────────────────────────────
@@ -121,13 +122,13 @@ const MetricCard: React.FC<{ icon: React.ReactNode; label: string; value: string
 };
 
 // ── AI Chat Demo ───────────────────────────────────────────────────────────────
-const DEMO_MESSAGES = [
-  { sender: 'ai'   as const, text: "Bonjour ! Quel est votre budget et ce que vous souhaitez en faire ?" },
-  { sender: 'user' as const, text: "250 000 €, je veux toucher un loyer depuis la France chaque mois." },
-  { sender: 'ai'   as const, text: "Parfait pour JVC ou JLT : 7–8 % brut, environ 1 400 €/mois nets. 0 % d'impôt à Dubaï. Je vous prépare la simulation complète ?" },
-];
-
 const HeroAIChat: React.FC<{ onCTAClick?: () => void }> = ({ onCTAClick }) => {
+  const { t } = useI18n();
+  const DEMO_MESSAGES = [
+    { sender: 'ai'   as const, text: t.hero.demo1 },
+    { sender: 'user' as const, text: t.hero.demo2 },
+    { sender: 'ai'   as const, text: t.hero.demo3 },
+  ];
   const [displayed, setDisplayed] = useState<{ sender: 'ai' | 'user'; text: string }[]>([]);
   const [isTyping, setIsTyping]   = useState(false);
   const [input, setInput]         = useState('');
@@ -161,12 +162,12 @@ const HeroAIChat: React.FC<{ onCTAClick?: () => void }> = ({ onCTAClick }) => {
             <Bot size={13} style={{ color: '#050505' }} />
           </motion.div>
           <div>
-            <span style={{ color: '#D4AF37', fontFamily: '"Manrope",sans-serif', fontSize: '0.8rem', fontWeight: 700 }}>DubaiInvest AI</span>
-            <span style={{ color: 'rgba(0,242,255,0.45)', fontSize: '0.62rem', fontFamily: '"Manrope",sans-serif', marginLeft: '0.4rem' }}>· Conseiller IA</span>
+            <span style={{ color: '#D4AF37', fontFamily: '"Manrope",sans-serif', fontSize: '0.8rem', fontWeight: 700 }}>{t.hero.aiName}</span>
+            <span style={{ color: 'rgba(0,242,255,0.45)', fontSize: '0.62rem', fontFamily: '"Manrope",sans-serif', marginLeft: '0.4rem' }}>{t.hero.aiRole}</span>
           </div>
           <div className="ml-auto flex items-center gap-1.5">
             <motion.div className="w-1.5 h-1.5 rounded-full" style={{ background: '#00F2FF', boxShadow: '0 0 6px #00F2FF' }} animate={{ opacity: [1, 0.3, 1], scale: [1, 1.3, 1] }} transition={{ duration: 2, repeat: Infinity }} />
-            <span style={{ color: 'rgba(0,242,255,0.65)', fontSize: '0.6rem', fontFamily: '"Manrope",sans-serif' }}>En ligne</span>
+            <span style={{ color: 'rgba(0,242,255,0.65)', fontSize: '0.6rem', fontFamily: '"Manrope",sans-serif' }}>{t.hero.online}</span>
           </div>
         </div>
         <div ref={scrollRef} className="flex-1 px-4 py-3 overflow-y-auto space-y-3" style={{ scrollbarWidth: 'none' }}>
@@ -188,7 +189,7 @@ const HeroAIChat: React.FC<{ onCTAClick?: () => void }> = ({ onCTAClick }) => {
           )}
         </div>
         <div className="flex items-center gap-2 px-3 py-2.5 shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && onCTAClick?.()} placeholder="Ex : 300 000 €, je veux un loyer mensuel…" className="flex-1 bg-transparent outline-none min-w-0" style={{ color: 'rgba(240,235,224,0.65)', fontFamily: '"Manrope",sans-serif', fontSize: '0.77rem' }} />
+          <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && onCTAClick?.()} placeholder={t.hero.inputPlaceholder} className="flex-1 bg-transparent outline-none min-w-0" style={{ color: 'rgba(240,235,224,0.65)', fontFamily: '"Manrope",sans-serif', fontSize: '0.77rem' }} />
           <motion.button onClick={onCTAClick} whileHover={{ scale: 1.12, boxShadow: '0 0 22px rgba(0,242,255,0.55)' }} whileTap={{ scale: 0.9 }} className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #D4AF37, #00F2FF)', cursor: 'pointer' }}>
             <Send size={12} style={{ color: '#050505' }} />
           </motion.button>
@@ -209,6 +210,7 @@ interface HeroSectionProps {
 const BG_IMAGE = 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=55&w=1280&auto=format&fit=crop';
 
 export default function HeroSection({ avgYield, avgPrice, totalTransactions, onCTAClick }: HeroSectionProps) {
+  const { t, locale } = useI18n();
   const sectionRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showContent,    setShowContent]     = useState(false);
@@ -282,9 +284,9 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
   const titleShift = scrollProgress * (isMobile ? 90 : 130);
 
   const metrics = [
-    { icon: <TrendingUp size={20} />, label: 'Rendement moyen',  value: `${(animYield / 10).toFixed(1)}%`, sub: 'vs 3.2% Europe' },
-    { icon: <Building2  size={20} />, label: 'Prix moyen AED',   value: animPrice.toLocaleString('fr-FR'),  sub: '90j glissants' },
-    { icon: <BarChart3  size={20} />, label: 'Transactions DLD', value: animTx.toLocaleString('fr-FR'),     sub: 'ce trimestre'  },
+    { icon: <TrendingUp size={20} />, label: t.hero.metricYield, value: `${(animYield / 10).toFixed(1)}%`,    sub: t.hero.metricYieldSub },
+    { icon: <Building2  size={20} />, label: t.hero.metricPrice, value: animPrice.toLocaleString(locale),     sub: t.hero.metricPriceSub },
+    { icon: <BarChart3  size={20} />, label: t.hero.metricTx,    value: animTx.toLocaleString(locale),        sub: t.hero.metricTxSub },
   ];
 
   return (
@@ -392,7 +394,7 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
                   transition: 'none',
                 }}
               >
-                Trouvons le meilleur
+                {t.hero.title1}
               </motion.span>
               <motion.span
                 style={{
@@ -414,7 +416,7 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
                   transition: 'none',
                 }}
               >
-                investissement locatif à Dubaï
+                {t.hero.title2}
               </motion.span>
             </h1>
 
@@ -422,12 +424,12 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
             <motion.button
               type="button"
               onClick={skipToContent}
-              aria-label="Passer l'animation et découvrir le contenu"
+              aria-label={t.hero.skipAria}
               style={{ opacity: 1 - scrollProgress * 3, transform: `translateY(${titleShift * 0.4}px)`, transition: 'none', pointerEvents: scrollProgress > 0.3 ? 'none' : 'auto', background: 'transparent', border: 'none', cursor: 'pointer' }}
               className="relative z-10 flex flex-col items-center gap-2 mt-4 px-6 select-none"
             >
               <span style={{ color: 'rgba(0,242,255,0.65)', fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem', letterSpacing: '0.14em', textTransform: 'uppercase', textShadow: '0 2px 8px rgba(5,5,5,0.9)' }}>
-                Faites défiler pour découvrir
+                {t.hero.scrollHint}
               </span>
               <motion.div
                 animate={{ y: [0, 6, 0] }}
@@ -457,14 +459,14 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
                   <motion.div className="absolute inset-0 pointer-events-none" animate={{ x: ['-100%','200%'] }} transition={{ duration: 3, repeat: Infinity, repeatDelay: 2, ease: 'easeInOut' }} style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.18), rgba(0,242,255,0.10), transparent)' }} />
                   <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}><Sparkles size={9} style={{ color: '#D4AF37' }} /></motion.div>
                   <span style={{ color: '#D4AF37', fontSize: '0.62rem', fontFamily: '"Manrope",sans-serif', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', position: 'relative' }}>
-                    Conseiller IA · Investisseurs français · Dubaï 2026
+                    {t.hero.badge}
                   </span>
                 </div>
               </motion.div>
 
               {/* Subtitle */}
               <motion.p initial={{ opacity: 0, y: 16 }} animate={showContent ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0.2 }} style={{ color: 'rgba(240,235,224,0.55)', fontFamily: '"Manrope",sans-serif', fontSize: 'clamp(0.9rem,1.6vw,1.1rem)', maxWidth: '540px', lineHeight: 1.7 }}>
-                0 % d'impôt sur les loyers · Rendements 6–9 % · Simulation en 5 questions · Analyse IA personnalisée
+                {t.hero.subtitle}
               </motion.p>
 
               {/* AI Chat */}
@@ -483,7 +485,7 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
                   style={{ padding: '1rem 2.4rem', borderRadius: '9999px', background: 'linear-gradient(135deg, #b8891e 0%, #D4AF37 48%, #f0c060 100%)', color: '#050505', fontFamily: '"Manrope",sans-serif', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.10em', textTransform: 'uppercase', boxShadow: '0 0 30px rgba(212,175,55,0.42), 0 4px 24px rgba(0,0,0,0.6)', border: 'none', cursor: 'pointer' }}
                 >
                   <motion.div className="absolute inset-0 pointer-events-none" animate={{ x: ['-100%','200%'] }} transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 1 }} style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.30), transparent)' }} />
-                  <span style={{ position: 'relative' }}>Démarrer ma simulation gratuite</span>
+                  <span style={{ position: 'relative' }}>{t.hero.cta}</span>
                   <motion.div animate={{ x: [0,4,0] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ position: 'relative' }}><ArrowRight size={14} /></motion.div>
                 </motion.button>
               </motion.div>

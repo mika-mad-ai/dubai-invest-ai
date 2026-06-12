@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useI18n, fmt } from '../i18n';
 import { UserProfile, PropertyStatus } from '../types';
 import { gtm } from '../services/gtm';
 import { ArrowRightIcon, BuildingIcon, TrendingUpIcon, ShieldIcon, EuroIcon, CheckIcon, MapPinIcon, ChartIcon, PercentIcon } from './Icons';
@@ -352,13 +353,15 @@ const TiltCard: React.FC<{ children: React.ReactNode; disabled: boolean }> = ({ 
 // ── Option card ────────────────────────────────────────────────────────────────
 const OptionCard: React.FC<{
   option: StepOption;
+  label: string;
+  desc: string;
   isActive: boolean;
   isSelected: boolean;
   isIgnored: boolean;
   optIdx: number;
   onClick: () => void;
   refCallback: (el: HTMLButtonElement | null) => void;
-}> = ({ option, isActive, isSelected, isIgnored, optIdx, onClick, refCallback }) => {
+}> = ({ option, label, desc, isActive, isSelected, isIgnored, optIdx, onClick, refCallback }) => {
   const Icon = option.icon || CheckIcon;
 
   return (
@@ -452,7 +455,7 @@ const OptionCard: React.FC<{
           className="font-semibold uppercase tracking-widest relative z-10"
           style={{ fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem', marginBottom: '0.4rem' }}
         >
-          {option.label}
+          {label}
         </motion.span>
 
         {/* ── Desc ── */}
@@ -461,7 +464,7 @@ const OptionCard: React.FC<{
           className="leading-relaxed relative z-10"
           style={{ fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem' }}
         >
-          {option.desc}
+          {desc}
         </motion.span>
       </motion.button>
     </TiltCard>
@@ -470,6 +473,7 @@ const OptionCard: React.FC<{
 
 // ── Main component ─────────────────────────────────────────────────────────────
 const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
+  const { t } = useI18n();
   const [stepIndex, setStepIndex] = useState(0);
   useEffect(() => { gtm.funnelStart(); }, []);
   const [history, setHistory]     = useState<number[]>([]);
@@ -605,7 +609,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
 
           <div className="relative z-10 flex flex-col items-center px-3 py-3 md:px-5 md:py-4">
             <span style={{ color: 'rgba(212,168,67,0.55)', fontSize: '0.55rem', fontFamily: '"Manrope",sans-serif', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
-              Horizon {profile.duration} ans
+              {fmt(t.tree.horizonLabel, { n: profile.duration })}
             </span>
             <motion.span
               key={projectedRoi}
@@ -621,7 +625,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
             >
               +{projectedRoi}%
             </motion.span>
-            <span style={{ color: 'rgba(212,168,67,0.45)', fontSize: '0.55rem', fontFamily: '"Manrope",sans-serif', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: '0.3rem' }}>Prise de valeur</span>
+            <span style={{ color: 'rgba(212,168,67,0.45)', fontSize: '0.55rem', fontFamily: '"Manrope",sans-serif', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: '0.3rem' }}>{t.tree.roiCaption}</span>
             <motion.div
               className="absolute inset-0 rounded-2xl pointer-events-none"
               animate={{ boxShadow: ['0 0 0 0 rgba(212,168,67,0.25)', '0 0 0 10px rgba(212,168,67,0)', '0 0 0 0 rgba(212,168,67,0)'] }}
@@ -671,7 +675,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
               style={{ background: 'linear-gradient(90deg, transparent, rgba(20,184,166,0.14), transparent)' }}
             />
             <span style={{ color: '#14b8a6', fontFamily: '"Manrope",sans-serif', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', position: 'relative' }}>
-              Trouvons votre meilleur investissement · 5 questions
+              {t.tree.startBadge}
             </span>
           </div>
           <div className="absolute left-1/2 -translate-x-1/2 top-full w-px h-14"
@@ -712,7 +716,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
                       {isCompleted ? <CheckIcon className="w-2.5 h-2.5" /> : idx + 1}
                     </motion.div>
                     <span style={{ color: 'rgba(20,184,166,0.5)', fontSize: '0.6rem', fontFamily: '"Manrope",sans-serif', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
-                      Étape {idx + 1}
+                      {fmt(t.tree.stepLabel, { n: idx + 1 })}
                     </span>
                   </div>
 
@@ -723,11 +727,11 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
                     color: isCompleted ? 'rgba(240,235,224,0.38)' : '#f0ebe0',
                     lineHeight: 1.25, marginBottom: '0.5rem',
                   }}>
-                    {step.question}
+                    {t.tree.steps[idx]?.question ?? step.question}
                   </h3>
                   {step.sub && (
                     <p style={{ color: 'rgba(240,235,224,0.48)', fontSize: '0.7rem', fontFamily: '"Manrope",sans-serif', fontStyle: 'italic', lineHeight: 1.55 }}>
-                      {step.sub}
+                      {t.tree.steps[idx]?.sub ?? step.sub}
                     </p>
                   )}
                 </motion.div>
@@ -742,6 +746,8 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
                       <OptionCard
                         key={optIdx}
                         option={option}
+                        label={t.tree.steps[idx]?.options[optIdx]?.label ?? option.label}
+                        desc={t.tree.steps[idx]?.options[optIdx]?.desc ?? option.desc}
                         isActive={isActive}
                         isSelected={isSelected}
                         isIgnored={isIgnored}
@@ -807,13 +813,13 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
                     >
                       6
                     </motion.div>
-                    Finalisation
+                    {t.tree.finalStep}
                   </div>
                   <h3 style={{ fontFamily: '"Sora",sans-serif', fontSize: '1.75rem', fontWeight: 700, color: '#f0ebe0', marginBottom: '0.35rem' }}>
-                    Affinons les chiffres
+                    {t.tree.finalTitle}
                   </h3>
                   <p style={{ color: 'rgba(240,235,224,0.35)', fontSize: '0.73rem', fontFamily: '"Manrope",sans-serif', fontStyle: 'italic' }}>
-                    Deux paramètres pour calibrer votre simulation. Votre analyse IA démarre ensuite.
+                    {t.tree.finalSub}
                   </p>
                 </div>
 
@@ -821,8 +827,8 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
                   {/* Sliders */}
                   <div className="space-y-5 p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(20,184,166,0.08)' }}>
                     {[
-                      { label: 'Mon apport disponible', key: 'initialInvestment', min: 30000, max: parseInt(profile.totalBudget) || 600000, step: 5000, format: (v: string) => `${new Intl.NumberFormat('fr-FR').format(parseInt(v))} €` },
-                      { label: 'Je peux épargner par mois', key: 'monthlyContribution', min: 0, max: 10000, step: 100, format: (v: string) => `${new Intl.NumberFormat('fr-FR').format(parseInt(v))} €/mois` },
+                      { label: t.tree.sliderDeposit, key: 'initialInvestment', min: 30000, max: parseInt(profile.totalBudget) || 600000, step: 5000, format: (v: string) => `${new Intl.NumberFormat('fr-FR').format(parseInt(v))} €` },
+                      { label: t.tree.sliderMonthly, key: 'monthlyContribution', min: 0, max: 10000, step: 100, format: (v: string) => `${new Intl.NumberFormat('fr-FR').format(parseInt(v))} €${t.tree.perMonthSuffix}` },
                     ].map(f => (
                       <div key={f.key}>
                         <div className="flex justify-between items-center mb-2.5">
@@ -846,8 +852,8 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
                   {/* Inputs */}
                   <div className="space-y-3">
                     {[
-                      { placeholder: 'Votre prénom et nom', key: 'name',  type: 'text',  value: profile.name },
-                      { placeholder: 'Votre adresse e-mail', key: 'email', type: 'email', value: profile.email },
+                      { placeholder: t.tree.namePlaceholder, key: 'name',  type: 'text',  value: profile.name },
+                      { placeholder: t.tree.emailPlaceholder, key: 'email', type: 'email', value: profile.email },
                     ].map(f => (
                       <input key={f.key} type={f.type} placeholder={f.placeholder} required value={f.value}
                         onChange={e => setProfile({ ...profile, [f.key]: e.target.value })}
@@ -882,7 +888,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
                     )}
                     {isLoading
                       ? <span className="loader !w-4 !h-4 !border-2 !border-black/20 !border-t-black" />
-                      : <><ArrowRightIcon className="w-4 h-4 relative" /><span className="relative">Voir ma simulation complète</span></>
+                      : <><ArrowRightIcon className="w-4 h-4 relative" /><span className="relative">{t.tree.submit}</span></>
                     }
                   </motion.button>
                 </form>

@@ -3,47 +3,87 @@
     {
       "source": "/hero-video.mp4",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     },
     {
       "source": "/sitemap.xml",
       "headers": [
-        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=300" }
+        {
+          "key": "Content-Type",
+          "value": "application/xml; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, stale-while-revalidate=300"
+        }
       ]
     },
     {
       "source": "/sitemap_index.xml",
       "headers": [
-        { "key": "Content-Type", "value": "application/xml; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=300" }
+        {
+          "key": "Content-Type",
+          "value": "application/xml; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, stale-while-revalidate=300"
+        }
       ]
     },
     {
       "source": "/robots.txt",
       "headers": [
-        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
       ]
     },
     {
       "source": "/llms.txt",
       "headers": [
-        { "key": "Content-Type", "value": "text/plain; charset=utf-8" },
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
       ]
     },
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-XSS-Protection", "value": "1; mode=block" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
       ]
     }
   ],
   "rewrites": [
+    {
+      "source": "/:locale(en|es|ru|zh|ar|af)",
+      "destination": "/index.html"
+    },
     {
       "source": "/analyse-geopolitique-dubai",
       "destination": "/analyse-geopolitique-dubai.html"
@@ -66,16 +106,36 @@
     }
   ],
   "functions": {
-    "api/collector/run.ts": { "maxDuration": 300 },
-    "api/live-listings.ts": { "maxDuration": 60 },
-    "api/cron/refresh-listings.ts": { "maxDuration": 300 },
-    "api/cron/seo-geo-optimizer.ts": { "maxDuration": 60 },
-    "api/cron/monthly-report.ts": { "maxDuration": 120 },
-    "api/cron/mention-monitor.ts": { "maxDuration": 120 },
-    "api/llms-txt.ts": { "maxDuration": 10 },
-    "api/seo-content.ts": { "maxDuration": 10 },
-    "api/rapport.ts": { "maxDuration": 10 },
-    "api/haro-webhook.ts": { "maxDuration": 60 }
+    "api/collector/run.ts": {
+      "maxDuration": 300
+    },
+    "api/live-listings.ts": {
+      "maxDuration": 60
+    },
+    "api/cron/refresh-listings.ts": {
+      "maxDuration": 300
+    },
+    "api/cron/seo-geo-optimizer.ts": {
+      "maxDuration": 60
+    },
+    "api/cron/monthly-report.ts": {
+      "maxDuration": 120
+    },
+    "api/cron/mention-monitor.ts": {
+      "maxDuration": 120
+    },
+    "api/llms-txt.ts": {
+      "maxDuration": 10
+    },
+    "api/seo-content.ts": {
+      "maxDuration": 10
+    },
+    "api/rapport.ts": {
+      "maxDuration": 10
+    },
+    "api/haro-webhook.ts": {
+      "maxDuration": 60
+    }
   },
   "crons": [
     {

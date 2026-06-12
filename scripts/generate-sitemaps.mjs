@@ -4,12 +4,27 @@ import { join } from 'node:path';
 const BASE_URL = 'https://dubainvest.eu';
 const today = new Date().toISOString().slice(0, 10);
 
+const LOCALES = ['en', 'es', 'ru', 'zh', 'ar', 'af'];
+
+const homeAlternates = [
+  `    <xhtml:link rel="alternate" hreflang="fr" href="${BASE_URL}/"/>`,
+  ...LOCALES.map((l) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${BASE_URL}/${l}"/>`),
+  `    <xhtml:link rel="alternate" hreflang="x-default" href="${BASE_URL}/"/>`,
+].join('\n');
+
 const urls = [
   {
     loc: `${BASE_URL}/`,
     changefreq: 'daily',
     priority: '1.0',
+    alternates: homeAlternates,
   },
+  ...LOCALES.map((l) => ({
+    loc: `${BASE_URL}/${l}`,
+    changefreq: 'daily',
+    priority: '0.9',
+    alternates: homeAlternates,
+  })),
   {
     loc: `${BASE_URL}/analyse-geopolitique-dubai`,
     changefreq: 'weekly',
@@ -28,14 +43,14 @@ const urls = [
 ];
 
 const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${urls
   .map(
     (u) => `  <url>
     <loc>${u.loc}</loc>
     <lastmod>${today}</lastmod>
     <changefreq>${u.changefreq}</changefreq>
-    <priority>${u.priority}</priority>
+    <priority>${u.priority}</priority>${u.alternates ? '\n' + u.alternates : ''}
   </url>`
   )
   .join('\n')}

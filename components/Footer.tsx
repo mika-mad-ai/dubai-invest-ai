@@ -1,24 +1,12 @@
 import React from 'react';
+import { useI18n } from '../i18n';
 
-const articles = [
-  {
-    href: '/analyse-geopolitique-dubai',
-    title: 'Conflit Moyen-Orient & immobilier Dubaï 2026',
-    desc: 'Impact géopolitique semaine par semaine sur les prix et transactions',
-  },
-  {
-    href: '/guide-visa-or-dubai',
-    title: 'Guide complet : Visa Or Dubaï (Golden Visa)',
-    desc: 'Conditions, coûts et démarches pour obtenir la résidence aux EAU',
-  },
-  {
-    href: '/meilleurs-quartiers-dubai-investissement',
-    title: 'Meilleurs quartiers de Dubaï pour investir en 2026',
-    desc: 'Comparatif rendement, valorisation et risque par district',
-  },
-];
+const ARTICLE_HREFS = ['/analyse-geopolitique-dubai', '/guide-visa-or-dubai', '/meilleurs-quartiers-dubai-investissement'];
 
-const Footer: React.FC = () => (
+const Footer: React.FC = () => {
+  const { t } = useI18n();
+  const articles = ARTICLE_HREFS.map((href, i) => ({ href, ...t.footer.articles[i] }));
+  return (
   <footer
     style={{
       background: 'rgba(5,5,5,0.97)',
@@ -34,14 +22,14 @@ const Footer: React.FC = () => (
         <div>
           <img src="/NewLogoDubAInvestV2.png" alt="DubaiInvest" style={{ height: 56, marginBottom: 16 }} />
           <p style={{ color: 'rgba(180,170,155,0.7)', fontSize: 13, lineHeight: 1.6, maxWidth: 280 }}>
-            Plateforme IA d'analyse et de simulation pour investisseurs immobiliers francophones à Dubaï.
+            {t.footer.brand}
           </p>
         </div>
 
         {/* Articles */}
         <div>
           <h3 style={{ color: '#D4AF37', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>
-            Analyses & Guides
+            {t.footer.guides}
           </h3>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
             {articles.map(a => (
@@ -63,10 +51,10 @@ const Footer: React.FC = () => (
         {/* Simulateur */}
         <div>
           <h3 style={{ color: '#D4AF37', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>
-            Simulateur Gratuit
+            {t.footer.simulator}
           </h3>
           <p style={{ color: 'rgba(180,170,155,0.7)', fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
-            Calculez votre rendement locatif, comparez les quartiers et obtenez une analyse IA personnalisée en 2 minutes.
+            {t.footer.simulatorDesc}
           </p>
           <a
             href="/"
@@ -82,7 +70,7 @@ const Footer: React.FC = () => (
               textDecoration: 'none',
             }}
           >
-            Simuler mon investissement →
+            {t.footer.simulatorCta}
           </a>
         </div>
       </div>
@@ -99,14 +87,15 @@ const Footer: React.FC = () => (
         }}
       >
         <p style={{ color: 'rgba(180,170,155,0.4)', fontSize: 11 }}>
-          © 2026 DubaiInvest AI Advisor — Conseil en investissement immobilier à Dubaï pour investisseurs francophones
+          {t.footer.copyright}
         </p>
         <p style={{ color: 'rgba(180,170,155,0.3)', fontSize: 11 }}>
-          Les informations fournies sont à titre indicatif et ne constituent pas un conseil financier.
+          {t.footer.disclaimer}
         </p>
       </div>
     </div>
   </footer>
-);
+  );
+};
 
 export default Footer;

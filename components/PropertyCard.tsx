@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Property } from '../types';
 import { MapPinIcon, CheckIcon, TrendingUpIcon } from './Icons';
+import { useI18n } from '../i18n';
 
 interface PropertyCardProps {
   property: Property;
@@ -10,6 +11,7 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSelect, onContact }) => {
+  const { t } = useI18n();
   const photos = property.images && property.images.length > 0 ? property.images : (property.image ? [property.image] : []);
   const [photoIdx, setPhotoIdx] = useState(0);
 
@@ -96,10 +98,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSel
         {isGoodDeal && (
             <div className="absolute top-4 left-4 z-20 animate-fade-in flex flex-col items-start gap-1">
                 <span className="text-[10px] font-black bg-emerald-500 text-white px-3 py-1 rounded shadow-lg uppercase tracking-widest flex items-center gap-1">
-                   ★ Deal Score
+                   {t.property.dealScore}
                 </span>
                 <span className="text-xs font-bold bg-black/80 text-emerald-400 px-3 py-1 rounded border border-emerald-500/30 backdrop-blur-md">
-                   Opportunité Confirmée
+                   {t.property.dealConfirmed}
                 </span>
             </div>
         )}
@@ -119,13 +121,13 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSel
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-2 gap-2 mb-4">
             <div className="bg-white/5 rounded p-2 border border-white/5">
-                <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Gross Yield</p>
+                <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">{t.property.grossYield}</p>
                 <p className="text-sm font-bold text-gold-400">{property.yield}%</p>
             </div>
             <div className={`rounded p-2 border flex flex-col justify-center ${getLiquidityColor(property.liquidity)}`}>
-                <p className="text-[8px] uppercase tracking-widest mb-1 opacity-80">Liquidité (Exit)</p>
+                <p className="text-[8px] uppercase tracking-widest mb-1 opacity-80">{t.property.liquidity}</p>
                 <p className="text-sm font-bold flex items-center gap-1">
-                    {property.liquidity === 'High' ? '⚡ Rapide' : property.liquidity === 'Medium' ? 'Moyenne' : 'Lente'}
+                    {property.liquidity === 'High' ? t.property.liqFast : property.liquidity === 'Medium' ? t.property.liqMedium : t.property.liqSlow}
                 </p>
             </div>
         </div>
@@ -133,7 +135,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSel
         {/* Amenities */}
         {property.amenities && property.amenities.length > 0 && (
           <div className="mb-4">
-            <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1.5">Équipements</p>
+            <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1.5">{t.property.amenities}</p>
             <div className="flex flex-wrap gap-1">
               {property.amenities.slice(0, 6).map((a, i) => (
                 <span key={i} className="text-[8px] px-1.5 py-0.5 rounded bg-white/5 text-slate-300 border border-white/10">
@@ -152,7 +154,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSel
         {/* Catalysts - Future Growth Tags */}
         {property.catalysts && property.catalysts.length > 0 && (
             <div className="mb-4">
-                <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">Catalyseurs 2026</p>
+                <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">{t.property.catalysts}</p>
                 <div className="flex flex-wrap gap-1">
                     {property.catalysts.map((cat, i) => (
                         <span key={i} className="text-[8px] px-2 py-1 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20 flex items-center gap-1">
@@ -178,14 +180,14 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSel
                     : 'bg-white/5 text-white hover:bg-white/10 border border-white/10'
                 }`}
             >
-                {isSelected ? 'Analysé' : 'Simuler'}
+                {isSelected ? t.property.analyzed : t.property.simulate}
             </button>
             
             <button 
                 onClick={() => onContact(property)}
                 className="flex-1 py-3 bg-transparent border border-gold-500/30 text-gold-400 text-[9px] font-black uppercase tracking-widest rounded-sm hover:bg-gold-500/10 transition-colors"
             >
-                Dossier
+                {t.property.contact}
             </button>
             </div>
 
@@ -199,7 +201,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSel
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
-                Voir l'annonce sur PropertyFinder
+                {t.property.viewListing}
               </a>
             )}
         </div>

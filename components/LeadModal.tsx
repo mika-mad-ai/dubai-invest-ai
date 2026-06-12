@@ -3,6 +3,7 @@ import { Property, UserProfile } from '../types';
 import { XIcon, CheckIcon, BuildingIcon } from './Icons';
 import { sendLeadToSheet } from '../services/googleSheets';
 import { gtm } from '../services/gtm';
+import { useI18n, fmt } from '../i18n';
 
 interface LeadModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ const PhoneIcon: React.FC<{ className?: string; style?: React.CSSProperties }> =
 );
 
 const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userProfile }) => {
+  const { t } = useI18n();
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -109,7 +111,7 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
             <h3 className="text-lg font-serif text-white leading-tight mb-0.5">{property.title}</h3>
             <p className="text-xs flex items-center gap-1" style={{ color: 'rgba(212,175,55,0.75)' }}>
               <BuildingIcon className="w-3 h-3" /> {property.location}
-              <span className="ml-2 text-emerald-400 font-bold">{property.yield}% rendement</span>
+              <span className="ml-2 text-emerald-400 font-bold">{fmt(t.property.yieldText, { y: property.yield })}</span>
             </p>
           </div>
         </div>
@@ -126,17 +128,16 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
                 >
                   <PhoneIcon className="w-6 h-6" style={{ color: '#D4AF37' }} />
                 </div>
-                <p className="text-white font-serif text-xl">Être rappelé par un conseiller</p>
+                <p className="text-white font-serif text-xl">{t.leadModal.title}</p>
                 <p className="text-xs mt-1" style={{ color: 'rgba(180,175,165,0.70)' }}>
-                  Un expert DubaiInvest vous contacte sous{' '}
-                  <span style={{ color: '#D4AF37' }}>24h</span> pour répondre à toutes vos questions sur ce bien.
+                  {fmt(t.leadModal.sub, { h: t.leadModal.hours })}
                 </p>
               </div>
 
               {/* Phone — only field */}
               <div>
                 <label className="block text-[10px] font-semibold uppercase tracking-widest mb-1.5" style={{ color: 'rgba(212,175,55,0.75)' }}>
-                  Votre numéro WhatsApp *
+                  {t.leadModal.phoneLabel}
                 </label>
                 <div className="relative">
                   <PhoneIcon
@@ -148,7 +149,7 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
                     required
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
-                    placeholder="+33 6 xx xx xx xx"
+                    placeholder={t.leadModal.phonePlaceholder}
                     className="w-full pl-10 pr-4 py-3.5 rounded-xl text-white text-sm outline-none transition-all"
                     style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.35)' }}
                     onFocus={e => { e.currentTarget.style.border = '1px solid rgba(212,175,55,0.75)'; e.currentTarget.style.boxShadow = '0 0 16px rgba(212,175,55,0.12)'; }}
@@ -172,18 +173,18 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
                 {isSubmitting ? (
                   <>
                     <span className="w-4 h-4 border-2 border-black/30 border-t-black/80 rounded-full animate-spin" />
-                    Envoi en cours…
+                    {t.leadModal.submitting}
                   </>
                 ) : (
                   <>
                     <PhoneIcon className="w-4 h-4" />
-                    Je souhaite être rappelé
+                    {t.leadModal.submit}
                   </>
                 )}
               </button>
 
               <p className="text-[9px] text-center uppercase tracking-widest" style={{ color: 'rgba(180,175,165,0.35)' }}>
-                Sans engagement · Données confidentielles · Réponse sous 24h
+                {t.leadModal.smallprint}
               </p>
             </form>
           ) : (
@@ -199,19 +200,19 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
               >
                 <CheckIcon className="w-10 h-10" />
               </div>
-              <h3 className="text-2xl font-serif text-white mb-2">Demande enregistrée</h3>
+              <h3 className="text-2xl font-serif text-white mb-2">{t.leadModal.successTitle}</h3>
               <p className="text-sm leading-relaxed mb-1" style={{ color: 'rgba(180,175,165,0.75)' }}>
-                Un conseiller DubaiInvest vous contactera
+                {t.leadModal.successL1}
               </p>
               <p className="text-sm font-bold mb-1" style={{ color: '#D4AF37' }}>
-                sous 24h au {phone || 'votre numéro'}
+                {fmt(t.leadModal.successL2, { phone: phone || t.leadModal.yourNumber })}
               </p>
               <div
                 className="mt-5 mx-auto rounded-xl p-4 text-xs text-left"
                 style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.18)', color: 'rgba(180,175,165,0.70)' }}
               >
                 <p className="font-semibold text-white mb-1 text-xs">{property.title}</p>
-                <p>Rendement estimé : <span style={{ color: '#D4AF37' }}>{property.yield}%</span> · {property.location}</p>
+                <p>{t.leadModal.yieldEstimated} <span style={{ color: '#D4AF37' }}>{property.yield}%</span> · {property.location}</p>
               </div>
               <button
                 onClick={handleClose}
@@ -220,7 +221,7 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
               >
-                Fermer
+                {t.leadModal.close}
               </button>
             </div>
           )}

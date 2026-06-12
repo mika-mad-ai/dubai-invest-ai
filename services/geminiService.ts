@@ -16,7 +16,7 @@ const getAI = () => {
 /**
  * Génère une instruction système personnalisée basée sur le profil réel de l'investisseur.
  */
-const getSystemInstruction = (profile: UserProfile, _params: SimulationParams) => {
+const getSystemInstruction = (profile: UserProfile, _params: SimulationParams, language = 'français') => {
   const objectiveLabels: Record<string, string> = {
     rental_income: 'rente locative mensuelle depuis la France',
     capital_gains: 'plus-value à la revente',
@@ -83,15 +83,17 @@ MARCHÉS ET RENDEMENTS (données 2024–2025) :
 - Utiliser Google Search pour citer les prix DLD actuels et les projets en cours
 
 TON : Celui d'un ami expert qui vous parle franchement, sans langue de bois.
+
+LANGUE : Réponds TOUJOURS en ${language}, quelle que soit la langue de la question.
   `;
 };
 
-export const createInvestmentChat = (profile: UserProfile, params: SimulationParams): Chat => {
+export const createInvestmentChat = (profile: UserProfile, params: SimulationParams, language = 'français'): Chat => {
   const ai = getAI();
   return ai.chats.create({
     model: MODEL_NAME,
     config: {
-      systemInstruction: getSystemInstruction(profile, params),
+      systemInstruction: getSystemInstruction(profile, params, language),
       temperature: 0.15, // Faible température pour plus de précision factuelle
       tools: [{ googleSearch: {} }]
     },

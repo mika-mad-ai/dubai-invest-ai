@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { RobotAvatarIcon } from './Icons';
+import { useI18n, LOCALES, LOCALE_LABELS } from '../i18n';
 
 interface SmartNavbarProps {
   message: string;
@@ -10,8 +11,10 @@ interface SmartNavbarProps {
 }
 
 const SmartNavbar: React.FC<SmartNavbarProps> = ({ message, isStreaming, hasProfile, onReset, exchangeRate }) => {
+  const { t, locale, setLocale } = useI18n();
   const [isScrolled, setIsScrolled] = useState(false);
   const [lineAngle, setLineAngle] = useState(0);
+  const [langOpen, setLangOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -112,15 +115,68 @@ const SmartNavbar: React.FC<SmartNavbarProps> = ({ message, isStreaming, hasProf
           </div>
         </div>
 
-        {/* RIGHT: EXCHANGE RATE + RESET */}
-        <div
-          className={`shrink-0 flex items-center gap-5 transition-all duration-500 ${
-            hasProfile ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-        >
-          <div className="hidden lg:flex flex-col items-end" style={{ borderRight: '1px solid rgba(212,175,55,0.15)', paddingRight: '20px' }}>
+        {/* RIGHT: LANG SWITCHER + EXCHANGE RATE + RESET */}
+        <div className="shrink-0 flex items-center gap-3 md:gap-5">
+
+          {/* Language switcher — always visible */}
+          <div className="relative">
+            <button
+              onClick={() => setLangOpen(o => !o)}
+              aria-label="Language"
+              className="text-[11px] font-bold uppercase tracking-widest transition-colors"
+              style={{
+                color: '#D4AF37',
+                border: '1px solid rgba(212,168,67,0.30)',
+                borderRadius: '8px',
+                padding: '7px 12px',
+                background: 'rgba(5,5,5,0.55)',
+                cursor: 'pointer',
+              }}
+            >
+              🌐 {LOCALE_LABELS[locale]}
+            </button>
+            {langOpen && (
+              <div
+                className="absolute mt-2 py-1 rounded-xl z-50"
+                style={{
+                  insetInlineEnd: 0,
+                  background: 'rgba(8,8,12,0.97)',
+                  border: '1px solid rgba(212,175,55,0.25)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                  minWidth: '130px',
+                  backdropFilter: 'blur(18px)',
+                }}
+              >
+                {LOCALES.map(l => (
+                  <button
+                    key={l}
+                    onClick={() => { setLocale(l); setLangOpen(false); }}
+                    className="w-full text-start px-4 py-2 text-xs transition-colors"
+                    style={{
+                      color: l === locale ? '#D4AF37' : 'rgba(240,235,224,0.75)',
+                      background: l === locale ? 'rgba(212,175,55,0.10)' : 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontWeight: l === locale ? 700 : 500,
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.08)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = l === locale ? 'rgba(212,175,55,0.10)' : 'transparent'; }}
+                  >
+                    {LOCALE_LABELS[l]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div
+            className={`flex items-center gap-5 transition-all duration-500 ${
+              hasProfile ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+          >
+          <div className="hidden lg:flex flex-col items-end" style={{ borderInlineEnd: '1px solid rgba(212,175,55,0.15)', paddingInlineEnd: '20px' }}>
             <span className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(212,175,55,0.60)' }}>
-              Taux de Change
+              {t.nav.exchangeRate}
             </span>
             <span className="text-xs font-mono mt-0.5" style={{ color: '#D4AF37' }}>
               1 EUR = {exchangeRate.toFixed(2)} AED
@@ -152,8 +208,9 @@ const SmartNavbar: React.FC<SmartNavbarProps> = ({ message, isStreaming, hasProf
               el.style.background = 'transparent';
             }}
           >
-            Nouveau
+            {t.nav.newBtn}
           </button>
+          </div>
         </div>
       </div>
     </nav>
