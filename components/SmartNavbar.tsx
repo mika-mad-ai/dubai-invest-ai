@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { RobotAvatarIcon } from './Icons';
-import { useI18n, LOCALES, LOCALE_LABELS } from '../i18n';
+import { useI18n, LOCALES, LOCALE_LABELS, LOCALE_FLAGS, LOCALE_NAMES } from '../i18n';
 
 interface SmartNavbarProps {
   message: string;
@@ -123,27 +123,29 @@ const SmartNavbar: React.FC<SmartNavbarProps> = ({ message, isStreaming, hasProf
             <button
               onClick={() => setLangOpen(o => !o)}
               aria-label="Language"
-              className="text-[11px] font-bold uppercase tracking-widest transition-colors"
+              className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest transition-colors"
               style={{
                 color: '#D4AF37',
                 border: '1px solid rgba(212,168,67,0.30)',
-                borderRadius: '8px',
-                padding: '7px 12px',
+                borderRadius: '10px',
+                padding: '9px 16px',
                 background: 'rgba(5,5,5,0.55)',
                 cursor: 'pointer',
               }}
             >
-              🌐 {LOCALE_LABELS[locale]}
+              <span style={{ fontSize: '1.35rem', lineHeight: 1 }}>{LOCALE_FLAGS[locale]}</span>
+              <span>{LOCALE_LABELS[locale]}</span>
+              <span style={{ fontSize: '0.7rem', opacity: 0.6, transform: langOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
             </button>
             {langOpen && (
               <div
-                className="absolute mt-2 py-1 rounded-xl z-50"
+                className="absolute mt-2 py-1.5 rounded-xl z-50"
                 style={{
                   insetInlineEnd: 0,
                   background: 'rgba(8,8,12,0.97)',
                   border: '1px solid rgba(212,175,55,0.25)',
                   boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-                  minWidth: '130px',
+                  minWidth: '190px',
                   backdropFilter: 'blur(18px)',
                 }}
               >
@@ -151,9 +153,9 @@ const SmartNavbar: React.FC<SmartNavbarProps> = ({ message, isStreaming, hasProf
                   <button
                     key={l}
                     onClick={() => { setLocale(l); setLangOpen(false); }}
-                    className="w-full text-start px-4 py-2 text-xs transition-colors"
+                    className="w-full flex items-center gap-3 text-start px-4 py-2.5 text-sm transition-colors"
                     style={{
-                      color: l === locale ? '#D4AF37' : 'rgba(240,235,224,0.75)',
+                      color: l === locale ? '#D4AF37' : 'rgba(240,235,224,0.80)',
                       background: l === locale ? 'rgba(212,175,55,0.10)' : 'transparent',
                       border: 'none',
                       cursor: 'pointer',
@@ -162,7 +164,8 @@ const SmartNavbar: React.FC<SmartNavbarProps> = ({ message, isStreaming, hasProf
                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,175,55,0.08)'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = l === locale ? 'rgba(212,175,55,0.10)' : 'transparent'; }}
                   >
-                    {LOCALE_LABELS[l]}
+                    <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>{LOCALE_FLAGS[l]}</span>
+                    <span>{LOCALE_NAMES[l]}</span>
                   </button>
                 ))}
               </div>

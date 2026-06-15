@@ -18,6 +18,16 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   fr: 'FR', en: 'EN', es: 'ES', ru: 'RU', zh: '中文', ar: 'عربي', af: 'AF',
 };
 
+// Drapeau pour chaque locale (🇦🇪 pour l'arabe — site Dubaï ; 🇿🇦 pour l'afrikaans).
+export const LOCALE_FLAGS: Record<Locale, string> = {
+  fr: '🇫🇷', en: '🇬🇧', es: '🇪🇸', ru: '🇷🇺', zh: '🇨🇳', ar: '🇦🇪', af: '🇿🇦',
+};
+
+// Nom de la langue dans sa propre langue, pour le menu déroulant.
+export const LOCALE_NAMES: Record<Locale, string> = {
+  fr: 'Français', en: 'English', es: 'Español', ru: 'Русский', zh: '中文', ar: 'العربية', af: 'Afrikaans',
+};
+
 /** Interpolation de {placeholders} dans une chaîne de traduction. */
 export function fmt(template: string, vars: Record<string, string | number>): string {
   return template.replace(/\{(\w+)\}/g, (_, k) => (vars[k] !== undefined ? String(vars[k]) : `{${k}}`));
