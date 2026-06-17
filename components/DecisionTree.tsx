@@ -473,7 +473,7 @@ const OptionCard: React.FC<{
 
 // ── Main component ─────────────────────────────────────────────────────────────
 const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
-  const { t } = useI18n();
+  const { t, money } = useI18n();
   const [stepIndex, setStepIndex] = useState(0);
   useEffect(() => { gtm.funnelStart(); }, []);
   const [history, setHistory]     = useState<number[]>([]);
@@ -827,8 +827,8 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
                   {/* Sliders */}
                   <div className="space-y-5 p-5 rounded-2xl" style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(20,184,166,0.08)' }}>
                     {[
-                      { label: t.tree.sliderDeposit, key: 'initialInvestment', min: 30000, max: parseInt(profile.totalBudget) || 600000, step: 5000, format: (v: string) => `${new Intl.NumberFormat('fr-FR').format(parseInt(v))} €` },
-                      { label: t.tree.sliderMonthly, key: 'monthlyContribution', min: 0, max: 10000, step: 100, format: (v: string) => `${new Intl.NumberFormat('fr-FR').format(parseInt(v))} €${t.tree.perMonthSuffix}` },
+                      { label: t.tree.sliderDeposit, key: 'initialInvestment', min: 30000, max: parseInt(profile.totalBudget) || 600000, step: 5000, format: (v: string) => money(parseInt(v)) },
+                      { label: t.tree.sliderMonthly, key: 'monthlyContribution', min: 0, max: 10000, step: 100, format: (v: string) => `${money(parseInt(v))}${t.tree.perMonthSuffix}` },
                     ].map(f => (
                       <div key={f.key}>
                         <div className="flex justify-between items-center mb-2.5">

@@ -1,5 +1,6 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
+import { useI18n } from '../../i18n';
 
 interface TaxComparisonProps {
   franceTax: number;
@@ -8,18 +9,13 @@ interface TaxComparisonProps {
 }
 
 const TaxComparisonChart: React.FC<TaxComparisonProps> = ({ franceTax, dubaiTax, duration }) => {
+  const { money } = useI18n();
   const data = [
-    { name: 'France', value: franceTax, fill: '#f43f5e' }, 
-    { name: 'Dubaï', value: dubaiTax, fill: '#10b981' },   
+    { name: 'France', value: franceTax, fill: '#f43f5e' },
+    { name: 'Dubaï', value: dubaiTax, fill: '#10b981' },
   ];
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('fr-FR', { 
-      style: 'currency', 
-      currency: 'EUR',
-      maximumFractionDigits: 0
-    }).format(value);
-  };
+  const formatCurrency = (value: number) => money(value);
 
   return (
     <div className="glass-panel p-6 rounded-2xl h-full flex flex-col border border-white/5">

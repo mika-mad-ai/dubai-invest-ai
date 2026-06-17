@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Property, UserProfile } from '../types';
 import { MapPinIcon, TrendingUpIcon, CheckIcon, XIcon, BuildingIcon } from './Icons';
+import { useI18n } from '../i18n';
 
 // ── Scoring ───────────────────────────────────────────────────────────────────
 
@@ -86,14 +87,14 @@ function matchPercent(score: number): number {
   return Math.max(35, Math.min(score, 95));
 }
 
-function buildRationale(p: Property, profile: UserProfile): string[] {
+function buildRationale(p: Property, profile: UserProfile, money: (n: number) => string): string[] {
   const reasons: string[] = [];
   const budget = parseFloat(profile.totalBudget) || 400_000;
-  if (p.price <= budget) reasons.push(`Dans votre budget (${new Intl.NumberFormat('fr-FR').format(p.price)} €)`);
+  if (p.price <= budget) reasons.push(`Dans votre budget (${money(p.price)})`);
   if (p.yield >= 7) reasons.push(`Rendement exceptionnel à ${p.yield}%`);
   if (p.liquidity === 'High') reasons.push('Liquidité élevée — revente rapide si besoin');
   if (profile.objective === 'rental_income' && p.yield >= 6.5) reasons.push('Correspond à votre objectif locatif');
-  if (profile.objective === 'golden_visa' && p.price >= 545_000) reasons.push('Éligible Golden Visa UAE (≥ 545 000 €)');
+  if (profile.objective === 'golden_visa' && p.price >= 545_000) reasons.push(`Éligible Golden Visa UAE (≥ ${money(545_000)})`);
   if (p.catalysts && p.catalysts.length > 0) reasons.push(`Catalyseurs : ${p.catalysts.slice(0, 2).join(', ')}`);
   return reasons.slice(0, 3);
 }
@@ -108,6 +109,7 @@ interface LightboxProps {
 }
 
 const Lightbox: React.FC<LightboxProps> = ({ property: p, images, initialIndex, onClose }) => {
+  const { money } = useI18n();
   const [idx, setIdx] = useState(initialIndex);
   const prev = useCallback(() => setIdx(i => (i - 1 + images.length) % images.length), [images.length]);
   const next = useCallback(() => setIdx(i => (i + 1) % images.length), [images.length]);
@@ -122,7 +124,7 @@ const Lightbox: React.FC<LightboxProps> = ({ property: p, images, initialIndex, 
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose, prev, next]);
 
-  const fmt = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+  const fmt = (n: number) => money(n);
 
   return (
     <div
@@ -428,9 +430,10 @@ interface AITopPickProps {
 }
 
 const AITopPick: React.FC<AITopPickProps> = ({ property: p, profile, score, onSelect, onContact, isSelected }) => {
+  const { money } = useI18n();
   const pct  = matchPercent(score);
-  const whys = buildRationale(p, profile);
-  const fmt  = (n: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+  const whys = buildRationale(p, profile, money);
+  const fmt  = (n: number) => money(n);
 
   const images = (p.images && p.images.length > 0 ? p.images : [p.image]).filter(Boolean);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);

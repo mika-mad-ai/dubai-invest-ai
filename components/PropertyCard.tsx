@@ -11,7 +11,7 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSelect, onContact }) => {
-  const { t } = useI18n();
+  const { t, money } = useI18n();
   const photos = property.images && property.images.length > 0 ? property.images : (property.image ? [property.image] : []);
   const [photoIdx, setPhotoIdx] = useState(0);
 
@@ -25,9 +25,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSel
     setPhotoIdx(i => (i + 1) % photos.length);
   }, [photos.length]);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(price);
-  };
+  const formatPrice = (price: number) => money(price);
 
   // Calcul du Deal Score
   // On compare le prix au m2 de cette propriété avec le prix du marché moyen défini dans les données

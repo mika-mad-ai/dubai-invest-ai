@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { ChartDataPoint } from '../types';
 import { BurjKhalifaIcon, EiffelTowerIcon } from './Icons';
+import { useI18n } from '../i18n';
 
 interface GrowthVisualizerProps {
   data: ChartDataPoint[];
@@ -9,6 +10,7 @@ interface GrowthVisualizerProps {
 }
 
 const GrowthVisualizer: React.FC<GrowthVisualizerProps> = ({ data, duration }) => {
+  const { money } = useI18n();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const requestRef = useRef<number>(0);
@@ -61,7 +63,7 @@ const GrowthVisualizer: React.FC<GrowthVisualizerProps> = ({ data, duration }) =
     setIsPlaying(!isPlaying);
   };
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
+  const formatCurrency = (val: number) => money(val);
 
   return (
     <div className="glass-panel p-8 rounded-2xl border border-white/5 relative overflow-hidden min-h-[500px] flex flex-col">

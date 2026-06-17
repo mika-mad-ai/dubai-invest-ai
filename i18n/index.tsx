@@ -28,6 +28,33 @@ export const LOCALE_NAMES: Record<Locale, string> = {
   fr: 'Français', en: 'English', es: 'Español', ru: 'Русский', zh: '中文', ar: 'العربية', af: 'Afrikaans',
 };
 
+/**
+ * Devise associée à chaque locale + taux de conversion approximatif depuis l'EUR.
+ * Les montants du modèle de données sont stockés en EUR ; on convertit à l'affichage.
+ * Taux indicatifs (AED aligné sur le widget EUR/AED du site = 4,24).
+ */
+export const LOCALE_CURRENCY: Record<Locale, { code: string; rate: number }> = {
+  fr: { code: 'EUR', rate: 1 },
+  en: { code: 'GBP', rate: 0.85 },
+  es: { code: 'EUR', rate: 1 },
+  ru: { code: 'RUB', rate: 100 },
+  zh: { code: 'CNY', rate: 7.8 },
+  ar: { code: 'AED', rate: 4.24 },
+  af: { code: 'ZAR', rate: 20 },
+};
+
+const intlLocale = (l: Locale) => (l === 'zh' ? 'zh-CN' : l);
+
+/** Formate un montant EUR dans la devise de la locale (conversion incluse). */
+export function formatMoney(amountEur: number, locale: Locale, maximumFractionDigits = 0): string {
+  const { code, rate } = LOCALE_CURRENCY[locale];
+  return new Intl.NumberFormat(intlLocale(locale), {
+    style: 'currency',
+    currency: code,
+    maximumFractionDigits,
+  }).format(amountEur * rate);
+}
+
 /** Interpolation de {placeholders} dans une chaîne de traduction. */
 export function fmt(template: string, vars: Record<string, string | number>): string {
   return template.replace(/\{(\w+)\}/g, (_, k) => (vars[k] !== undefined ? String(vars[k]) : `{${k}}`));
@@ -47,9 +74,16 @@ interface I18nContextValue {
   locale: Locale;
   t: Dict;
   setLocale: (l: Locale) => void;
+  /** Formate un montant EUR dans la devise de la locale courante. */
+  money: (amountEur: number, maximumFractionDigits?: number) => string;
 }
 
-const I18nContext = createContext<I18nContextValue>({ locale: 'fr', t: fr, setLocale: () => {} });
+const I18nContext = createContext<I18nContextValue>({
+  locale: 'fr',
+  t: fr,
+  setLocale: () => {},
+  money: (a) => formatMoney(a, 'fr'),
+});
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [locale, setLocaleState] = useState<Locale>(() =>
@@ -81,7 +115,15 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     document.querySelector('link[rel="canonical"]')?.setAttribute('href', `https://dubainvest.eu${localePath(locale)}`);
   }, [locale]);
 
-  const value = useMemo(() => ({ locale, t: DICTS[locale], setLocale }), [locale]);
+  const value = useMemo(
+    () => ({
+      locale,
+      t: DICTS[locale],
+      setLocale,
+      money: (amountEur: number, maximumFractionDigits = 0) => formatMoney(amountEur, locale, maximumFractionDigits),
+    }),
+    [locale]
+  );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 };

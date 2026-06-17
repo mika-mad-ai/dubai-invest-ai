@@ -1,6 +1,7 @@
 import React from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { ChartDataPoint } from '../types';
+import { useI18n, LOCALE_CURRENCY } from '../i18n';
 
 interface ProjectionsChartProps {
   data: ChartDataPoint[];
@@ -8,13 +9,15 @@ interface ProjectionsChartProps {
 }
 
 const ProjectionsChart: React.FC<ProjectionsChartProps> = ({ data, className }) => {
+  const { locale } = useI18n();
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('fr-FR', {
+    const { code, rate } = LOCALE_CURRENCY[locale];
+    return new Intl.NumberFormat(locale === 'zh' ? 'zh-CN' : locale, {
       style: 'currency',
-      currency: 'EUR', 
+      currency: code,
       maximumSignificantDigits: 3,
       notation: "compact",
-    }).format(value);
+    }).format(value * rate);
   };
 
   return (

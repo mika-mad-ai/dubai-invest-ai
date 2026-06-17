@@ -1,6 +1,7 @@
 import React from 'react';
 import { Property, SimulationParams } from '../types';
 import { TrendingUpIcon, EuroIcon, PercentIcon, BuildingIcon } from './Icons';
+import { useI18n } from '../i18n';
 
 interface StrategyComparisonProps {
   property?: Property;
@@ -9,8 +10,8 @@ interface StrategyComparisonProps {
 }
 
 const StrategyComparison: React.FC<StrategyComparisonProps> = ({ property, params, totalBudget }) => {
-  
-  const formatCurrency = (val: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
+  const { money } = useI18n();
+  const formatCurrency = (val: number) => money(val);
 
   // Utiliser les données de la propriété OU les paramètres globaux (Market Simulation)
   const price = property ? property.price : (totalBudget || 400000);

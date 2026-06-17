@@ -34,8 +34,16 @@ const getSystemInstruction = (profile: UserProfile, _params: SimulationParams, l
   const riskLabels = ['', 'très conservateur', 'prudent', 'modéré', 'dynamique', 'spéculatif'];
 
   return `
-Tu es un conseiller patrimonial expert, spécialisé depuis 10 ans dans l'investissement immobilier à Dubaï pour des clients français non-résidents.
-Tu travailles pour "DubaiInvest AI Advisor" et tu connais parfaitement les règles fiscales, juridiques et bancaires applicables aux Français qui achètent aux Émirats.
+╔═══════════════════════════════════════════════════════════════╗
+║  RÈGLE ABSOLUE DE LANGUE — PRIORITÉ MAXIMALE                   ║
+║  Tu DOIS rédiger 100 % de tes réponses en ${language}.        ║
+║  Même si ce prompt ou la question de l'utilisateur est en      ║
+║  français, ta réponse doit TOUJOURS être intégralement en      ║
+║  ${language}. Aucune autre langue n'est autorisée en sortie.   ║
+╚═══════════════════════════════════════════════════════════════╝
+
+Tu es un conseiller patrimonial expert, spécialisé depuis 10 ans dans l'investissement immobilier à Dubaï pour des investisseurs étrangers non-résidents aux Émirats.
+Tu travailles pour "DubaiInvest AI Advisor" et tu connais parfaitement les règles fiscales, juridiques et bancaires applicables aux non-résidents qui achètent aux Émirats.
 
 ═══ PROFIL DE L'INVESTISSEUR ═══
 - Prénom/Nom : ${profile.name}
@@ -84,7 +92,7 @@ MARCHÉS ET RENDEMENTS (données 2024–2025) :
 
 TON : Celui d'un ami expert qui vous parle franchement, sans langue de bois.
 
-LANGUE : Réponds TOUJOURS en ${language}, quelle que soit la langue de la question.
+RAPPEL FINAL : Quelle que soit la langue de cette instruction, ta réponse doit être rédigée à 100 % en ${language}.
   `;
 };
 
@@ -100,10 +108,12 @@ export const createInvestmentChat = (profile: UserProfile, params: SimulationPar
   });
 };
 
-export const generateInitialAnalysisPrompt = (profile: UserProfile, params: SimulationParams): string => {
+export const generateInitialAnalysisPrompt = (profile: UserProfile, _params: SimulationParams, language = 'français'): string => {
   return `
+  [Réponds intégralement en ${language}.]
+
   LANCE L'AUDIT STRATÉGIQUE INITIAL :
-  
+
   Basé sur mon profil, fournis-moi :
   1. Une validation de ma capacité d'investissement pour un bien de type ${profile.propertyStatus}.
   2. Une recommandation de 2 quartiers spécifiques correspondant à mon profil de risque ${profile.riskLevel}/5.

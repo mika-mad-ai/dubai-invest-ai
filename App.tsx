@@ -69,7 +69,7 @@ const AITopPickSkeleton: React.FC = () => (
 );
 
 function App() {
-  const { t, locale } = useI18n();
+  const { t, locale, money } = useI18n();
   const sectionClassName =
     "relative overflow-hidden rounded-3xl border border-white/[0.06] p-5 md:p-8 shadow-[0_18px_60px_rgba(0,0,0,0.5)] before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:bg-gradient-to-b before:from-[#D4AF37] before:via-[#00F2FF] before:to-transparent"
   const sectionStyle = { background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' };
@@ -276,7 +276,7 @@ function App() {
 
     try {
       chatSessionRef.current = createInvestmentChat(profile, simParams, t.geminiLanguage);
-      const prompt = generateInitialAnalysisPrompt(profile, simParams);
+      const prompt = generateInitialAnalysisPrompt(profile, simParams, t.geminiLanguage);
       const result = await chatSessionRef.current.sendMessage({ message: prompt });
       const sources = result.candidates?.[0]?.groundingMetadata?.groundingChunks?.map((chunk: any) => ({ title: chunk.web?.title || "Données DLD", uri: chunk.web?.uri })).filter((s: any) => s.uri) || [];
       setGroundingSources(sources);
@@ -370,7 +370,7 @@ function App() {
     return () => { cancelled = true; };
   }, [hasProfile, userProfile]);
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
+  const formatCurrency = (val: number) => money(val);
 
   return (
     <div className="min-h-screen font-sans" style={{ background: '#050505', color: 'rgba(240,235,224,0.88)' }}>

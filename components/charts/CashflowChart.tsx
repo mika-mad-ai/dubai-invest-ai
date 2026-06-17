@@ -1,19 +1,15 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine, CartesianGrid, LabelList } from 'recharts';
 import { CashflowDataPoint } from '../../types';
+import { useI18n } from '../../i18n';
 
 interface CashflowChartProps {
   data: CashflowDataPoint[];
 }
 
 const CashflowChart: React.FC<CashflowChartProps> = ({ data }) => {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('fr-FR', { 
-      style: 'currency', 
-      currency: 'EUR',
-      maximumFractionDigits: 0
-    }).format(Math.abs(value));
-  };
+  const { money } = useI18n();
+  const formatCurrency = (value: number) => money(Math.abs(value));
 
   return (
     <div className="glass-panel p-6 rounded-2xl h-full flex flex-col border border-white/5">

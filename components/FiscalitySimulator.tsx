@@ -1,6 +1,7 @@
 import React from 'react';
 import { SimulationParams } from '../types';
 import { EuroIcon } from './Icons';
+import { useI18n } from '../i18n';
 
 interface FiscalitySimulatorProps {
   params: SimulationParams;
@@ -9,7 +10,8 @@ interface FiscalitySimulatorProps {
 }
 
 const FiscalitySimulator: React.FC<FiscalitySimulatorProps> = ({ params, onChange, annualRent }) => {
-  
+  const { money } = useI18n();
+
   const getFlag = (code: string) => {
     switch(code) {
         case 'FR': return '🇫🇷';
@@ -106,7 +108,7 @@ const FiscalitySimulator: React.FC<FiscalitySimulatorProps> = ({ params, onChang
             {/* Visual Bar Comparison */}
             <div className="mt-auto bg-midnight-950/50 rounded-xl p-6 border border-white/5">
                 <p className="text-xs text-white mb-4 font-bold uppercase tracking-widest flex items-center gap-2">
-                    <EuroIcon className="w-4 h-4 text-gold-400" /> Comparatif sur {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(annualRent)} de revenus
+                    <EuroIcon className="w-4 h-4 text-gold-400" /> Comparatif sur {money(annualRent)} de revenus
                 </p>
                 
                 {/* France Scenario (Worst case usually) */}
