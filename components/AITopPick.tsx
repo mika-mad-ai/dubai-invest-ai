@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Property, UserProfile } from '../types';
 import { MapPinIcon, TrendingUpIcon, CheckIcon, XIcon, BuildingIcon } from './Icons';
-import { useI18n } from '../i18n';
+import { useI18n, fmt } from '../i18n';
+import type { Dict } from '../i18n/fr';
 
 // ── Scoring ───────────────────────────────────────────────────────────────────
 
@@ -87,15 +88,15 @@ function matchPercent(score: number): number {
   return Math.max(35, Math.min(score, 95));
 }
 
-function buildRationale(p: Property, profile: UserProfile, money: (n: number) => string): string[] {
+function buildRationale(p: Property, profile: UserProfile, money: (n: number) => string, tp: Dict['topPick']): string[] {
   const reasons: string[] = [];
   const budget = parseFloat(profile.totalBudget) || 400_000;
-  if (p.price <= budget) reasons.push(`Dans votre budget (${money(p.price)})`);
-  if (p.yield >= 7) reasons.push(`Rendement exceptionnel à ${p.yield}%`);
-  if (p.liquidity === 'High') reasons.push('Liquidité élevée — revente rapide si besoin');
-  if (profile.objective === 'rental_income' && p.yield >= 6.5) reasons.push('Correspond à votre objectif locatif');
-  if (profile.objective === 'golden_visa' && p.price >= 545_000) reasons.push(`Éligible Golden Visa UAE (≥ ${money(545_000)})`);
-  if (p.catalysts && p.catalysts.length > 0) reasons.push(`Catalyseurs : ${p.catalysts.slice(0, 2).join(', ')}`);
+  if (p.price <= budget) reasons.push(fmt(tp.rInBudget, { price: money(p.price) }));
+  if (p.yield >= 7) reasons.push(fmt(tp.rHighYield, { y: p.yield }));
+  if (p.liquidity === 'High') reasons.push(tp.rLiquidity);
+  if (profile.objective === 'rental_income' && p.yield >= 6.5) reasons.push(tp.rRentalMatch);
+  if (profile.objective === 'golden_visa' && p.price >= 545_000) reasons.push(fmt(tp.rGoldenVisa, { price: money(545_000) }));
+  if (p.catalysts && p.catalysts.length > 0) reasons.push(fmt(tp.rCatalysts, { cats: p.catalysts.slice(0, 2).join(', ') }));
   return reasons.slice(0, 3);
 }
 
@@ -109,7 +110,7 @@ interface LightboxProps {
 }
 
 const Lightbox: React.FC<LightboxProps> = ({ property: p, images, initialIndex, onClose }) => {
-  const { money } = useI18n();
+  const { money, t } = useI18n();
   const [idx, setIdx] = useState(initialIndex);
   const prev = useCallback(() => setIdx(i => (i - 1 + images.length) % images.length), [images.length]);
   const next = useCallback(() => setIdx(i => (i + 1) % images.length), [images.length]);
@@ -124,7 +125,7 @@ const Lightbox: React.FC<LightboxProps> = ({ property: p, images, initialIndex, 
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose, prev, next]);
 
-  const fmt = (n: number) => money(n);
+  const fmtPrice = (n: number) => money(n);
 
   return (
     <div
@@ -198,16 +199,16 @@ const Lightbox: React.FC<LightboxProps> = ({ property: p, images, initialIndex, 
               <MapPinIcon className="w-3 h-3" /> {p.location}
             </p>
           </div>
-          <p className="text-xl font-serif shrink-0" style={{ color: '#D4AF37' }}>{fmt(p.price)}</p>
+          <p className="text-xl font-serif shrink-0" style={{ color: '#D4AF37' }}>{fmtPrice(p.price)}</p>
         </div>
 
         {/* Specs grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           {[
-            { label: 'Rendement', value: `${p.yield}%` },
-            { label: 'Surface',   value: `${p.sqm} m²` },
-            { label: 'Chambres', value: `${p.beds} ch. / ${p.baths} sdb` },
-            { label: 'Type',      value: p.type },
+            { label: t.topPick.yield, value: `${p.yield}%` },
+            { label: t.topPick.surface, value: `${p.sqm} m²` },
+            { label: t.topPick.beds, value: fmt(t.topPick.bedsValue, { beds: p.beds, baths: p.baths }) },
+            { label: t.topPick.type, value: p.type },
           ].map(({ label, value }) => (
             <div key={label} className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
               <p className="text-[8px] uppercase tracking-widest mb-1" style={{ color: 'rgba(180,175,165,0.45)' }}>{label}</p>
@@ -230,12 +231,12 @@ const Lightbox: React.FC<LightboxProps> = ({ property: p, images, initialIndex, 
 
         {/* Liquidité + Livraison */}
         <div className="flex flex-wrap gap-4 text-xs" style={{ color: 'rgba(180,175,165,0.60)' }}>
-          {p.liquidity && <span><BuildingIcon className="w-3 h-3 inline mr-1" />Liquidité : <span className="text-white font-semibold">{p.liquidity}</span></span>}
-          {p.completion && <span>Livraison : <span className="text-white font-semibold">{p.completion}</span></span>}
+          {p.liquidity && <span><BuildingIcon className="w-3 h-3 inline mr-1" />{t.topPick.liquidity} <span className="text-white font-semibold">{p.liquidity}</span></span>}
+          {p.completion && <span>{t.topPick.delivery} <span className="text-white font-semibold">{p.completion}</span></span>}
           {p.sourceUrl && (
             <a href={p.sourceUrl} target="_blank" rel="noopener noreferrer"
               className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2">
-              Voir l'annonce source →
+              {t.topPick.viewSource}
             </a>
           )}
         </div>
@@ -270,6 +271,7 @@ interface ProgressRingProps {
 }
 
 const ProgressRing: React.FC<ProgressRingProps> = ({ pct, images, title, onOpenLightbox }) => {
+  const { t } = useI18n();
   const [offset, setOffset]     = useState(CIRCUMFERENCE); // ring starts empty
   const [imgIndex, setImgIndex] = useState(0);
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -330,7 +332,7 @@ const ProgressRing: React.FC<ProgressRingProps> = ({ pct, images, title, onOpenL
         >
           <span className="text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded-full"
             style={{ background: 'rgba(5,5,8,0.80)', border: '1px solid rgba(212,175,55,0.50)', color: '#D4AF37' }}>
-            Agrandir
+            {t.topPick.zoom}
           </span>
         </div>
 
@@ -412,7 +414,7 @@ const ProgressRing: React.FC<ProgressRingProps> = ({ pct, images, title, onOpenL
         }}
       >
         <span className="text-2xl font-black leading-none" style={{ color: '#D4AF37' }}>{pct}%</span>
-        <span className="text-[8px] uppercase tracking-widest mt-0.5" style={{ color: 'rgba(212,175,55,0.60)' }}>de match</span>
+        <span className="text-[8px] uppercase tracking-widest mt-0.5" style={{ color: 'rgba(212,175,55,0.60)' }}>{t.topPick.match}</span>
       </div>
     </div>
   );
@@ -430,10 +432,10 @@ interface AITopPickProps {
 }
 
 const AITopPick: React.FC<AITopPickProps> = ({ property: p, profile, score, onSelect, onContact, isSelected }) => {
-  const { money } = useI18n();
+  const { money, t } = useI18n();
   const pct  = matchPercent(score);
-  const whys = buildRationale(p, profile, money);
-  const fmt  = (n: number) => money(n);
+  const whys = buildRationale(p, profile, money, t.topPick);
+  const fmtPrice = (n: number) => money(n);
 
   const images = (p.images && p.images.length > 0 ? p.images : [p.image]).filter(Boolean);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -456,13 +458,13 @@ const AITopPick: React.FC<AITopPickProps> = ({ property: p, profile, score, onSe
       {/* ── Title ── */}
       <div className="text-center mb-8">
         <p className="text-[10px] uppercase tracking-[0.25em] mb-2" style={{ color: 'rgba(212,175,55,0.55)' }}>
-          ★ Recommandation IA · Analyse de votre profil
+          {t.topPick.badge}
         </p>
         <h2 className="text-2xl md:text-4xl font-serif text-white leading-tight">
-          Meilleure annonce du moment
+          {t.topPick.titleTop}
         </h2>
         <h2 className="text-2xl md:text-4xl font-serif leading-tight" style={{ color: '#D4AF37' }}>
-          pour votre profil
+          {t.topPick.titleBottom}
         </h2>
       </div>
 
@@ -505,12 +507,12 @@ const AITopPick: React.FC<AITopPickProps> = ({ property: p, profile, score, onSe
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
-            Voir l'annonce complète
+            {t.topPick.viewListing}
           </a>
         ) : (
           <span className="inline-block mt-3 text-[9px] uppercase tracking-widest px-3 py-1 rounded-full"
             style={{ color: 'rgba(180,175,165,0.35)', border: '1px solid rgba(255,255,255,0.07)' }}>
-            Annonce interne
+            {t.topPick.internalListing}
           </span>
         )}
       </div>
@@ -518,9 +520,9 @@ const AITopPick: React.FC<AITopPickProps> = ({ property: p, profile, score, onSe
       {/* ── Key metrics ── */}
       <div className="grid grid-cols-3 gap-3 mb-6 max-w-sm mx-auto">
         {[
-          { label: 'Rendement', value: `${p.yield}%`, gold: true },
-          { label: 'Prix',      value: fmt(p.price),  gold: false },
-          { label: 'Surface',   value: `${p.sqm} m²`, gold: false },
+          { label: t.topPick.yield, value: `${p.yield}%`, gold: true },
+          { label: t.topPick.price, value: fmtPrice(p.price), gold: false },
+          { label: t.topPick.surface, value: `${p.sqm} m²`, gold: false },
         ].map(({ label, value, gold }) => (
           <div
             key={label}
@@ -578,7 +580,7 @@ const AITopPick: React.FC<AITopPickProps> = ({ property: p, profile, score, onSe
             color: '#D4AF37',
           }}
         >
-          {isSelected ? <><CheckIcon className="w-4 h-4" /> Bien sélectionné</> : 'Simuler avec ce bien'}
+          {isSelected ? <><CheckIcon className="w-4 h-4" /> {t.topPick.selected}</> : t.topPick.simulate}
         </button>
         <button
           onClick={() => onContact(p)}
@@ -591,7 +593,7 @@ const AITopPick: React.FC<AITopPickProps> = ({ property: p, profile, score, onSe
           onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
         >
-          Être rappelé
+          {t.topPick.contact}
         </button>
       </div>
     </div>
