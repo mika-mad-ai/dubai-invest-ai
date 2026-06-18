@@ -186,6 +186,7 @@ const es: Dict = {
     sources: "Fuentes",
     analyzing: "IA Analizando...",
     placeholder: "Su pregunta…",
+    suggestions: ["📍 ROI", "📈 Gastos", "🏢 Entregado", "💎 Zonas"],
   },
 
   footer: {

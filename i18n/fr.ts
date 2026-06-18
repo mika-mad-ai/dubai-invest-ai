@@ -187,6 +187,7 @@ const fr = {
     sources: "Sources",
     analyzing: "IA Analyse...",
     placeholder: "Votre question…",
+    suggestions: ["📍 ROI", "📈 Frais", "🏢 Ready", "💎 Zones"],
   },
 
   footer: {

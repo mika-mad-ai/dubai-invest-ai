@@ -11,15 +11,9 @@ interface ChatInterfaceProps {
   groundingSources?: Array<{ title: string; uri: string }>;
 }
 
-const SUGGESTED_QUESTIONS = [
-  "📍 ROI",
-  "📈 Frais",
-  "🏢 Ready",
-  "💎 Zones"
-];
-
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, isStreaming, groundingSources }) => {
   const { t } = useI18n();
+  const SUGGESTED_QUESTIONS = t.chat.suggestions;
   const [input, setInput] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 

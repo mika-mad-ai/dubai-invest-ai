@@ -186,6 +186,7 @@ const af: Dict = {
     sources: "Bronne",
     analyzing: "KI ontleed...",
     placeholder: "Jou vraag…",
+    suggestions: ["📍 ROI", "📈 Koste", "🏢 Gereed", "💎 Sones"],
   },
 
   footer: {

@@ -186,6 +186,7 @@ const ru: Dict = {
     sources: "Источники",
     analyzing: "ИИ анализирует...",
     placeholder: "Ваш вопрос…",
+    suggestions: ["📍 ROI", "📈 Расходы", "🏢 Готовое", "💎 Районы"],
   },
 
   footer: {

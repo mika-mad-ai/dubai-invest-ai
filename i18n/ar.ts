@@ -186,6 +186,7 @@ const ar: Dict = {
     sources: "المصادر",
     analyzing: "الذكاء الاصطناعي يحلل...",
     placeholder: "سؤالك…",
+    suggestions: ["📍 العائد", "📈 الرسوم", "🏢 جاهز", "💎 المناطق"],
   },
 
   footer: {

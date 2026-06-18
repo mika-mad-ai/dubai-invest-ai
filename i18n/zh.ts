@@ -186,6 +186,7 @@ const zh: Dict = {
     sources: "来源",
     analyzing: "AI分析中...",
     placeholder: "您的问题…",
+    suggestions: ["📍 收益", "📈 费用", "🏢 现房", "💎 区域"],
   },
 
   footer: {
