@@ -60,7 +60,7 @@ export default async function handler(
       log.push('Publication sur les réseaux configurés…');
       results = await publishAll(content, media);
       for (const r of results) {
-        if (r.skipped) log.push(`— ${r.platform} : ignoré (identifiants absents)`);
+        if (r.skipped) log.push(`— ${r.platform} : ignoré (${r.error ?? 'identifiants absents'})`);
         else if (r.ok) log.push(`✓ ${r.platform} : publié (${r.id ?? 'ok'})`);
         else log.push(`✗ ${r.platform} : ${r.error}`);
       }

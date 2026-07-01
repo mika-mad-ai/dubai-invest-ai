@@ -309,8 +309,9 @@ async function publishInstagram(content: DailyContent, media: GeneratedMedia): P
 async function publishTikTok(content: DailyContent, media: GeneratedMedia): Promise<PublishResult> {
   const token = process.env.TIKTOK_ACCESS_TOKEN;
   if (!token) return { platform: 'tiktok', ok: false, skipped: true };
+  // Mode texte+image : pas de vidéo → TikTok est ignoré proprement (il exige une vidéo).
   if (!media.videoUrl) {
-    return { platform: 'tiktok', ok: false, error: 'TikTok exige une vidéo hébergée (URL publique). Active SOCIAL_ENABLE_VIDEO.' };
+    return { platform: 'tiktok', ok: false, skipped: true, error: 'vidéo requise (SOCIAL_ENABLE_VIDEO désactivé)' };
   }
   const title = withHashtags(content.perPlatform.tiktok || content.caption, content.hashtags).slice(0, 2200);
   try {
@@ -338,8 +339,9 @@ async function publishYouTube(content: DailyContent, media: GeneratedMedia): Pro
   const clientSecret = process.env.YT_CLIENT_SECRET;
   const refreshToken = process.env.YT_REFRESH_TOKEN;
   if (!clientId || !clientSecret || !refreshToken) return { platform: 'youtube', ok: false, skipped: true };
+  // Mode texte+image : pas de vidéo → YouTube est ignoré proprement (il exige une vidéo).
   if (!media.videoBase64) {
-    return { platform: 'youtube', ok: false, error: 'YouTube exige une vidéo. Active SOCIAL_ENABLE_VIDEO.' };
+    return { platform: 'youtube', ok: false, skipped: true, error: 'vidéo requise (SOCIAL_ENABLE_VIDEO désactivé)' };
   }
 
   try {
