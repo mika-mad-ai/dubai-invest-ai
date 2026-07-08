@@ -59,6 +59,8 @@ export interface GeneratedMedia {
   /** Vidéo MP4 en base64. */
   videoBase64?: string;
   videoUrl?: string;
+  /** Slides infographiques (URLs publiques) — publiées en carrousel si présentes. */
+  carouselUrls?: string[];
 }
 
 export interface PublishResult {
@@ -250,7 +252,7 @@ function withHashtags(text: string, tags: string[]): string {
   return `${text}\n\n${tagLine}`.trim();
 }
 
-/** Facebook Page : /{page-id}/photos ou /{page-id}/videos. */
+/** Facebook Page : carrousel multi-photos, sinon /photos, /videos ou /feed. */
 async function publishFacebook(content: DailyContent, media: GeneratedMedia): Promise<PublishResult> {
   const pageId = process.env.FB_PAGE_ID;
   const token = process.env.FB_PAGE_ACCESS_TOKEN;
@@ -258,6 +260,32 @@ async function publishFacebook(content: DailyContent, media: GeneratedMedia): Pr
 
   const message = withHashtags(content.perPlatform.facebook || content.caption, content.hashtags);
   const v = 'v21.0';
+
+  // Carrousel infographique : upload de chaque slide en non-publié,
+  // puis un post unique qui les attache toutes.
+  if (media.carouselUrls?.length) {
+    try {
+      const mediaIds: string[] = [];
+      for (const slideUrl of media.carouselUrls) {
+        const r = await fetch(`https://graph.facebook.com/${v}/${pageId}/photos`, {
+          method: 'POST',
+          body: new URLSearchParams({ url: slideUrl, published: 'false', access_token: token }),
+        });
+        const d: any = await r.json();
+        if (!r.ok || !d?.id) return { platform: 'facebook', ok: false, error: JSON.stringify(d?.error ?? d) };
+        mediaIds.push(d.id);
+      }
+      const feedBody = new URLSearchParams({ message, access_token: token });
+      mediaIds.forEach((id, i) => feedBody.set(`attached_media[${i}]`, JSON.stringify({ media_fbid: id })));
+      const res = await fetch(`https://graph.facebook.com/${v}/${pageId}/feed`, { method: 'POST', body: feedBody });
+      const data: any = await res.json();
+      if (!res.ok) return { platform: 'facebook', ok: false, error: JSON.stringify(data?.error ?? data) };
+      return { platform: 'facebook', ok: true, id: data?.id };
+    } catch (e: any) {
+      return { platform: 'facebook', ok: false, error: e?.message ?? String(e) };
+    }
+  }
+
   try {
     let url: string;
     let body: Record<string, string>;
@@ -280,17 +308,50 @@ async function publishFacebook(content: DailyContent, media: GeneratedMedia): Pr
   }
 }
 
-/** Instagram Business (Graph API) : create container → publish. Exige une URL publique. */
+/** Instagram Business (Graph API) : carrousel natif, sinon container simple → publish. */
 async function publishInstagram(content: DailyContent, media: GeneratedMedia): Promise<PublishResult> {
   const igUserId = process.env.IG_USER_ID;
   const token = process.env.IG_ACCESS_TOKEN ?? process.env.FB_PAGE_ACCESS_TOKEN;
   if (!igUserId || !token) return { platform: 'instagram', ok: false, skipped: true };
-  if (!media.imageUrl && !media.videoUrl) {
+  if (!media.carouselUrls?.length && !media.imageUrl && !media.videoUrl) {
     return { platform: 'instagram', ok: false, error: 'Instagram exige une image ou vidéo hébergée (URL publique) — aucune disponible.' };
   }
 
   const caption = withHashtags(content.perPlatform.instagram || content.caption, content.hashtags);
   const v = 'v21.0';
+
+  // Carrousel infographique : containers enfants → container CAROUSEL → publish.
+  if (media.carouselUrls?.length) {
+    try {
+      const children: string[] = [];
+      for (const slideUrl of media.carouselUrls) {
+        const r = await fetch(`https://graph.facebook.com/${v}/${igUserId}/media`, {
+          method: 'POST',
+          body: new URLSearchParams({ image_url: slideUrl, is_carousel_item: 'true', access_token: token }),
+        });
+        const d: any = await r.json();
+        if (!r.ok || !d?.id) return { platform: 'instagram', ok: false, error: JSON.stringify(d?.error ?? d) };
+        children.push(d.id);
+      }
+      const carRes = await fetch(`https://graph.facebook.com/${v}/${igUserId}/media`, {
+        method: 'POST',
+        body: new URLSearchParams({ media_type: 'CAROUSEL', children: children.join(','), caption, access_token: token }),
+      });
+      const carData: any = await carRes.json();
+      if (!carRes.ok || !carData?.id) return { platform: 'instagram', ok: false, error: JSON.stringify(carData?.error ?? carData) };
+
+      const pubRes = await fetch(`https://graph.facebook.com/${v}/${igUserId}/media_publish`, {
+        method: 'POST',
+        body: new URLSearchParams({ creation_id: carData.id, access_token: token }),
+      });
+      const pubData: any = await pubRes.json();
+      if (!pubRes.ok) return { platform: 'instagram', ok: false, error: JSON.stringify(pubData?.error ?? pubData) };
+      return { platform: 'instagram', ok: true, id: pubData?.id };
+    } catch (e: any) {
+      return { platform: 'instagram', ok: false, error: e?.message ?? String(e) };
+    }
+  }
+
   try {
     const createBody: Record<string, string> = { caption, access_token: token };
     if (media.videoUrl) { createBody.media_type = 'REELS'; createBody.video_url = media.videoUrl; }

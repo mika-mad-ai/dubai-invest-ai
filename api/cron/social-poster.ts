@@ -17,6 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { generateDailyContent, generateMedia, publishAll, type PublishResult } from '../lib/social';
+import { generateCarousel } from '../lib/carousel';
 
 const CRON_SECRET = process.env.CRON_SECRET ?? '';
 
@@ -51,6 +52,17 @@ export default async function handler(
     log.push(`✓ Image : ${media.imageUrl ? 'ok (hébergée)' : media.imageBase64 ? 'ok (bytes, non hébergée)' : 'aucune'}`);
     log.push(`✓ Vidéo : ${media.videoUrl ? 'ok (hébergée)' : media.videoBase64 ? 'ok (bytes)' : (process.env.SOCIAL_ENABLE_VIDEO === 'true' ? 'échec/timeout' : 'désactivée')}`);
 
+    // Carrousel infographique (5 slides data) — mode par défaut FB/IG.
+    // La photo IA du jour sert de fond à la slide de couverture.
+    log.push('Génération du carrousel infographique (5 slides)…');
+    const carousel = await generateCarousel(media.imageBase64);
+    if (carousel) {
+      media.carouselUrls = carousel.urls;
+      log.push(`✓ Carrousel : 5 slides (${carousel.stats.total} annonces, top rendement ${carousel.stats.topYield.zone} ${carousel.stats.topYield.yield}%)`);
+    } else {
+      log.push('⚠ Carrousel indisponible (stats/upload) — repli sur l\'image simple.');
+    }
+
     // dry=1 : on génère mais on ne publie pas (utile pour tester sans poster).
     let results: PublishResult[] = [];
     if (dryRun) {
@@ -80,7 +92,7 @@ export default async function handler(
         hashtags: content.hashtags,
         per_platform: content.perPlatform,
       },
-      media: { image: !!media.imageUrl, video: !!media.videoUrl, image_url: media.imageUrl, video_url: media.videoUrl },
+      media: { image: !!media.imageUrl, video: !!media.videoUrl, image_url: media.imageUrl, video_url: media.videoUrl, carousel: media.carouselUrls ?? [] },
       results,
       log,
     });
