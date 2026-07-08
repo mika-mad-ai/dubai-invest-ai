@@ -192,7 +192,7 @@ function buildTree(stats: CarouselStats, slide: number, coverBg?: string): Node 
           el('div', {
             display: 'flex', alignSelf: 'flex-start', marginTop: 26, padding: '30px 58px', borderRadius: 999,
             backgroundImage: `linear-gradient(135deg, #b8891e, ${GOLD} 48%, #f0c060)`,
-          }, el('div', { display: 'flex', fontFamily: 'Manrope', fontWeight: 800, fontSize: 40, color: '#050505', letterSpacing: 2 }, 'GRATUIT → LIEN EN BIO')),
+          }, el('div', { display: 'flex', fontFamily: 'Manrope', fontWeight: 800, fontSize: 40, color: '#050505', letterSpacing: 2 }, 'GRATUIT · LIEN EN BIO')),
         ]),
       ], 5);
   }
