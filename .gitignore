@@ -5,3 +5,6 @@ dist
 .DS_Store
 .vscode/
 .vercel
+.env.local
+.env*.local
+.playwright-mcp/

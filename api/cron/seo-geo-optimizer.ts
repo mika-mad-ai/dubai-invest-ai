@@ -12,7 +12,9 @@
  *    - meta_description  → utilisé par le frontend pour Google Search
  *    - faq_schema        → JSON-LD injecté dans <head> pour Google SGE / Gemini Overviews
  *    - market_stats      → snapshot des stats pour debug/historique
- * 4. Met à jour la date lastmod du sitemap dans Supabase
+ * 4. Stocke dans Supabase (table daily_posts) :
+ *    - daily_post        → article de blog quotidien avec l'analyse du marché
+ * 5. Met à jour la date lastmod du sitemap dans Supabase
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -59,6 +61,17 @@ interface MarketStats {
   premium_zone: ZoneStat;
 }
 
+interface BlogPost {
+  title: string;
+  slug: string;
+  content: string;
+}
+
+interface SocialPosts {
+  twitter: string;
+  linkedin: string;
+}
+
 // ─── Supabase helpers ────────────────────────────────────────────────────────
 
 async function supabaseQuery(path: string, body?: object): Promise<any> {
@@ -95,6 +108,24 @@ async function upsertSEOContent(key: string, content: string, metadata: object =
       content,
       generated_at: new Date().toISOString(),
       metadata,
+    }),
+  });
+}
+
+async function insertBlogPost(post: BlogPost, stats: MarketStats): Promise<void> {
+  await fetch(`${SUPABASE_URL}/rest/v1/daily_posts`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+    body: JSON.stringify({
+      title: post.title,
+      slug: post.slug,
+      content: post.content,
+      market_stats: stats,
     }),
   });
 }
@@ -183,15 +214,18 @@ ZONE PREMIUM : ${stats.premium_zone?.label} (moy. ${stats.premium_zone?.avg_pric
 `.trim();
 }
 
-// ─── Generate SEO content via Gemini ─────────────────────────────────────────
+// ─── Generate content via Gemini ───────────────────────────────────────────
 
-async function generateSEOContent(stats: MarketStats): Promise<{
+async function generateDailyContent(stats: MarketStats): Promise<{
   llms_txt: string;
   meta_description: string;
   faq_schema: object;
+  blogPost: BlogPost;
+  socialPosts: SocialPosts;
 }> {
   const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
   const summary = buildMarketSummary(stats);
+  const year = new Date().getFullYear();
 
   // 1. llms.txt — optimisé pour AI crawlers (Gemini, Claude, GPT, Perplexity)
   const llmsPrompt = `Tu es un expert SEO/GEO (Generative Engine Optimization) spécialisé dans l'immobilier à Dubaï.
@@ -248,7 +282,7 @@ Format attendu (JSON pur, sans markdown) :
 }
 
 Questions à couvrir (adapte avec les vraies données) :
-1. Quel est le meilleur quartier pour investir à Dubaï en ${new Date().getFullYear()} ?
+1. Quel est le meilleur quartier pour investir à Dubaï en ${year} ?
 2. Quel rendement locatif espérer à Dubaï ?
 3. Quel budget minimum pour investir à Dubaï ?
 4. Comment éviter la double imposition France-Dubaï ?
@@ -256,12 +290,72 @@ Questions à couvrir (adapte avec les vraies données) :
 
 Réponds UNIQUEMENT avec le JSON, sans markdown ni explications.`;
 
-  // Call Gemini for all 3 in parallel
+  // 4. Daily Blog Post
+  const blogPrompt = `Tu es un expert en immobilier et en rédaction d'articles de blog SEO. Rédige un article de blog informatif sur le marché immobilier de Dubaï pour les investisseurs francophones.
+
+DONNÉES DE MARCHÉ EN TEMPS RÉEL DU ${stats.date} :
+${summary}
+
+RÈGLES :
+- Le public cible sont les investisseurs francophones qui ne connaissent pas bien Dubaï.
+- Ton engageant, informatif et professionnel.
+- Format : Markdown.
+- Structure :
+  - Un titre accrocheur (H1)
+  - Une introduction courte (1-2 paragraphes)
+  - Une section "Les chiffres clés du jour" avec une liste à puces des stats les plus importantes.
+  - Une analyse de 2-3 paragraphes sur les tendances (ex: le quartier avec le meilleur rendement, le plus accessible).
+  - Une brève conclusion avec un appel à l'action (ex: "Contactez DubaiInvest AI pour une simulation personnalisée").
+- Inclus des mots-clés SEO pertinents: "investissement immobilier Dubaï", "rendement locatif Dubaï", "prix immobilier Dubaï ${year}", "fiscalité Dubaï".
+- Le slug doit être en minuscules, sans accents, avec des mots séparés par des tirets.
+
+Format de sortie attendu (JSON pur, sans markdown autour) :
+{
+  "title": "Titre de l'article ici",
+  "slug": "titre-de-l-article-ici",
+  "content": "# Titre de l'article ici\\n\\nIntroduction...\\n\\n## Les chiffres clés du jour\\n\\n* Stat 1\\n* Stat 2\\n"
+}
+
+Réponds UNIQUEMENT avec le JSON.`;
+
+  // 5. Social Media Posts
+  const twitterPrompt = `Génère un tweet percutant (max 280 caractères) pour annoncer le nouveau rapport sur l'immobilier à Dubaï.
+
+Stats du jour :
+- Meilleur rendement : ${stats.top_yield_zone?.avg_yield}% à ${stats.top_yield_zone?.label}.
+- Prix d'entrée : dès ${stats.most_affordable_zone?.min_price_eur?.toLocaleString('fr-FR')}€.
+
+RÈGLES :
+- Ton direct et engageant.
+- Inclure 1-2 chiffres clés.
+- Inclure les hashtags #Dubai #immobilier #investissement #rentabilité.
+- Inclure un lien vers le blog (le lien sera ajouté plus tard, laisse un placeholder).
+- Réponds uniquement avec le texte du tweet.`;
+
+  const linkedinPrompt = `Génère un post LinkedIn professionnel pour partager l'analyse du marché immobilier de Dubaï.
+
+Stats du jour :
+${summary}
+
+RÈGLES :
+- Ton plus formel et analytique que pour Twitter.
+- Commence par une accroche forte.
+- Structure en 2-3 courts paragraphes.
+- Mentionne 2-3 stats clés (rendement, prix, quartier en vogue).
+- Termine par une question ouverte pour engager la discussion.
+- Inclure les hashtags #DubaiRealEstate #InvestInDubai #ImmobilierNeuf #DubaiProperty #GoldenVisa.
+- Réponds uniquement avec le texte du post.`;
+
+
+  // Call Gemini for all content in parallel
   const model = 'gemini-2.0-flash';
-  const [llmsResult, metaResult, faqResult] = await Promise.all([
+  const [llmsResult, metaResult, faqResult, blogResult, twitterResult, linkedinResult] = await Promise.all([
     ai.models.generateContent({ model, contents: llmsPrompt }),
     ai.models.generateContent({ model, contents: metaPrompt }),
     ai.models.generateContent({ model, contents: faqPrompt }),
+    ai.models.generateContent({ model, contents: blogPrompt }),
+    ai.models.generateContent({ model, contents: twitterPrompt }),
+    ai.models.generateContent({ model, contents: linkedinPrompt }),
   ]);
 
   const llms_txt = llmsResult.text ?? '';
@@ -279,17 +373,35 @@ Réponds UNIQUEMENT avec le JSON, sans markdown ni explications.`;
       mainEntity: [
         {
           '@type': 'Question',
-          name: `Quel est le meilleur quartier pour investir à Dubaï en ${new Date().getFullYear()} ?`,
+          name: `Quel est le meilleur quartier pour investir à Dubaï en ${year} ?`,
           acceptedAnswer: {
             '@type': 'Answer',
-            text: `En ${new Date().getFullYear()}, ${stats.top_yield_zone?.label ?? 'JVC'} offre le meilleur rendement locatif avec ${stats.top_yield_zone?.avg_yield ?? 7}%/an. Accessible dès ${stats.most_affordable_zone?.min_price_eur?.toLocaleString('fr-FR') ?? '150 000'}€ dans les zones abordables.`,
+            text: `En ${year}, ${stats.top_yield_zone?.label ?? 'JVC'} offre le meilleur rendement locatif avec ${stats.top_yield_zone?.avg_yield ?? 7}%/an. Accessible dès ${stats.most_affordable_zone?.min_price_eur?.toLocaleString('fr-FR') ?? '150 000'}€ dans les zones abordables.`,
           },
         },
       ],
     };
   }
 
-  return { llms_txt, meta_description, faq_schema };
+  let blogPost: BlogPost = { title: '', slug: '', content: '' };
+  try {
+    const blogRaw = (blogResult.text ?? '').replace(/```json\n?|```\n?/g, '').trim();
+    blogPost = JSON.parse(blogRaw);
+  } catch (e) {
+    console.error('Failed to parse blog post JSON:', e);
+    blogPost = {
+      title: `Analyse du marché immobilier de Dubaï - ${stats.date}`,
+      slug: `analyse-marche-immobilier-dubai-${new Date().toISOString().slice(0, 10)}`,
+      content: `# Analyse du marché immobilier de Dubaï - ${stats.date}\n\nVoici un résumé des dernières tendances du marché immobilier à Dubaï.\n\n${summary}`
+    };
+  }
+
+  const socialPosts: SocialPosts = {
+    twitter: (twitterResult.text ?? '').trim(),
+    linkedin: (linkedinResult.text ?? '').trim(),
+  };
+
+  return { llms_txt, meta_description, faq_schema, blogPost, socialPosts };
 }
 
 // ─── Handler ─────────────────────────────────────────────────────────────────
@@ -318,23 +430,30 @@ export default async function handler(
     const stats = await fetchMarketStats();
     log.push(`✓ ${stats.total_listings} listings across ${stats.zones.length} zones`);
 
-    // 2. Generate SEO content via Gemini
-    log.push('Generating SEO content via Gemini...');
-    const { llms_txt, meta_description, faq_schema } = await generateSEOContent(stats);
+    // 2. Generate content via Gemini
+    log.push('Generating content via Gemini...');
+    const { llms_txt, meta_description, faq_schema, blogPost, socialPosts } = await generateDailyContent(stats);
     log.push(`✓ llms.txt: ${llms_txt.length} chars`);
     log.push(`✓ meta: "${meta_description.slice(0, 60)}..."`);
     log.push(`✓ faq_schema: ${JSON.stringify(faq_schema).length} chars`);
+    log.push(`✓ Blog Post: "${blogPost.title}"`);
+    log.push(`✓ Twitter Post: ${socialPosts.twitter.slice(0, 60)}...`);
+    log.push(`✓ LinkedIn Post: ${socialPosts.linkedin.slice(0, 60)}...`);
 
-    // 3. Store in Supabase seo_content table
-    log.push('Storing SEO content in Supabase...');
+
+    // 3. Store in Supabase
+    log.push('Storing content in Supabase...');
     const metadata = { zones: stats.zones.length, total_listings: stats.total_listings, date: stats.date };
     await Promise.all([
       upsertSEOContent('llms_txt', llms_txt, metadata),
       upsertSEOContent('meta_description', meta_description, metadata),
       upsertSEOContent('faq_schema', JSON.stringify(faq_schema), metadata),
       upsertSEOContent('market_stats', buildMarketSummary(stats), metadata),
+      insertBlogPost(blogPost, stats),
     ]);
-    log.push('✓ Stored 4 SEO content entries');
+    log.push('✓ Stored 4 SEO content entries and 1 blog post.');
+
+    // TODO: Post to social media
 
     const elapsed = Date.now() - startedAt;
     log.push(`Done in ${elapsed}ms`);
@@ -349,6 +468,12 @@ export default async function handler(
         min_entry: `${stats.most_affordable_zone?.label} dès ${stats.most_affordable_zone?.min_price_eur?.toLocaleString('fr-FR')}€`,
       },
       log,
+      generated_content: {
+        blog_title: blogPost.title,
+        blog_slug: blogPost.slug,
+        tweet: socialPosts.twitter,
+        linkedin_post: socialPosts.linkedin,
+      }
     });
   } catch (err: any) {
     console.error('[seo-geo-optimizer]', err);

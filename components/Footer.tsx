@@ -1,7 +1,7 @@
 import React from 'react';
 import { useI18n } from '../i18n';
 
-const ARTICLE_HREFS = ['/analyse-geopolitique-dubai', '/guide-visa-or-dubai', '/meilleurs-quartiers-dubai-investissement'];
+const ARTICLE_HREFS = ['/analyse-geopolitique-dubai', '/guide-visa-or-dubai', '/meilleurs-quartiers-dubai-investissement', '/blog'];
 
 const Footer: React.FC = () => {
   const { t } = useI18n();
@@ -21,7 +21,7 @@ const Footer: React.FC = () => {
         {/* Brand */}
         <div>
           <img src="/NewLogoDubAInvestV2.png" alt="DubaiInvest" style={{ height: 56, marginBottom: 16 }} />
-          <p style={{ color: 'rgba(180,170,155,0.7)', fontSize: 13, lineHeight: 1.6, maxWidth: 280 }}>
+          <p style={{ color: 'rgba(200,192,178,0.85)', fontSize: 13, lineHeight: 1.6, maxWidth: 280 }}>
             {t.footer.brand}
           </p>
         </div>
@@ -41,7 +41,7 @@ const Footer: React.FC = () => {
                   onMouseLeave={e => (e.currentTarget.style.color = 'rgba(240,235,224,0.8)')}
                 >
                   <span style={{ display: 'block', fontWeight: 600 }}>{a.title}</span>
-                  <span style={{ color: 'rgba(180,170,155,0.55)', fontSize: 11 }}>{a.desc}</span>
+                  <span style={{ color: 'rgba(200,192,178,0.75)', fontSize: 11 }}>{a.desc}</span>
                 </a>
               </li>
             ))}
@@ -53,7 +53,7 @@ const Footer: React.FC = () => {
           <h3 style={{ color: '#D4AF37', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 16 }}>
             {t.footer.simulator}
           </h3>
-          <p style={{ color: 'rgba(180,170,155,0.7)', fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
+          <p style={{ color: 'rgba(200,192,178,0.85)', fontSize: 13, lineHeight: 1.6, marginBottom: 16 }}>
             {t.footer.simulatorDesc}
           </p>
           <a
@@ -86,10 +86,10 @@ const Footer: React.FC = () => {
           gap: 12,
         }}
       >
-        <p style={{ color: 'rgba(180,170,155,0.4)', fontSize: 11 }}>
+        <p style={{ color: 'rgba(200,192,178,0.68)', fontSize: 11 }}>
           {t.footer.copyright}
         </p>
-        <p style={{ color: 'rgba(180,170,155,0.3)', fontSize: 11 }}>
+        <p style={{ color: 'rgba(200,192,178,0.62)', fontSize: 11 }}>
           {t.footer.disclaimer}
         </p>
       </div>

@@ -13,7 +13,9 @@ const LiquidAuroraCanvas: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let animId: number;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let animId = 0;
+    let visible = true;
     let W = (canvas.width  = window.innerWidth);
     let H = (canvas.height = window.innerHeight);
 
@@ -26,7 +28,7 @@ const LiquidAuroraCanvas: React.FC = () => {
       { ox:0.80,oy:0.72,ax:0.12,ay:0.10,fx:0.00033,fy:0.00048,px:4.2,py:0.3,rBase:0.38,color:[0,242,255],alpha:0.10 },
     ];
 
-    const loop = (ts: number) => {
+    const draw = (ts: number) => {
       ctx.clearRect(0, 0, W, H);
       const side = Math.min(W, H);
       for (const n of nappes) {
@@ -47,12 +49,27 @@ const LiquidAuroraCanvas: React.FC = () => {
         ctx.fillStyle = grad; ctx.fill();
         ctx.restore();
       }
+    };
+    const loop = (ts: number) => {
+      draw(ts);
       animId = requestAnimationFrame(loop);
     };
-    animId = requestAnimationFrame(loop);
-    const onResize = () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; };
-    window.addEventListener('resize', onResize);
-    return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', onResize); };
+
+    // Reduced motion : une seule frame statique, pas de boucle.
+    // Sinon : la boucle ne tourne que lorsque le canvas est à l'écran.
+    if (reducedMotion) {
+      draw(0);
+    } else {
+      const io = new IntersectionObserver(([entry]) => {
+        visible = entry.isIntersecting;
+        if (visible && !animId) animId = requestAnimationFrame(loop);
+        if (!visible && animId) { cancelAnimationFrame(animId); animId = 0; }
+      });
+      io.observe(canvas);
+      const onResize = () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; };
+      window.addEventListener('resize', onResize);
+      return () => { if (animId) cancelAnimationFrame(animId); io.disconnect(); window.removeEventListener('resize', onResize); };
+    }
   }, []);
 
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }} />;
@@ -110,10 +127,10 @@ const MetricCard: React.FC<{ icon: React.ReactNode; label: string; value: string
       <div style={{ fontFamily: '"Sora",sans-serif', fontSize: 'clamp(1.3rem, 5vw, 2.2rem)', fontWeight: 700, lineHeight: 1, background: 'linear-gradient(135deg, #fef3c7 0%, #D4AF37 55%, #f0c060 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', fontVariantNumeric: 'tabular-nums', position: 'relative', zIndex: 2, isolation: 'isolate' }}>
         {value}
       </div>
-      <div style={{ color: 'rgba(240,235,224,0.42)', fontSize: '0.62rem', fontFamily: '"Manrope",sans-serif', textTransform: 'uppercase', letterSpacing: '0.12em', textAlign: 'center', position: 'relative', zIndex: 2 }}>
+      <div style={{ color: 'rgba(240,235,224,0.72)', fontSize: '0.62rem', fontFamily: '"Manrope",sans-serif', textTransform: 'uppercase', letterSpacing: '0.12em', textAlign: 'center', position: 'relative', zIndex: 2 }}>
         {label}
       </div>
-      <div style={{ fontSize: '0.68rem', fontFamily: '"Manrope",sans-serif', position: 'relative', zIndex: 2, color: hovered ? 'rgba(0,242,255,0.75)' : 'rgba(212,175,55,0.50)', transition: 'color 0.2s' }}>
+      <div style={{ fontSize: '0.68rem', fontFamily: '"Manrope",sans-serif', position: 'relative', zIndex: 2, color: hovered ? 'rgba(0,242,255,0.85)' : 'rgba(226,191,92,0.85)', transition: 'color 0.2s' }}>
         {sub}
       </div>
       <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(0,242,255,0.65), transparent)', opacity: hovered ? 1 : 0, transition: 'opacity 0.2s' }} />
@@ -163,7 +180,7 @@ const HeroAIChat: React.FC<{ onCTAClick?: () => void }> = ({ onCTAClick }) => {
           </motion.div>
           <div>
             <span style={{ color: '#D4AF37', fontFamily: '"Manrope",sans-serif', fontSize: '0.8rem', fontWeight: 700 }}>{t.hero.aiName}</span>
-            <span style={{ color: 'rgba(0,242,255,0.45)', fontSize: '0.62rem', fontFamily: '"Manrope",sans-serif', marginLeft: '0.4rem' }}>{t.hero.aiRole}</span>
+            <span style={{ color: 'rgba(0,242,255,0.72)', fontSize: '0.62rem', fontFamily: '"Manrope",sans-serif', marginLeft: '0.4rem' }}>{t.hero.aiRole}</span>
           </div>
           <div className="ml-auto flex items-center gap-1.5">
             <motion.div className="w-1.5 h-1.5 rounded-full" style={{ background: '#00F2FF', boxShadow: '0 0 6px #00F2FF' }} animate={{ opacity: [1, 0.3, 1], scale: [1, 1.3, 1] }} transition={{ duration: 2, repeat: Infinity }} />
@@ -360,10 +377,11 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
                 muted
                 loop
                 playsInline
-                preload="auto"
+                preload="metadata"
                 poster={BG_IMAGE}
                 onLoadedData={() => setVideoLoaded(true)}
                 className="w-full h-full object-cover"
+                aria-hidden="true"
               />
               <motion.div
                 className="absolute inset-0"
@@ -465,7 +483,7 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
               </motion.div>
 
               {/* Subtitle */}
-              <motion.p initial={{ opacity: 0, y: 16 }} animate={showContent ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0.2 }} style={{ color: 'rgba(240,235,224,0.55)', fontFamily: '"Manrope",sans-serif', fontSize: 'clamp(0.9rem,1.6vw,1.1rem)', maxWidth: '540px', lineHeight: 1.7 }}>
+              <motion.p initial={{ opacity: 0, y: 16 }} animate={showContent ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0.2 }} style={{ color: 'rgba(240,235,224,0.78)', fontFamily: '"Manrope",sans-serif', fontSize: 'clamp(0.9rem,1.6vw,1.1rem)', maxWidth: '540px', lineHeight: 1.7 }}>
                 {t.hero.subtitle}
               </motion.p>
 

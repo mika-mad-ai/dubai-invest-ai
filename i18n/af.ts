@@ -196,6 +196,7 @@ const af: Dict = {
       { title: "Midde-Oosterse konflik & Dubai-eiendom 2026", desc: "Week-vir-week geopolitieke impak op pryse en transaksies" },
       { title: "Volledige gids: Dubai Goue Visum", desc: "Voorwaardes, koste en stappe om VAE-verblyf te kry" },
       { title: "Beste Dubai-distrikte om in 2026 in te belê", desc: "Opbrengs, groei en risiko vergelyk per distrik" },
+      { title: "Daaglikse markontleding", desc: "Dubai-pryse, opbrengste en tendense — daagliks deur KI bygewerk" },
     ],
     simulator: "Gratis Simulator",
     simulatorDesc: "Bereken jou huuropbrengs, vergelyk distrikte en kry 'n persoonlike KI-analise in 2 minute.",

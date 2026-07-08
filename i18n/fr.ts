@@ -197,6 +197,7 @@ const fr = {
       { title: "Conflit Moyen-Orient & immobilier Dubaï 2026", desc: "Impact géopolitique semaine par semaine sur les prix et transactions" },
       { title: "Guide complet : Visa Or Dubaï (Golden Visa)", desc: "Conditions, coûts et démarches pour obtenir la résidence aux EAU" },
       { title: "Meilleurs quartiers de Dubaï pour investir en 2026", desc: "Comparatif rendement, valorisation et risque par district" },
+      { title: "Analyses quotidiennes du marché", desc: "Prix, rendements et tendances à Dubaï — mis à jour chaque jour par IA" },
     ],
     simulator: "Simulateur Gratuit",
     simulatorDesc: "Calculez votre rendement locatif, comparez les quartiers et obtenez une analyse IA personnalisée en 2 minutes.",

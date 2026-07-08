@@ -196,6 +196,7 @@ const en: Dict = {
       { title: "Middle East conflict & Dubai real estate 2026", desc: "Week-by-week geopolitical impact on prices and transactions" },
       { title: "Complete guide: Dubai Golden Visa", desc: "Conditions, costs and steps to obtain UAE residency" },
       { title: "Best Dubai districts to invest in 2026", desc: "Yield, appreciation and risk compared by district" },
+      { title: "Daily market analysis", desc: "Dubai prices, yields and trends — updated daily by AI" },
     ],
     simulator: "Free Simulator",
     simulatorDesc: "Calculate your rental yield, compare districts and get a personalised AI analysis in 2 minutes.",

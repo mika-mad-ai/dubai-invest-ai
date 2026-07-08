@@ -184,3 +184,16 @@ h1, h2, h3, h4, .font-serif {
   font-family: "Playfair Display", serif !important;
   text-shadow: 0 2px 4px rgba(0,0,0,0.8);
 }
+
+/* ── Accessibilité : motion réduit ──────────────────────────────────────────
+   Toutes les animations décoratives (aurora, scans, pulses, keyframes
+   Tailwind) sont neutralisées quand l'utilisateur demande moins de motion.
+   framer-motion est géré séparément via <MotionConfig reducedMotion="user">. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

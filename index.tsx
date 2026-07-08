@@ -1,6 +1,8 @@
 
 import React, { Component, ReactNode, ErrorInfo } from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
 import App from './App';
 import { I18nProvider } from './i18n';
 import './index.css';
@@ -64,10 +66,14 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <ErrorBoundary>
-      <I18nProvider>
-        <App />
-      </I18nProvider>
-    </ErrorBoundary>
+    <BrowserRouter>
+      <ErrorBoundary>
+        <I18nProvider>
+          <MotionConfig reducedMotion="user">
+            <App />
+          </MotionConfig>
+        </I18nProvider>
+      </ErrorBoundary>
+    </BrowserRouter>
   </React.StrictMode>
 );

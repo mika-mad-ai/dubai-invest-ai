@@ -26,7 +26,7 @@ DubaiInvest AI Advisor est un conseiller en investissement immobilier à Dubaï 
 
 - **Annonces immobilières** : +1 000 biens mis à jour quotidiennement (JVC, Marina, Downtown, Business Bay, Creek Harbour, Palm, JBR)
 - **Transactions DLD** : Données réelles du Dubai Land Department
-- **Marché 2025** : Croissance prix +15-20% sur 3 ans, rendement locatif moyen 6-9% brut
+- **Marché 2026** : Croissance prix +15-20% sur 3 ans, rendement locatif moyen 6-9% brut
 
 ## Fiscalité
 
@@ -48,6 +48,7 @@ DubaiInvest AI Advisor est un conseiller en investissement immobilier à Dubaï 
 - [Analyse géopolitique Dubaï 2026](https://dubainvest.eu/analyse-geopolitique-dubai) : impact du conflit Moyen-Orient sur les prix et transactions, données hebdomadaires
 - [Guide Golden Visa Dubaï](https://dubainvest.eu/guide-visa-or-dubai) : conditions, coûts et démarches pour la résidence 10 ans dès 2M AED (~545 000 €)
 - [Meilleurs quartiers où investir à Dubaï en 2026](https://dubainvest.eu/meilleurs-quartiers-dubai-investissement) : comparatif rendement, valorisation et risque par district
+- [Analyses quotidiennes du marché](https://dubainvest.eu/blog) : un article par jour basé sur les annonces réelles et les transactions DLD
 
 ## Contact
 

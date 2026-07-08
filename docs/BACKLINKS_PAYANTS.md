@@ -4,6 +4,76 @@
 
 ---
 
+## Comment activer — Plan d'action immédiat
+
+### Étape 1 — Créer les comptes (gratuit, 15 min)
+- [ ] **[SEMJuice](https://www.semjuice.com)** — inscription gratuite. Catalogue auto-service, le plus rapide pour démarrer (22-700€/article selon le site).
+- [ ] **[Getfluence](https://getfluence.com)** — inscription gratuite. Pour les médias premium (Capital, Moneyvox, JDN) — Tier 2/3 uniquement.
+
+### Étape 2 — Chercher les sites cibles dans le catalogue
+Une fois connecté à SEMJuice/Getfluence, utilise leur barre de recherche avec le nom de domaine exact (ex. `moncercleimmo.com`, `guideimmodubai.com`). Si le site est dans leur réseau, tu vois directement : prix, délai de publication, DA/Trust Flow réels (pas des estimations).
+- Si le site **est dans le catalogue** → commande directement (étape 3).
+- Si le site **n'y est pas** (cas probable pour `selexium.com`, `lepetitjournal.com`, `sopra-dubai.com`, `dubaiimmobilier.fr`) → contact direct (étape 4).
+
+### Étape 3 — Commander un article via la plateforme
+1. Choisis le site, le format (500-1000 mots conseillé)
+2. Donne le brief : mot-clé cible (ex. "investir à Dubai 2026"), lien vers `https://dubainvest.eu/`, angle éditorial
+3. La plateforme ou l'éditeur rédige un brouillon → tu valides ou demandes des modifs
+4. Publication sous 1-2 semaines en général
+
+### Étape 4 — Contact direct (sites hors plateforme)
+Template email à adapter :
+
+```
+Objet : Partenariat éditorial — DubaiInvest AI Advisor
+
+Bonjour,
+
+Je suis [ton nom], fondateur de DubaiInvest AI Advisor
+(https://dubainvest.eu), un conseiller IA pour les investisseurs
+francophones souhaitant investir dans l'immobilier à Dubaï
+(simulation de rendement, fiscalité, visa or).
+
+Je suis votre contenu sur [thématique] et pense qu'un partenariat
+éditorial pourrait intéresser votre audience : [proposition concrète
+— article invité / mention dans un article existant / échange de
+visibilité].
+
+Seriez-vous ouvert à en discuter ? Je peux proposer un article
+complet (1000+ mots, données chiffrées DLD/Knight Frank) ou
+simplement une mention + lien dans un contenu existant.
+
+Cordialement,
+[nom]
+```
+
+### Étape 5 — Suivre les résultats
+Après publication, vérifie l'indexation du lien dans GSC (`Liens` dans le menu) sous 2-4 semaines, et surveille le trafic référent dans **Performance → Pages** filtré par la période.
+
+### Démarrage suggéré (budget serré)
+Commence par 1-2 commandes SEMJuice sur des sites Tier 1/2 (`moncercleimmo.com`, `guideimmodubai.com`) — moins chers, auto-service, retour rapide pour valider le processus avant d'investir sur les gros médias (Capital, Moneyvox via Getfluence).
+
+### Suivi de statut
+
+| Site | Canal | Statut |
+|---|---|---|
+| selexium.com | Contact direct | ⬜ Non démarré |
+| moneyvox.fr | Getfluence | ⬜ Non démarré |
+| dubaiimmobilier.fr | Contact direct | ⬜ Non démarré |
+| lepetitjournal.com/dubai | Contact direct (régie) | ⬜ Non démarré |
+| capital.fr | Getfluence | ⬜ Non démarré |
+| expat.com | Contact direct | ⬜ Non démarré |
+| moncercleimmo.com | SEMJuice | ⬜ Non démarré |
+| guideimmodubai.com | SEMJuice | ⬜ Non démarré |
+| sopra-dubai.com | Contact direct | ⬜ Non démarré |
+| journaldunet.com | Getfluence | ⬜ Non démarré |
+| challenges.fr | Getfluence | ⬜ Non démarré |
+| investir-expatrie.fr | SEMJuice / contact | ⬜ Non démarré |
+
+> Statuts possibles : ⬜ Non démarré · 🔄 Contacté/commandé · ✍️ Brouillon en relecture · ✅ Publié · ❌ Refusé/indisponible
+
+---
+
 ## TIER 1 — Priorité absolue (ROI maximal)
 
 ### 1. selexium.com
@@ -146,5 +216,5 @@ MOIS 3 — Autorité (budget : 2000-3000€)
 
 ---
 
-*Dernière mise à jour : Mai 2026*
-*Sources : Ahrefs estimations, Semrush, Moz DA, trafic SimilarWeb, tarifs Getfluence/SEMJuice*
+*Dernière mise à jour : 11 juin 2026*
+*Sources : Ahrefs estimations, Semrush, Moz DA, trafic SimilarWeb, tarifs Getfluence/SEMJuice (vérifiés juin 2026)*

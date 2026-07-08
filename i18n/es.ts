@@ -196,6 +196,7 @@ const es: Dict = {
       { title: "Conflicto en Oriente Medio e inmobiliario Dubái 2026", desc: "Impacto geopolítico semana a semana sobre precios y transacciones" },
       { title: "Guía completa: Visa Dorada de Dubái (Golden Visa)", desc: "Condiciones, costes y trámites para obtener la residencia en EAU" },
       { title: "Mejores barrios de Dubái para invertir en 2026", desc: "Comparativa de rentabilidad, revalorización y riesgo por distrito" },
+      { title: "Análisis diario del mercado", desc: "Precios, rentabilidades y tendencias en Dubái — actualizado a diario por IA" },
     ],
     simulator: "Simulador Gratuito",
     simulatorDesc: "Calcule su rentabilidad de alquiler, compare barrios y obtenga un análisis IA personalizado en 2 minutos.",

@@ -63,6 +63,10 @@ const sitemapIndexXml = `<?xml version="1.0" encoding="UTF-8"?>
     <loc>${BASE_URL}/sitemap.xml</loc>
     <lastmod>${today}</lastmod>
   </sitemap>
+  <sitemap>
+    <loc>${BASE_URL}/sitemap-blog.xml</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
 </sitemapindex>
 `;
 

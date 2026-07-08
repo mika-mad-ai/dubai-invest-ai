@@ -101,6 +101,18 @@
       "destination": "/api/llms-txt"
     },
     {
+      "source": "/blog",
+      "destination": "/api/blog-page"
+    },
+    {
+      "source": "/blog/:slug",
+      "destination": "/api/blog-page?slug=:slug"
+    },
+    {
+      "source": "/sitemap-blog.xml",
+      "destination": "/api/sitemap-blog"
+    },
+    {
       "source": "/rapport-immobilier-dubai-:slug",
       "destination": "/api/rapport?slug=rapport-immobilier-dubai-:slug"
     }
@@ -131,6 +143,12 @@
       "maxDuration": 10
     },
     "api/rapport.ts": {
+      "maxDuration": 10
+    },
+    "api/blog-page.ts": {
+      "maxDuration": 10
+    },
+    "api/sitemap-blog.ts": {
       "maxDuration": 10
     },
     "api/haro-webhook.ts": {
