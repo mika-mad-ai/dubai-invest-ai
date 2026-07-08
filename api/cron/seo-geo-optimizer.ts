@@ -27,8 +27,9 @@ const GEMINI_KEY = process.env.API_KEY!;
 const AED_TO_EUR = 1 / 4.24;
 const CRON_SECRET = process.env.CRON_SECRET ?? '';
 
-// Vignette d'article (Imagen). Réutilise le bucket public du social agent.
-const IMAGE_MODEL = process.env.SOCIAL_IMAGE_MODEL ?? 'imagen-3.0-generate-002';
+// Vignette d'article — génération d'image native Gemini (Imagen n'est pas
+// disponible sur cette clé API). Réutilise le bucket public du social agent.
+const IMAGE_MODEL = process.env.BLOG_IMAGE_MODEL ?? 'gemini-2.5-flash-image';
 const STORAGE_BUCKET = process.env.SOCIAL_STORAGE_BUCKET ?? 'social-media';
 
 // ─── Zone display names ──────────────────────────────────────────────────────
@@ -135,19 +136,20 @@ async function insertBlogPost(post: BlogPost, stats: MarketStats, imageUrl: stri
   });
 }
 
-// ─── Vignette d'article via Imagen ───────────────────────────────────────────
-// Échec toléré : l'article est publié sans image si Imagen ou le Storage échoue
-// (Imagen exige un compte Gemini API payant).
+// ─── Vignette d'article via Gemini image ─────────────────────────────────────
+// Échec toléré : l'article est publié sans image si la génération ou le
+// Storage échoue.
 
 async function generateBlogThumbnail(ai: GoogleGenAI, post: BlogPost): Promise<string | null> {
   try {
     const prompt = `Cinematic editorial photograph illustrating a daily Dubai real estate market analysis titled "${post.title}". Photorealistic aerial or street-level view of Dubai skyline, modern residential towers, warm golden-hour light with deep blue sky, high-end financial magazine cover style, sharp details, no text, no watermark, no people in focus, 16:9 composition.`;
-    const resp: any = await ai.models.generateImages({
+    const resp: any = await ai.models.generateContent({
       model: IMAGE_MODEL,
-      prompt,
-      config: { numberOfImages: 1, aspectRatio: '16:9' },
+      contents: prompt,
+      config: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '16:9' } },
     });
-    const base64 = resp?.generatedImages?.[0]?.image?.imageBytes;
+    const parts: any[] = resp?.candidates?.[0]?.content?.parts ?? [];
+    const base64 = parts.find(p => p?.inlineData?.data)?.inlineData?.data;
     if (typeof base64 !== 'string' || !base64) return null;
 
     const path = `blog/${new Date().toISOString().slice(0, 10)}-${post.slug.slice(0, 80)}.png`;
@@ -392,7 +394,7 @@ RÈGLES :
 
 
   // Call Gemini for all content in parallel
-  const model = 'gemini-2.0-flash';
+  const model = 'gemini-2.5-flash';
   const [llmsResult, metaResult, faqResult, blogResult, twitterResult, linkedinResult] = await Promise.all([
     ai.models.generateContent({ model, contents: llmsPrompt }),
     ai.models.generateContent({ model, contents: metaPrompt }),

@@ -136,7 +136,7 @@ Format de réponse (JSON) :
 Réponds UNIQUEMENT avec le JSON.`;
 
   try {
-    const result = await ai.models.generateContent({ model: 'gemini-2.0-flash', contents: prompt });
+    const result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
     const raw = (result.text ?? '').replace(/```json\n?|```\n?/g, '').trim();
     return JSON.parse(raw);
   } catch {

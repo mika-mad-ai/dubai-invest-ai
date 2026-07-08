@@ -3,7 +3,7 @@ import { GoogleGenAI, Chat } from "@google/genai";
 import { UserProfile, SimulationParams } from '../types';
 
 // Use a generally available model to avoid preview access issues.
-const MODEL_NAME = 'gemini-2.0-flash';
+const MODEL_NAME = 'gemini-2.5-flash';
 
 const getAI = () => {
   const apiKey = process.env.API_KEY;

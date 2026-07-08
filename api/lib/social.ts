@@ -25,8 +25,8 @@ const GEMINI_KEY = process.env.API_KEY ?? '';
 const SUPABASE_URL = process.env.SUPABASE_URL ?? '';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 
-const TEXT_MODEL  = process.env.SOCIAL_TEXT_MODEL  ?? 'gemini-2.0-flash';
-const IMAGE_MODEL = process.env.SOCIAL_IMAGE_MODEL ?? 'imagen-3.0-generate-002';
+const TEXT_MODEL  = process.env.SOCIAL_TEXT_MODEL  ?? 'gemini-2.5-flash';
+const IMAGE_MODEL = process.env.SOCIAL_IMAGE_MODEL ?? 'gemini-2.5-flash-image';
 const VIDEO_MODEL = process.env.SOCIAL_VIDEO_MODEL ?? 'veo-2.0-generate-001';
 
 const ENABLE_VIDEO = process.env.SOCIAL_ENABLE_VIDEO === 'true';
@@ -130,12 +130,24 @@ Réponds UNIQUEMENT avec un objet JSON valide (aucun texte autour), au format ex
 
 export async function generateImage(prompt: string): Promise<string | null> {
   try {
-    const resp: any = await ai().models.generateImages({
+    // Les modèles imagen-* passent par generateImages ; les modèles
+    // gemini-*-image génèrent via generateContent (inlineData en sortie).
+    if (IMAGE_MODEL.startsWith('imagen')) {
+      const resp: any = await ai().models.generateImages({
+        model: IMAGE_MODEL,
+        prompt,
+        config: { numberOfImages: 1, aspectRatio: '1:1' },
+      });
+      const bytes = resp?.generatedImages?.[0]?.image?.imageBytes;
+      return typeof bytes === 'string' ? bytes : null;
+    }
+    const resp: any = await ai().models.generateContent({
       model: IMAGE_MODEL,
-      prompt,
-      config: { numberOfImages: 1, aspectRatio: '1:1' },
+      contents: prompt,
+      config: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '1:1' } },
     });
-    const bytes = resp?.generatedImages?.[0]?.image?.imageBytes;
+    const parts: any[] = resp?.candidates?.[0]?.content?.parts ?? [];
+    const bytes = parts.find(p => p?.inlineData?.data)?.inlineData?.data;
     return typeof bytes === 'string' ? bytes : null;
   } catch (e: any) {
     console.error('[social] image generation failed:', e?.message ?? e);

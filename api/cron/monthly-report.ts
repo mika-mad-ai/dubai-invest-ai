@@ -141,14 +141,14 @@ STRUCTURE HTML REQUISE (retourne uniquement le contenu du <body>, sans <html>/<h
 
 Réponds UNIQUEMENT avec le HTML demandé, aucun texte avant/après.`;
 
-  const result = await ai.models.generateContent({ model: 'gemini-2.0-flash', contents: prompt });
+  const result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
   const rawHtml = result.text ?? '';
 
   const metaPrompt = `En une phrase de 145-160 caractères, meta description Google pour ce rapport :
 "Rapport immobilier Dubai ${month} ${year} — ${stats.total} annonces analysées. ${topYield?.label} : ${topYield?.avg_yield}%/an. Entrée dès ${cheapest?.min_eur?.toLocaleString('fr-FR')}€. Données PropertyFinder + DLD."
 Retourne UNIQUEMENT la meta description, améliorée pour maximiser le CTR.`;
 
-  const metaResult = await ai.models.generateContent({ model: 'gemini-2.0-flash', contents: metaPrompt });
+  const metaResult = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: metaPrompt });
 
   const title = `Rapport Immobilier Dubai ${month.charAt(0).toUpperCase() + month.slice(1)} ${year} — Analyse & Prix`;
   const meta_description = (metaResult.text ?? '').trim().replace(/^["']|["']$/g, '');
