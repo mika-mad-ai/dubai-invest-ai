@@ -177,8 +177,10 @@ async function generateBlogThumbnail(ai: GoogleGenAI, post: BlogPost): Promise<s
 async function fetchMarketStats(): Promise<MarketStats> {
   // Aggregate by zone using Supabase PostgREST
   // We fetch all listings and aggregate in JS (PostgREST doesn't support GROUP BY directly)
+  // Alias PostgREST vers le schéma réel de la table listings
+  // (price_aed, district_id, yield_pct)
   const listings = await supabaseQuery(
-    '/listings?select=price,district,yield_estimate,type,beds&limit=2000'
+    '/listings?select=price:price_aed,district:district_id,yield_estimate:yield_pct,type,beds&limit=2000'
   );
 
   if (!Array.isArray(listings) || listings.length === 0) {
