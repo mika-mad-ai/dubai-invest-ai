@@ -142,7 +142,18 @@ async function insertBlogPost(post: BlogPost, stats: MarketStats, imageUrl: stri
 
 async function generateBlogThumbnail(ai: GoogleGenAI, post: BlogPost): Promise<string | null> {
   try {
-    const prompt = `Cinematic editorial photograph illustrating a daily Dubai real estate market analysis titled "${post.title}". Photorealistic aerial or street-level view of Dubai skyline, modern residential towers, warm golden-hour light with deep blue sky, high-end financial magazine cover style, sharp details, no text, no watermark, no people in focus, 16:9 composition.`;
+    // Ne JAMAIS citer le titre dans le prompt : le modèle le dessine dans
+    // l'image (avec des fautes). Scène pure, variée selon le jour du mois.
+    const scenes = [
+      'aerial drone view of Dubai Marina towers and yachts at golden hour',
+      'Downtown Dubai skyline with Burj Khalifa at dusk, city lights turning on',
+      'modern residential towers of Business Bay reflecting warm sunset light over the canal',
+      'Palm Jumeirah aerial view with turquoise water and luxury villas',
+      'Jumeirah Village Circle low-rise residential district under a deep blue evening sky',
+      'Dubai Creek Harbour waterfront promenade with futuristic towers at sunrise',
+    ];
+    const scene = scenes[new Date().getDate() % scenes.length];
+    const prompt = `Photorealistic cinematic editorial photograph: ${scene}. High-end financial magazine aesthetic, sharp architectural details, warm golden light with deep blue sky, 16:9 composition. Absolutely NO text, NO letters, NO words, NO typography, NO captions, NO watermarks, NO logos, NO signage anywhere in the image.`;
     const resp: any = await ai.models.generateContent({
       model: IMAGE_MODEL,
       contents: prompt,
