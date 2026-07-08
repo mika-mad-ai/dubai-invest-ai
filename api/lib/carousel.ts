@@ -155,8 +155,12 @@ function buildTree(stats: CarouselStats, slide: number, coverBg?: string): Node 
         position: 'absolute', top: 0, left: 0, width: W, height: H, display: 'flex',
         backgroundImage: 'linear-gradient(180deg, rgba(5,5,5,0.55) 0%, rgba(5,5,5,0.30) 45%, rgba(5,5,5,0.88) 100%)',
       });
+      const coverImg: Node = {
+        type: 'img',
+        props: { src: coverBg, style: { position: 'absolute', top: 0, left: 0, width: W, height: H, objectFit: 'cover' } },
+      };
       return el('div', { width: W, height: H, display: 'flex', position: 'relative', backgroundColor: BG }, [
-        ...(coverBg ? [el('img', { position: 'absolute', top: 0, left: 0, width: W, height: H, objectFit: 'cover', src: coverBg } as any), overlay] : []),
+        ...(coverBg ? [coverImg, overlay] : []),
         el('div', { position: 'absolute', top: 0, left: 0, width: W, height: H, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 72 }, [
           el('div', { display: 'flex', fontFamily: 'Manrope', fontWeight: 800, fontSize: 38, color: CYAN, textTransform: 'uppercase', letterSpacing: 5 }, stats.date),
           el('div', { display: 'flex', flexDirection: 'column', gap: 30 }, [
