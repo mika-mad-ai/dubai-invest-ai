@@ -83,7 +83,8 @@ function mdToHtml(md: string): string {
 
 // ─── Layout HTML partagé ─────────────────────────────────────────────────────
 
-function pageShell(opts: { title: string; description: string; canonical: string; jsonLd: object[]; body: string }): string {
+function pageShell(opts: { title: string; description: string; canonical: string; jsonLd: object[]; body: string; ogImage?: string }): string {
+  const ogImage = opts.ogImage ?? `${BASE_URL}/NewLogoDubAInvestV2.png`;
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -98,7 +99,9 @@ function pageShell(opts: { title: string; description: string; canonical: string
 <meta property="og:url" content="${opts.canonical}" />
 <meta property="og:title" content="${escapeHtml(opts.title)}" />
 <meta property="og:description" content="${escapeHtml(opts.description)}" />
-<meta property="og:image" content="${BASE_URL}/NewLogoDubAInvestV2.png" />
+<meta property="og:image" content="${ogImage}" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="${ogImage}" />
 <meta property="og:locale" content="fr_FR" />
 ${opts.jsonLd.map(o => `<script type="application/ld+json">${JSON.stringify(o)}</script>`).join('\n')}
 <style>
@@ -116,6 +119,10 @@ ${opts.jsonLd.map(o => `<script type="application/ld+json">${JSON.stringify(o)}<
   header.site nav a { margin-left:16px; font-size:0.85rem; text-decoration:none; color:rgba(240,235,224,0.75); }
   header.site nav a:hover { color:#e2bf5c; }
   .meta { color:rgba(240,235,224,0.60); font-size:0.85rem; margin-bottom:32px; }
+  img.thumb { width:100%; height:auto; aspect-ratio:16/9; object-fit:cover; border-radius:14px; border:1px solid rgba(212,175,55,0.20); margin:8px 0 24px; }
+  ul.posts li { display:flex; gap:14px; align-items:center; }
+  ul.posts img { width:112px; aspect-ratio:16/9; object-fit:cover; border-radius:8px; border:1px solid rgba(212,175,55,0.18); flex-shrink:0; }
+  ul.posts .txt { min-width:0; }
   .cta { display:inline-block; margin-top:40px; padding:14px 28px; border-radius:999px; background:linear-gradient(135deg,#b8891e,#D4AF37 48%,#f0c060); color:#050505; font-weight:800; text-decoration:none; letter-spacing:0.04em; }
   ul.posts { list-style:none; padding:0; }
   ul.posts li { padding:14px 0; border-bottom:1px solid rgba(212,175,55,0.15); }
@@ -160,7 +167,7 @@ export default async function handler(
 
   // ── Article unique ──
   if (slug) {
-    const rows = await supabase(`/daily_posts?select=title,slug,content,created_at&slug=eq.${slug}&limit=1`);
+    const rows = await supabase(`/daily_posts?select=title,slug,content,created_at,image_url&slug=eq.${slug}&limit=1`);
     const post = rows?.[0];
     if (!post) {
       res.setHeader('Cache-Control', 'public, max-age=300');
@@ -184,6 +191,7 @@ export default async function handler(
       title: `${post.title} | DubaiInvest`,
       description,
       canonical,
+      ogImage: post.image_url ?? undefined,
       jsonLd: [{
         '@context': 'https://schema.org',
         '@type': 'Article',
@@ -194,7 +202,7 @@ export default async function handler(
         mainEntityOfPage: canonical,
         author: { '@type': 'Organization', name: 'DubaiInvest AI Advisor', url: BASE_URL },
         publisher: { '@type': 'Organization', name: 'DubaiInvest AI Advisor', url: BASE_URL, logo: { '@type': 'ImageObject', url: `${BASE_URL}/NewLogoDubAInvestV2.png` } },
-        image: `${BASE_URL}/NewLogoDubAInvestV2.png`,
+        image: post.image_url ?? `${BASE_URL}/NewLogoDubAInvestV2.png`,
       }, {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
@@ -206,13 +214,14 @@ export default async function handler(
       }],
       body: `<h1>${escapeHtml(post.title)}</h1>
 <p class="meta"><time datetime="${date}">Publié le ${date}</time> · DubaiInvest AI Advisor · Données PropertyFinder & DLD</p>
+${post.image_url ? `<img class="thumb" src="${post.image_url}" alt="${escapeHtml(post.title)} — vue de Dubaï" width="1408" height="792" />` : ''}
 ${mdToHtml(md)}
 <a class="cta" href="/">Simuler mon investissement à Dubaï →</a>`,
     }));
   }
 
   // ── Index /blog ──
-  const posts = (await supabase('/daily_posts?select=title,slug,created_at&order=created_at.desc&limit=90')) ?? [];
+  const posts = (await supabase('/daily_posts?select=title,slug,created_at,image_url&order=created_at.desc&limit=90')) ?? [];
   res.setHeader('Cache-Control', 'public, max-age=1800, stale-while-revalidate=86400');
   return res.status(200).end(pageShell({
     title: 'Analyses quotidiennes du marché immobilier de Dubaï | DubaiInvest',
@@ -236,7 +245,7 @@ ${mdToHtml(md)}
 <p class="meta">Un article par jour, généré à partir des annonces réelles (PropertyFinder) et des transactions DLD.</p>
 ${posts.length === 0
   ? '<p>Les premières analyses arrivent très bientôt. En attendant, découvrez nos <a href="/meilleurs-quartiers-dubai-investissement">guides quartiers</a>.</p>'
-  : `<ul class="posts">${posts.map((p: any) => `<li><time datetime="${(p.created_at ?? '').slice(0, 10)}">${(p.created_at ?? '').slice(0, 10)}</time><a href="/blog/${p.slug}">${escapeHtml(p.title)}</a></li>`).join('')}</ul>`}
+  : `<ul class="posts">${posts.map((p: any) => `<li>${p.image_url ? `<img src="${p.image_url}" alt="" loading="lazy" width="112" height="63" />` : ''}<div class="txt"><time datetime="${(p.created_at ?? '').slice(0, 10)}">${(p.created_at ?? '').slice(0, 10)}</time><a href="/blog/${p.slug}">${escapeHtml(p.title)}</a></div></li>`).join('')}</ul>`}
 <a class="cta" href="/">Simuler mon investissement à Dubaï →</a>`,
   }));
 }

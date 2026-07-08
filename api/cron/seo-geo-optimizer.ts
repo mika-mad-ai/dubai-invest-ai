@@ -27,6 +27,10 @@ const GEMINI_KEY = process.env.API_KEY!;
 const AED_TO_EUR = 1 / 4.24;
 const CRON_SECRET = process.env.CRON_SECRET ?? '';
 
+// Vignette d'article (Imagen). Réutilise le bucket public du social agent.
+const IMAGE_MODEL = process.env.SOCIAL_IMAGE_MODEL ?? 'imagen-3.0-generate-002';
+const STORAGE_BUCKET = process.env.SOCIAL_STORAGE_BUCKET ?? 'social-media';
+
 // ─── Zone display names ──────────────────────────────────────────────────────
 
 const ZONE_LABELS: Record<string, string> = {
@@ -112,7 +116,7 @@ async function upsertSEOContent(key: string, content: string, metadata: object =
   });
 }
 
-async function insertBlogPost(post: BlogPost, stats: MarketStats): Promise<void> {
+async function insertBlogPost(post: BlogPost, stats: MarketStats, imageUrl: string | null): Promise<void> {
   await fetch(`${SUPABASE_URL}/rest/v1/daily_posts`, {
     method: 'POST',
     headers: {
@@ -126,8 +130,46 @@ async function insertBlogPost(post: BlogPost, stats: MarketStats): Promise<void>
       slug: post.slug,
       content: post.content,
       market_stats: stats,
+      image_url: imageUrl,
     }),
   });
+}
+
+// ─── Vignette d'article via Imagen ───────────────────────────────────────────
+// Échec toléré : l'article est publié sans image si Imagen ou le Storage échoue
+// (Imagen exige un compte Gemini API payant).
+
+async function generateBlogThumbnail(ai: GoogleGenAI, post: BlogPost): Promise<string | null> {
+  try {
+    const prompt = `Cinematic editorial photograph illustrating a daily Dubai real estate market analysis titled "${post.title}". Photorealistic aerial or street-level view of Dubai skyline, modern residential towers, warm golden-hour light with deep blue sky, high-end financial magazine cover style, sharp details, no text, no watermark, no people in focus, 16:9 composition.`;
+    const resp: any = await ai.models.generateImages({
+      model: IMAGE_MODEL,
+      prompt,
+      config: { numberOfImages: 1, aspectRatio: '16:9' },
+    });
+    const base64 = resp?.generatedImages?.[0]?.image?.imageBytes;
+    if (typeof base64 !== 'string' || !base64) return null;
+
+    const path = `blog/${new Date().toISOString().slice(0, 10)}-${post.slug.slice(0, 80)}.png`;
+    const upload = await fetch(`${SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKET}/${path}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        apikey: SUPABASE_KEY,
+        'Content-Type': 'image/png',
+        'x-upsert': 'true',
+      },
+      body: Buffer.from(base64, 'base64'),
+    });
+    if (!upload.ok) {
+      console.error('[seo-geo] thumbnail upload failed:', upload.status, await upload.text());
+      return null;
+    }
+    return `${SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET}/${path}`;
+  } catch (e: any) {
+    console.error('[seo-geo] thumbnail generation failed:', e?.message ?? e);
+    return null;
+  }
 }
 
 // ─── Fetch market stats from Supabase listings ───────────────────────────────
@@ -440,6 +482,10 @@ export default async function handler(
     log.push(`✓ Twitter Post: ${socialPosts.twitter.slice(0, 60)}...`);
     log.push(`✓ LinkedIn Post: ${socialPosts.linkedin.slice(0, 60)}...`);
 
+    // 2b. Vignette de l'article via Imagen (échec toléré → article sans image)
+    log.push('Generating blog thumbnail via Imagen...');
+    const thumbnailUrl = await generateBlogThumbnail(new GoogleGenAI({ apiKey: GEMINI_KEY }), blogPost);
+    log.push(thumbnailUrl ? `✓ Thumbnail: ${thumbnailUrl}` : '⚠ Thumbnail skipped (Imagen/Storage unavailable)');
 
     // 3. Store in Supabase
     log.push('Storing content in Supabase...');
@@ -449,7 +495,7 @@ export default async function handler(
       upsertSEOContent('meta_description', meta_description, metadata),
       upsertSEOContent('faq_schema', JSON.stringify(faq_schema), metadata),
       upsertSEOContent('market_stats', buildMarketSummary(stats), metadata),
-      insertBlogPost(blogPost, stats),
+      insertBlogPost(blogPost, stats, thumbnailUrl),
     ]);
     log.push('✓ Stored 4 SEO content entries and 1 blog post.');
 
