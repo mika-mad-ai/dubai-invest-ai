@@ -16,10 +16,38 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { generateDailyContent, generateMedia, publishAll, type PublishResult } from '../lib/social';
+import { generateDailyContent, generateMedia, publishAll, type PublishResult, type ArticleContext } from '../lib/social';
 import { generateCarousel } from '../lib/carousel';
 
 const CRON_SECRET = process.env.CRON_SECRET ?? '';
+const SUPABASE_URL = (process.env.SUPABASE_URL ?? '').trim();
+const SUPABASE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '').trim();
+
+/**
+ * Récupère l'article de blog du jour (publié par seo-geo-optimizer à 4h UTC)
+ * pour que le post social le relaie et pointe vers sa page dédiée.
+ * Renvoie null si aucun article n'a été publié aujourd'hui (repli angle autonome).
+ */
+async function fetchTodayArticle(): Promise<ArticleContext | null> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return null;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/daily_posts?select=title,slug,created_at&order=created_at.desc&limit=1`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }, signal: AbortSignal.timeout(5_000) }
+    );
+    if (!res.ok) return null;
+    const rows: any[] = await res.json();
+    const post = rows[0];
+    if (!post?.slug) return null;
+    // On n'exige pas la date exacte : le plus récent article fait toujours foi,
+    // mais on ignore un article vieux de plus de 36h (cron 4h probablement en échec).
+    const ageMs = Date.now() - new Date(post.created_at).getTime();
+    if (ageMs > 36 * 3600 * 1000) return null;
+    return { title: post.title, slug: post.slug, url: `https://dubainvest.eu/blog/${post.slug}` };
+  } catch {
+    return null;
+  }
+}
 
 export default async function handler(
   req: { method: string; headers: Record<string, string>; query?: Record<string, string> },
@@ -42,8 +70,13 @@ export default async function handler(
   const log: string[] = [];
 
   try {
-    log.push('Génération de l\'angle éditorial du jour via Gemini + Google Search…');
-    const content = await generateDailyContent();
+    // Relaie l'article du jour (page dédiée du blog) s'il existe.
+    const article = await fetchTodayArticle();
+    if (article) log.push(`✓ Article du jour à relayer : « ${article.title} » → ${article.url}`);
+    else log.push('— Aucun article du jour trouvé : angle social autonome.');
+
+    log.push('Génération du post du jour via Gemini + Google Search…');
+    const content = await generateDailyContent(article ?? undefined);
     log.push(`✓ Sujet : ${content.topic}`);
     log.push(`✓ Titre : ${content.title}`);
 

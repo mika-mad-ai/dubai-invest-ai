@@ -75,14 +75,32 @@ const ai = () => new GoogleGenAI({ apiKey: GEMINI_KEY });
 
 // ─── 1. Génération du contenu (texte) ────────────────────────────────────────
 
-export async function generateDailyContent(): Promise<DailyContent> {
+/** Article du jour publié sur le blog — sert d'angle et de destination au post. */
+export interface ArticleContext {
+  title: string;
+  slug: string;
+  url: string;
+}
+
+export async function generateDailyContent(article?: ArticleContext): Promise<DailyContent> {
   const today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  // Si l'article du jour existe, le post social le relaie et pointe vers sa page
+  // dédiée (au lieu d'un angle indépendant). Sinon, angle géopolitique autonome.
+  const link = article?.url ?? SITE_URL;
+  const angleBrief = article
+    ? `L'article du jour vient d'être publié sur le blog DubaiInvest :
+TITRE : « ${article.title} »
+URL À PARTAGER : ${link}
+
+Ta mission : rédiger les posts qui donnent envie de LIRE cet article. Résume son intérêt (marché immobilier Dubaï, chiffres, opportunités) sans tout dévoiler, et invite à cliquer. NE change PAS de sujet.`
+    : `En t'appuyant sur l'actualité RÉELLE et RÉCENTE (utilise Google Search), choisis UN angle éditorial fort du jour croisant l'ACTUALITÉ GÉOPOLITIQUE (Moyen-Orient, économie mondiale, flux de capitaux) ET son impact sur l'IMMOBILIER À DUBAÏ (prix, rendements, demande, Golden Visa).`;
 
   const prompt = `Tu es le responsable social media de "DubaiInvest", plateforme d'investissement immobilier à Dubaï pour investisseurs internationaux.
 
-Nous sommes le ${today}. En t'appuyant sur l'actualité RÉELLE et RÉCENTE (utilise Google Search) :
-1. Choisis UN angle éditorial fort du jour croisant l'ACTUALITÉ GÉOPOLITIQUE (Moyen-Orient, économie mondiale, flux de capitaux) ET son impact sur l'IMMOBILIER À DUBAÏ (prix, rendements, demande, Golden Visa).
-2. Rédige un post engageant, factuel, sans survente, orienté investisseur.
+Nous sommes le ${today}. ${angleBrief}
+
+Rédige un post engageant, factuel, sans survente, orienté investisseur.
 
 Réponds UNIQUEMENT avec un objet JSON valide (aucun texte autour), au format exact :
 {
@@ -90,10 +108,10 @@ Réponds UNIQUEMENT avec un objet JSON valide (aucun texte autour), au format ex
   "title": "titre court accrocheur (max 70 caractères, pour YouTube)",
   "caption": "légende principale, 3-5 phrases, ton expert et accessible, 1 emoji max par phrase",
   "perPlatform": {
-    "facebook": "version Facebook (2-4 phrases, invite à commenter, finit par un lien ${SITE_URL})",
-    "instagram": "version Instagram (accroche + 2-3 phrases + appel à l'action 'lien en bio', plus visuelle)",
+    "facebook": "version Facebook (2-4 phrases, invite à commenter, finit par le lien ${link})",
+    "instagram": "version Instagram (accroche + 2-3 phrases + appel à l'action 'article complet, lien en bio', plus visuelle)",
     "tiktok": "version TikTok très courte, punchy, 1-2 phrases, ton direct",
-    "youtube": "description YouTube Short (2-3 phrases + ${SITE_URL})"
+    "youtube": "description YouTube Short (2-3 phrases + ${link})"
   },
   "hashtags": ["8 à 12 hashtags pertinents sans le #, mix EN/FR: DubaiRealEstate, InvestInDubai, ImmobilierDubai, GoldenVisa, ..."],
   "imagePrompt": "prompt EN détaillé pour générer une image photoréaliste, luxueuse, editorial, skyline/immobilier Dubaï illustrant l'angle du jour, sans texte incrusté, aspect cinématographique",
@@ -115,10 +133,12 @@ Réponds UNIQUEMENT avec un objet JSON valide (aucun texte autour), au format ex
     return parsed;
   } catch {
     // Fallback minimal si le JSON ne parse pas
-    const fallback = `Dubaï reste une valeur refuge : 0 % d'impôt sur les loyers, rendements 6–9 %, Golden Visa dès 545 000 €. Analyse du jour → ${SITE_URL}`;
+    const fallback = article
+      ? `${article.title} — notre analyse du marché immobilier de Dubaï. À lire → ${link}`
+      : `Dubaï reste une valeur refuge : 0 % d'impôt sur les loyers, rendements 6–9 %, Golden Visa dès 545 000 €. Analyse du jour → ${link}`;
     return {
-      topic: 'Fallback — résilience du marché immobilier de Dubaï',
-      title: 'Investir à Dubaï en 2026',
+      topic: article ? `Relai de l'article : ${article.title}` : 'Fallback — résilience du marché immobilier de Dubaï',
+      title: article?.title?.slice(0, 70) ?? 'Investir à Dubaï en 2026',
       caption: fallback,
       perPlatform: { facebook: fallback, instagram: fallback, tiktok: fallback, youtube: fallback },
       hashtags: ['DubaiRealEstate', 'InvestInDubai', 'ImmobilierDubai', 'GoldenVisa', 'RealEstate', 'Dubai'],
