@@ -20,6 +20,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { GoogleGenAI } from '@google/genai';
+import { pickDailyPhoto } from '../lib/stock-photos';
 
 const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -31,6 +32,9 @@ const CRON_SECRET = process.env.CRON_SECRET ?? '';
 // disponible sur cette clé API). Réutilise le bucket public du social agent.
 const IMAGE_MODEL = process.env.BLOG_IMAGE_MODEL ?? 'gemini-2.5-flash-image';
 const STORAGE_BUCKET = process.env.SOCIAL_STORAGE_BUCKET ?? 'social-media';
+// Mode économe par défaut : photo de stock Dubaï pour la vignette (gratuit).
+// Passer SOCIAL_ENABLE_AI_IMAGES=true pour régénérer par Gemini (payant).
+const ENABLE_AI_IMAGES = process.env.SOCIAL_ENABLE_AI_IMAGES === 'true';
 
 // ─── Zone display names ──────────────────────────────────────────────────────
 
@@ -141,6 +145,10 @@ async function insertBlogPost(post: BlogPost, stats: MarketStats, imageUrl: stri
 // Storage échoue.
 
 async function generateBlogThumbnail(ai: GoogleGenAI, post: BlogPost): Promise<string | null> {
+  // Mode économe : photo Dubaï de stock (URL publique directe, aucune dépense).
+  if (!ENABLE_AI_IMAGES) {
+    return pickDailyPhoto(1, 1600); // offset 1 : vignette différente du post social
+  }
   try {
     // Ne JAMAIS citer le titre dans le prompt : le modèle le dessine dans
     // l'image (avec des fautes). Scène pure, variée selon le jour du mois.

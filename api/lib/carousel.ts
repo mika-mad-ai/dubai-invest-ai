@@ -210,8 +210,18 @@ const FONTS = [
   { name: 'Manrope', data: Buffer.from(MANROPE_800, 'base64'), weight: 800 as const, style: 'normal' as const },
 ];
 
+/** Data URI avec le bon type MIME détecté depuis les octets (PNG Gemini vs JPEG stock). */
+function toDataUri(base64: string): string {
+  const head = Buffer.from(base64.slice(0, 12), 'base64');
+  let mime = 'image/jpeg';
+  if (head[0] === 0x89 && head[1] === 0x50) mime = 'image/png';
+  else if (head[0] === 0xff && head[1] === 0xd8) mime = 'image/jpeg';
+  else if (head[8] === 0x57 && head[9] === 0x45) mime = 'image/webp';
+  return `data:${mime};base64,${base64}`;
+}
+
 export async function renderSlide(stats: CarouselStats, slide: number, coverImageBase64?: string): Promise<Buffer> {
-  const coverBg = coverImageBase64 ? `data:image/png;base64,${coverImageBase64}` : undefined;
+  const coverBg = coverImageBase64 ? toDataUri(coverImageBase64) : undefined;
   const svg = await satori(buildTree(stats, slide, coverBg) as any, { width: W, height: H, fonts: FONTS });
   return sharp(Buffer.from(svg)).png({ quality: 92 }).toBuffer();
 }

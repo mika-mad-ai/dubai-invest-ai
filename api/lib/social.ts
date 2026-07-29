@@ -20,6 +20,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { GoogleGenAI } from '@google/genai';
+import { pickDailyPhoto, fetchPhotoBase64 } from './stock-photos';
 
 const GEMINI_KEY = process.env.API_KEY ?? '';
 const SUPABASE_URL = process.env.SUPABASE_URL ?? '';
@@ -30,6 +31,9 @@ const IMAGE_MODEL = process.env.SOCIAL_IMAGE_MODEL ?? 'gemini-2.5-flash-image';
 const VIDEO_MODEL = process.env.SOCIAL_VIDEO_MODEL ?? 'veo-2.0-generate-001';
 
 const ENABLE_VIDEO = process.env.SOCIAL_ENABLE_VIDEO === 'true';
+// Mode économe par défaut : photos de stock Dubaï (gratuit). Passer à 'true'
+// pour réactiver la génération d'image Gemini (payante) après reset du budget.
+const ENABLE_AI_IMAGES = process.env.SOCIAL_ENABLE_AI_IMAGES === 'true';
 const STORAGE_BUCKET = process.env.SOCIAL_STORAGE_BUCKET ?? 'social-media';
 
 const SITE_URL = 'https://dubainvest.eu';
@@ -249,6 +253,16 @@ async function uploadToStorage(base64: string, ext: 'png' | 'mp4', contentType: 
 export async function generateMedia(content: DailyContent): Promise<GeneratedMedia> {
   const media: GeneratedMedia = {};
 
+  // Mode économe (défaut) : photo Dubaï de stock, aucune dépense Gemini.
+  // L'URL publique sert au post FB/IG ; les octets servent de fond au carrousel.
+  if (!ENABLE_AI_IMAGES) {
+    // &fm=jpg : force le JPEG (satori et FB/IG gèrent mal le webp d'Unsplash).
+    media.imageUrl = pickDailyPhoto(0, 1600) + '&fm=jpg';
+    media.imageBase64 = (await fetchPhotoBase64(pickDailyPhoto(0, 1200) + '&fm=jpg')) ?? undefined;
+    return media;
+  }
+
+  // Mode IA : génération Gemini (payante).
   const [imageBase64, videoBase64] = await Promise.all([
     generateImage(content.imagePrompt),
     generateVideo(content.videoPrompt),
