@@ -122,14 +122,15 @@ Réponds UNIQUEMENT avec un objet JSON valide (aucun texte autour), au format ex
   "videoPrompt": "prompt EN pour une vidéo verticale 9:16 de 5-8s, plans aériens cinématographiques de Dubaï illustrant l'angle, mouvement de caméra fluide, sans texte"
 }`;
 
-  const result = await ai().models.generateContent({
-    model: TEXT_MODEL,
-    contents: prompt,
-    config: { temperature: 0.7, tools: [{ googleSearch: {} }] },
-  });
-
-  const raw = (result.text ?? '').replace(/```json\n?|```\n?/g, '').trim();
   try {
+    // L'appel Gemini est DANS le try : si le texte échoue (quota/cap 429,
+    // réseau…), on retombe sur le fallback au lieu de faire planter le run.
+    const result = await ai().models.generateContent({
+      model: TEXT_MODEL,
+      contents: prompt,
+      config: { temperature: 0.7, tools: [{ googleSearch: {} }] },
+    });
+    const raw = (result.text ?? '').replace(/```json\n?|```\n?/g, '').trim();
     const parsed = JSON.parse(raw) as DailyContent;
     // Garde-fous
     parsed.hashtags = Array.isArray(parsed.hashtags) ? parsed.hashtags.slice(0, 12) : [];

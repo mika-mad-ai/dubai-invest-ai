@@ -412,9 +412,11 @@ RÈGLES :
 - Réponds uniquement avec le texte du post.`;
 
 
-  // Call Gemini for all content in parallel
+  // Call Gemini for all content in parallel. allSettled (pas all) : si un appel
+  // échoue (quota/cap 429), les autres passent et l'article est publié quand
+  // même — chaque bloc a son fallback ci-dessous.
   const model = 'gemini-2.5-flash';
-  const [llmsResult, metaResult, faqResult, blogResult, twitterResult, linkedinResult] = await Promise.all([
+  const settled = await Promise.allSettled([
     ai.models.generateContent({ model, contents: llmsPrompt }),
     ai.models.generateContent({ model, contents: metaPrompt }),
     ai.models.generateContent({ model, contents: faqPrompt }),
@@ -422,9 +424,18 @@ RÈGLES :
     ai.models.generateContent({ model, contents: twitterPrompt }),
     ai.models.generateContent({ model, contents: linkedinPrompt }),
   ]);
+  const textAt = (i: number): string =>
+    settled[i].status === 'fulfilled' ? ((settled[i] as PromiseFulfilledResult<any>).value.text ?? '') : '';
+  const llmsResult = { text: textAt(0) };
+  const metaResult = { text: textAt(1) };
+  const faqResult = { text: textAt(2) };
+  const blogResult = { text: textAt(3) };
+  const twitterResult = { text: textAt(4) };
+  const linkedinResult = { text: textAt(5) };
 
-  const llms_txt = llmsResult.text ?? '';
-  const meta_description = (metaResult.text ?? '').trim().replace(/^["']|["']$/g, '');
+  const llms_txt = llmsResult.text || `# DubaiInvest AI Advisor — données du ${stats.date}\n\n${summary}\n\nMeilleur rendement : ${stats.top_yield_zone?.label} (${stats.top_yield_zone?.avg_yield}%/an). Ticket d'entrée dès ${stats.most_affordable_zone?.min_price_eur?.toLocaleString('fr-FR')}€. 0 % d'impôt sur les loyers, Golden Visa dès 545 000 €.\n\nSimulateur : https://dubainvest.eu`;
+  const meta_description = (metaResult.text ?? '').trim().replace(/^["']|["']$/g, '')
+    || `Investir à Dubaï en ${year} : rendement locatif jusqu'à ${stats.top_yield_zone?.avg_yield ?? 7}%, 0 % d'impôt, Golden Visa. Analyse quotidienne de ${stats.total_listings} annonces réelles.`;
 
   let faq_schema: object = {};
   try {
