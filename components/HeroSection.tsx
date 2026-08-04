@@ -266,7 +266,8 @@ interface HeroSectionProps {
 // piscine à débordement), remplacer public/hero-scrub.mp4 (mêmes specs :
 // H.264, keyframes fréquentes -g 4, muet, +faststart). Voir docs/HERO_SEQUENCE.md.
 const SCRUB_VIDEO = '/hero-scrub.mp4';
-const BG_IMAGE = 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=55&w=1280&auto=format&fit=crop';
+// Poster = 1re frame de la vidéo Veo (mer/désert) → chargement cohérent avec le scrub.
+const BG_IMAGE = '/hero-poster.jpg';
 
 export default function HeroSection({ avgYield, avgPrice, totalTransactions, onCTAClick }: HeroSectionProps) {
   const { t, locale } = useI18n();
