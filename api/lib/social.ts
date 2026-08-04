@@ -375,6 +375,16 @@ async function publishInstagram(content: DailyContent, media: GeneratedMedia): P
       const carData: any = await carRes.json();
       if (!carRes.ok || !carData?.id) return { platform: 'instagram', ok: false, error: JSON.stringify(carData?.error ?? carData) };
 
+      // Le container CAROUSEL doit être FINISHED avant publication, sinon
+      // "Media is not ready" (9007). On poll le status_code jusqu'à 60s.
+      for (let i = 0; i < 12; i++) {
+        const st = await fetch(`https://graph.facebook.com/${v}/${carData.id}?fields=status_code&access_token=${token}`);
+        const sd: any = await st.json();
+        if (sd?.status_code === 'FINISHED') break;
+        if (sd?.status_code === 'ERROR') return { platform: 'instagram', ok: false, error: 'container status ERROR' };
+        await new Promise(r => setTimeout(r, 5_000));
+      }
+
       const pubRes = await fetch(`https://graph.facebook.com/${v}/${igUserId}/media_publish`, {
         method: 'POST',
         body: new URLSearchParams({ creation_id: carData.id, access_token: token }),
@@ -500,11 +510,14 @@ async function publishYouTube(content: DailyContent, media: GeneratedMedia): Pro
   }
 }
 
-export async function publishAll(content: DailyContent, media: GeneratedMedia): Promise<PublishResult[]> {
-  return Promise.all([
-    publishFacebook(content, media),
-    publishInstagram(content, media),
-    publishTikTok(content, media),
-    publishYouTube(content, media),
-  ]);
+export async function publishAll(content: DailyContent, media: GeneratedMedia, only?: Platform): Promise<PublishResult[]> {
+  const all: Record<Platform, () => Promise<PublishResult>> = {
+    facebook: () => publishFacebook(content, media),
+    instagram: () => publishInstagram(content, media),
+    tiktok: () => publishTikTok(content, media),
+    youtube: () => publishYouTube(content, media),
+  };
+  // ?only=<platform> : republier une seule plateforme (évite les doublons).
+  const targets = only ? [only] : (Object.keys(all) as Platform[]);
+  return Promise.all(targets.map(p => all[p]()));
 }

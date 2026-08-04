@@ -103,7 +103,8 @@ export default async function handler(
       results = [];
     } else {
       log.push('Publication sur les réseaux configurés…');
-      results = await publishAll(content, media);
+      const only = (req as any).query?.only as ('facebook' | 'instagram' | 'tiktok' | 'youtube' | undefined);
+      results = await publishAll(content, media, only);
       for (const r of results) {
         if (r.skipped) log.push(`— ${r.platform} : ignoré (${r.error ?? 'identifiants absents'})`);
         else if (r.ok) log.push(`✓ ${r.platform} : publié (${r.id ?? 'ok'})`);
