@@ -216,7 +216,44 @@ const HeroAIChat: React.FC<{ onCTAClick?: () => void }> = ({ onCTAClick }) => {
   );
 };
 
-// ── Hero Section (Scroll Expansion) ───────────────────────────────────────────
+// ── Titre cinématographique ──────────────────────────────────────────────────
+const HeroTitle: React.FC<{ t: any }> = ({ t }) => (
+  <h1 className="flex flex-col items-center gap-2 md:gap-3 select-none" style={{ margin: 0 }}>
+    <span style={{ display: 'block', fontFamily: '"Sora",sans-serif', fontSize: 'clamp(2rem,5.5vw,4.5rem)', fontWeight: 700, lineHeight: 1.08, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #D4AF37 0%, #f0c060 45%, #00F2FF 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', filter: 'drop-shadow(0 2px 6px rgba(5,5,5,0.9)) drop-shadow(0 6px 24px rgba(5,5,5,0.7))' }}>{t.hero.title1}</span>
+    <span style={{ display: 'block', fontFamily: '"Sora",sans-serif', fontStyle: 'italic', fontSize: 'clamp(2rem,5.5vw,4.5rem)', fontWeight: 700, lineHeight: 1.08, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #00F2FF 0%, #D4AF37 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', filter: 'drop-shadow(0 2px 6px rgba(5,5,5,0.9)) drop-shadow(0 6px 24px rgba(5,5,5,0.7))' }}>{t.hero.title2}</span>
+  </h1>
+);
+
+// ── Bloc de contenu révélé après le scrub ────────────────────────────────────
+const HeroContent: React.FC<{ t: any; metrics: { icon: React.ReactNode; label: string; value: string; sub: string }[]; onCTAClick?: () => void; show: boolean }> = ({ t, metrics, onCTAClick, show }) => (
+  <section className="relative w-full" style={{ background: '#050505' }}>
+    <LiquidAuroraCanvas />
+    <motion.div className="flex flex-col w-full" initial={{ opacity: 0 }} animate={{ opacity: show ? 1 : 0 }} transition={{ duration: 0.8 }} style={{ zIndex: 10, position: 'relative' }}>
+      <div className="w-full max-w-4xl mx-auto px-4 md:px-6 flex flex-col items-center text-center" style={{ paddingTop: 'clamp(2rem, 6vw, 4rem)', paddingBottom: '4rem', gap: 'clamp(1.25rem, 3vw, 2rem)' }}>
+        <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={show ? { opacity: 1, scale: 1 } : {}} transition={{ duration: 0.5, delay: 0.1 }}>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full relative overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.32)', background: 'rgba(212,175,55,0.07)', backdropFilter: 'blur(12px)' }}>
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}><Sparkles size={9} style={{ color: '#D4AF37' }} /></motion.div>
+            <span style={{ color: '#D4AF37', fontSize: '0.62rem', fontFamily: '"Manrope",sans-serif', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase' }}>{t.hero.badge}</span>
+          </div>
+        </motion.div>
+        <motion.p initial={{ opacity: 0, y: 16 }} animate={show ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0.2 }} style={{ color: 'rgba(240,235,224,0.78)', fontFamily: '"Manrope",sans-serif', fontSize: 'clamp(0.9rem,1.6vw,1.1rem)', maxWidth: '540px', lineHeight: 1.7 }}>{t.hero.subtitle}</motion.p>
+        <div className="w-full"><HeroAIChat onCTAClick={onCTAClick} /></div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={show ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0.4 }} className="relative">
+          <motion.button onClick={onCTAClick} whileHover={{ scale: 1.04, boxShadow: '0 0 50px rgba(212,175,55,0.55), 0 0 100px rgba(0,242,255,0.18)' }} whileTap={{ scale: 0.97 }} className="relative inline-flex items-center gap-3 overflow-hidden" style={{ padding: '1rem 2.4rem', borderRadius: '9999px', background: 'linear-gradient(135deg, #b8891e 0%, #D4AF37 48%, #f0c060 100%)', color: '#050505', fontFamily: '"Manrope",sans-serif', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.10em', textTransform: 'uppercase', boxShadow: '0 0 30px rgba(212,175,55,0.42), 0 4px 24px rgba(0,0,0,0.6)', border: 'none', cursor: 'pointer' }}>
+            <span style={{ position: 'relative' }}>{t.hero.cta}</span>
+            <motion.div animate={{ x: [0, 4, 0] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ position: 'relative' }}><ArrowRight size={14} /></motion.div>
+          </motion.button>
+        </motion.div>
+        <div style={{ width: 1, height: 48, background: 'linear-gradient(to bottom, rgba(212,175,55,0.50), transparent)' }} />
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 w-full">
+          {metrics.map((m, i) => <MetricCard key={i} icon={m.icon} label={m.label} value={m.value} sub={m.sub} delay={0.1 + i * 0.08} />)}
+        </div>
+      </div>
+    </motion.div>
+  </section>
+);
+
+// ── Hero Section — vidéo cinématographique scrubée au scroll (type Apple) ─────
 interface HeroSectionProps {
   avgYield: number;
   avgPrice: number;
@@ -224,70 +261,92 @@ interface HeroSectionProps {
   onCTAClick?: () => void;
 }
 
+// Vidéo pilotée image par image par le scroll. Pour la séquence finale
+// (mer/désert → skyline qui s'assemble → Burj Khalifa "Magneto" → appartement →
+// piscine à débordement), remplacer public/hero-scrub.mp4 (mêmes specs :
+// H.264, keyframes fréquentes -g 4, muet, +faststart). Voir docs/HERO_SEQUENCE.md.
+const SCRUB_VIDEO = '/hero-scrub.mp4';
 const BG_IMAGE = 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=55&w=1280&auto=format&fit=crop';
 
 export default function HeroSection({ avgYield, avgPrice, totalTransactions, onCTAClick }: HeroSectionProps) {
   const { t, locale } = useI18n();
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [showContent,    setShowContent]     = useState(false);
-  const [isMobile,       setIsMobile]        = useState(false);
-  const [metricsReady,   setMetricsReady]    = useState(false);
-  const [shouldLoadVideo, setShouldLoadVideo] = useState(true);
-  const [videoLoaded, setVideoLoaded] = useState(false);
-  const [showBgImage, setShowBgImage] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [progress, setProgress] = useState(0);
+  const [showContent, setShowContent] = useState(false);
+  const [metricsReady, setMetricsReady] = useState(false);
+  const [reduced, setReduced] = useState(false);
 
   const animYield = useCountUp(Math.round(avgYield * 10), 1600, metricsReady);
   const animPrice = useCountUp(avgPrice, 2200, metricsReady);
   const animTx    = useCountUp(totalTransactions, 1900, metricsReady);
 
-  // Trigger count-up once content is visible
+  // reduced-motion / écran tactile / mobile : le scrub vidéo est saccadé →
+  // on bascule sur un fallback (vidéo en boucle + contenu directement visible).
   useEffect(() => {
-    if (showContent) { const t = setTimeout(() => setMetricsReady(true), 400); return () => clearTimeout(t); }
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const coarse = window.matchMedia('(pointer: coarse)');
+    const update = () => setReduced(mq.matches || coarse.matches || window.innerWidth < 768);
+    update();
+    mq.addEventListener('change', update);
+    coarse.addEventListener('change', update);
+    window.addEventListener('resize', update);
+    return () => { mq.removeEventListener('change', update); coarse.removeEventListener('change', update); window.removeEventListener('resize', update); };
+  }, []);
+
+  useEffect(() => {
+    if (showContent) { const id = setTimeout(() => setMetricsReady(true), 400); return () => clearTimeout(id); }
   }, [showContent]);
 
-  // Mobile detection
+  // Scroll-scrubbing : mappe la progression du scroll sur video.currentTime,
+  // lissé (lerp) dans une boucle rAF pour éviter les à-coups de seek.
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
+    if (reduced) return;
+    const section = sectionRef.current;
+    const video = videoRef.current;
+    if (!section || !video) return;
 
-
-  useEffect(() => {
-    if (videoLoaded) {
-      setShowBgImage(true);
-      return;
-    }
-    const t = setTimeout(() => setShowBgImage(true), 1600);
-    return () => clearTimeout(t);
-  }, [videoLoaded]);
-
-  // Native scroll drives the expansion — the hero section is taller than the
-  // viewport and its inner stage is position:sticky, so wheel, keyboard,
-  // touch and scrollbar all work without hijacking any event.
-  useEffect(() => {
     let raf = 0;
-    const update = () => {
-      raf = 0;
-      const el = sectionRef.current;
-      if (!el) return;
-      const dist = el.offsetHeight - window.innerHeight;
-      const p = dist > 0 ? Math.min(Math.max((window.scrollY - el.offsetTop) / dist, 0), 1) : 1;
-      setScrollProgress(p);
-      setShowContent(p >= 0.85);
+    let targetTime = 0;
+    let smoothTime = 0;
+    let duration = video.duration || 8;
+    const onMeta = () => { duration = video.duration || 8; };
+    video.addEventListener('loadedmetadata', onMeta);
+
+    const readScroll = () => {
+      const dist = section.offsetHeight - window.innerHeight;
+      const p = dist > 0 ? Math.min(Math.max((window.scrollY - section.offsetTop) / dist, 0), 1) : 0;
+      setProgress(p);
+      setShowContent(p >= 0.9);
+      targetTime = p * (duration - 0.05);
     };
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
-    update();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
+
+    const tick = () => {
+      smoothTime += (targetTime - smoothTime) * 0.12;
+      if (Math.abs(targetTime - smoothTime) < 0.004) smoothTime = targetTime;
+      if (video.readyState >= 2 && Math.abs(video.currentTime - smoothTime) > 0.01) {
+        try { video.currentTime = smoothTime; } catch { /* seek pas prêt */ }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+
+    readScroll();
+    raf = requestAnimationFrame(tick);
+    window.addEventListener('scroll', readScroll, { passive: true });
+    window.addEventListener('resize', readScroll);
     return () => {
-      if (raf) cancelAnimationFrame(raf);
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
+      cancelAnimationFrame(raf);
+      video.removeEventListener('loadedmetadata', onMeta);
+      window.removeEventListener('scroll', readScroll);
+      window.removeEventListener('resize', readScroll);
     };
-  }, []);
+  }, [reduced]);
+
+  const metrics = [
+    { icon: <TrendingUp size={20} />, label: t.hero.metricYield, value: `${(animYield / 10).toFixed(1)}%`, sub: t.hero.metricYieldSub },
+    { icon: <Building2  size={20} />, label: t.hero.metricPrice, value: animPrice.toLocaleString(locale), sub: t.hero.metricPriceSub },
+    { icon: <BarChart3  size={20} />, label: t.hero.metricTx,    value: animTx.toLocaleString(locale),    sub: t.hero.metricTxSub },
+  ];
 
   const skipToContent = () => {
     const el = sectionRef.current;
@@ -295,231 +354,43 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
     window.scrollTo({ top: el.offsetTop + el.offsetHeight - window.innerHeight, behavior: 'smooth' });
   };
 
-  // Video dimensions
-  const videoW   = 320 + scrollProgress * (isMobile ? 600 : 1220);
-  const videoH   = 200 + scrollProgress * (isMobile ? 220 : 440);
-  const titleShift = scrollProgress * (isMobile ? 90 : 130);
+  // ── Fallback mobile / reduced-motion ──
+  if (reduced) {
+    return (
+      <div style={{ backgroundColor: '#050505' }}>
+        <section className="relative w-full h-[100dvh] overflow-hidden">
+          <video src={SCRUB_VIDEO} autoPlay muted loop playsInline preload="metadata" poster={BG_IMAGE} aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(5,5,5,0.55) 0%, rgba(5,5,5,0.35) 45%, rgba(5,5,5,0.85) 100%)' }} />
+          <div className="relative z-10 flex flex-col items-center justify-center h-full px-6 text-center">
+            <HeroTitle t={t} />
+          </div>
+        </section>
+        <HeroContent t={t} metrics={metrics} onCTAClick={onCTAClick} show={true} />
+      </div>
+    );
+  }
 
-  const metrics = [
-    { icon: <TrendingUp size={20} />, label: t.hero.metricYield, value: `${(animYield / 10).toFixed(1)}%`,    sub: t.hero.metricYieldSub },
-    { icon: <Building2  size={20} />, label: t.hero.metricPrice, value: animPrice.toLocaleString(locale),     sub: t.hero.metricPriceSub },
-    { icon: <BarChart3  size={20} />, label: t.hero.metricTx,    value: animTx.toLocaleString(locale),        sub: t.hero.metricTxSub },
-  ];
+  const titleOpacity = Math.max(0, 1 - progress * 2.2);
+  const titleY = progress * -80;
 
   return (
-    // No overflow on this wrapper: it would break position:sticky below.
-    // Horizontal clipping is handled by the sticky stage itself + body{overflow-x:hidden}.
     <div style={{ backgroundColor: '#050505' }}>
-      {/* Taller-than-viewport section: scrolling through it drives the expansion */}
-      <section ref={sectionRef} className="relative" style={{ height: '220vh' }}>
-        <div className="sticky top-0 w-full h-dvh overflow-hidden">
-
-          {/* Aurora background */}
-          <LiquidAuroraCanvas />
-
-          {/* Dubai background image — fades out as video expands */}
-          {showBgImage && (
-            <motion.div
-              className="absolute inset-0 h-full"
-              style={{ zIndex: 2 }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 - scrollProgress * 1.4 }}
-              transition={{ duration: 0.3 }}
-            >
-              <img src={BG_IMAGE} alt="" className="w-screen h-screen object-cover object-center" loading="eager" decoding="async" />
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(5,5,5,0.55) 0%, rgba(5,5,5,0.35) 50%, rgba(5,5,5,0.70) 100%)' }} />
-            </motion.div>
-          )}
-
-          {/* ── Expansion stage ── */}
-          <div className="flex flex-col items-center justify-center w-full h-full relative" style={{ zIndex: 10 }}>
-
-            {/* Video */}
-            {/* Halo glow ring — behind the video */}
-            <div
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-              style={{
-                width: `${videoW + 80}px`,
-                height: `${videoH + 80}px`,
-                maxWidth: '110vw',
-                borderRadius: `${24 - scrollProgress * 22}px`,
-                background: `radial-gradient(ellipse at center, rgba(212,175,55,${0.55 - scrollProgress * 0.40}) 0%, rgba(0,242,255,${0.20 - scrollProgress * 0.15}) 40%, transparent 70%)`,
-                filter: 'blur(28px)',
-                opacity: Math.max(0, 1 - scrollProgress * 1.2),
-                zIndex: 0,
-              }}
-            />
-            <div
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl overflow-hidden"
-              style={{
-                width: `${videoW}px`,
-                height: `${videoH}px`,
-                maxWidth: '100vw',
-                maxHeight: '100vh',
-                boxShadow: `0 0 ${80 + scrollProgress * 40}px rgba(212,175,55,${0.45 - scrollProgress * 0.40}), 0 0 ${40 + scrollProgress * 20}px rgba(0,242,255,${0.20 - scrollProgress * 0.18})`,
-                transition: 'none',
-                borderRadius: `${18 - scrollProgress * 18}px`,
-                zIndex: 1,
-              }}
-            >
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'radial-gradient(ellipse at center, rgba(212,175,55,0.35) 0%, rgba(0,242,255,0.16) 40%, rgba(5,5,5,0.95) 100%)',
-                  opacity: videoLoaded ? 0 : 1,
-                  transition: 'opacity 320ms ease',
-                  zIndex: 1,
-                }}
-              />
-              <video
-                src={shouldLoadVideo ? '/hero-video.mp4' : undefined}
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-                poster={BG_IMAGE}
-                onLoadedData={() => setVideoLoaded(true)}
-                className="w-full h-full object-cover"
-                aria-hidden="true"
-              />
-              <motion.div
-                className="absolute inset-0"
-                style={{ background: '#050505' }}
-                animate={{ opacity: 0.68 - scrollProgress * 0.68 }}
-                transition={{ duration: 0.05 }}
-              />
-            </div>
-
-            {/* Title — splits vertically as video expands */}
-            <h1 className="relative z-10 flex flex-col items-center gap-3 px-6 text-center pointer-events-none select-none" style={{ margin: 0, fontWeight: 700 }}>
-              <motion.span
-                style={{
-                  display: 'block',
-                  fontFamily: '"Sora",sans-serif',
-                  fontSize: 'clamp(2rem,5.5vw,4.5rem)',
-                  fontWeight: 700,
-                  lineHeight: 1.08,
-                  letterSpacing: '-0.02em',
-                  transform: `translateY(-${titleShift}px)`,
-                  opacity: 1 - scrollProgress * 1.6,
-                  background: 'linear-gradient(135deg, #D4AF37 0%, #f0c060 45%, #00F2FF 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  filter: 'drop-shadow(0 2px 6px rgba(5,5,5,0.9)) drop-shadow(0 6px 24px rgba(5,5,5,0.7))',
-                  margin: 0,
-                  transition: 'none',
-                }}
-              >
-                {t.hero.title1}
-              </motion.span>
-              <motion.span
-                style={{
-                  display: 'block',
-                  fontFamily: '"Sora",sans-serif',
-                  fontStyle: 'italic',
-                  fontSize: 'clamp(2rem,5.5vw,4.5rem)',
-                  fontWeight: 700,
-                  lineHeight: 1.08,
-                  letterSpacing: '-0.02em',
-                  transform: `translateY(${titleShift}px)`,
-                  opacity: 1 - scrollProgress * 1.6,
-                  background: 'linear-gradient(135deg, #00F2FF 0%, #D4AF37 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  filter: 'drop-shadow(0 2px 6px rgba(5,5,5,0.9)) drop-shadow(0 6px 24px rgba(5,5,5,0.7))',
-                  margin: 0,
-                  transition: 'none',
-                }}
-              >
-                {t.hero.title2}
-              </motion.span>
-            </h1>
-
-            {/* Scroll hint — clickable to skip the expansion */}
-            <motion.button
-              type="button"
-              onClick={skipToContent}
-              aria-label={t.hero.skipAria}
-              style={{ opacity: 1 - scrollProgress * 3, transform: `translateY(${titleShift * 0.4}px)`, transition: 'none', pointerEvents: scrollProgress > 0.3 ? 'none' : 'auto', background: 'transparent', border: 'none', cursor: 'pointer' }}
-              className="relative z-10 flex flex-col items-center gap-2 mt-4 px-6 select-none"
-            >
-              <span style={{ color: 'rgba(0,242,255,0.65)', fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem', letterSpacing: '0.14em', textTransform: 'uppercase', textShadow: '0 2px 8px rgba(5,5,5,0.9)' }}>
-                {t.hero.scrollHint}
-              </span>
-              <motion.div
-                animate={{ y: [0, 6, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                style={{ width: 1, height: 28, background: 'linear-gradient(to bottom, rgba(0,242,255,0.7), transparent)' }}
-              />
-            </motion.button>
+      <section ref={sectionRef} className="relative" style={{ height: '360vh' }}>
+        <div className="sticky top-0 w-full h-[100dvh] overflow-hidden">
+          <video ref={videoRef} src={SCRUB_VIDEO} muted playsInline preload="auto" poster={BG_IMAGE} aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(to bottom, rgba(5,5,5,${0.30 + progress * 0.2}) 0%, rgba(5,5,5,0.15) 40%, rgba(5,5,5,${0.55 + progress * 0.35}) 100%)` }} />
+          <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center pointer-events-none" style={{ opacity: titleOpacity, transform: `translateY(${titleY}px)` }}>
+            <HeroTitle t={t} />
           </div>
-
+          <button type="button" onClick={skipToContent} aria-label={t.hero.skipAria} className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2" style={{ opacity: Math.max(0, 1 - progress * 4), background: 'transparent', border: 'none', cursor: 'pointer', pointerEvents: progress > 0.25 ? 'none' : 'auto' }}>
+            <span style={{ color: 'rgba(0,242,255,0.75)', fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem', letterSpacing: '0.14em', textTransform: 'uppercase', textShadow: '0 2px 8px rgba(5,5,5,0.9)' }}>{t.hero.scrollHint}</span>
+            <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }} style={{ width: 1, height: 28, background: 'linear-gradient(to bottom, rgba(0,242,255,0.7), transparent)' }} />
+          </button>
         </div>
       </section>
 
-      {/* ── Content revealed after the sticky stage ── */}
-      <section className="relative w-full">
-          <motion.div
-            className="flex flex-col w-full"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: showContent ? 1 : 0 }}
-            transition={{ duration: 0.8 }}
-            style={{ zIndex: 10, position: 'relative' }}
-          >
-            <div className="w-full max-w-4xl mx-auto px-4 md:px-6 flex flex-col items-center text-center" style={{ paddingTop: 'clamp(2rem, 6vw, 4rem)', paddingBottom: '4rem', gap: 'clamp(1.25rem, 3vw, 2rem)' }}>
+      <HeroContent t={t} metrics={metrics} onCTAClick={onCTAClick} show={showContent} />
 
-              {/* Badge */}
-              <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={showContent ? { opacity: 1, scale: 1 } : {}} transition={{ duration: 0.5, delay: 0.1 }}>
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full relative overflow-hidden" style={{ border: '1px solid rgba(212,175,55,0.32)', background: 'rgba(212,175,55,0.07)', backdropFilter: 'blur(12px)' }}>
-                  <motion.div className="absolute inset-0 pointer-events-none" animate={{ x: ['-100%','200%'] }} transition={{ duration: 3, repeat: Infinity, repeatDelay: 2, ease: 'easeInOut' }} style={{ background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.18), rgba(0,242,255,0.10), transparent)' }} />
-                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}><Sparkles size={9} style={{ color: '#D4AF37' }} /></motion.div>
-                  <span style={{ color: '#D4AF37', fontSize: '0.62rem', fontFamily: '"Manrope",sans-serif', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', position: 'relative' }}>
-                    {t.hero.badge}
-                  </span>
-                </div>
-              </motion.div>
-
-              {/* Subtitle */}
-              <motion.p initial={{ opacity: 0, y: 16 }} animate={showContent ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0.2 }} style={{ color: 'rgba(240,235,224,0.78)', fontFamily: '"Manrope",sans-serif', fontSize: 'clamp(0.9rem,1.6vw,1.1rem)', maxWidth: '540px', lineHeight: 1.7 }}>
-                {t.hero.subtitle}
-              </motion.p>
-
-              {/* AI Chat */}
-              <div className="w-full">
-                <HeroAIChat onCTAClick={onCTAClick} />
-              </div>
-
-              {/* CTA */}
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={showContent ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.6, delay: 0.4 }} className="relative">
-                <motion.div className="absolute inset-0 rounded-full pointer-events-none" animate={{ scale: [1,1.4,1], opacity: [0.55,0,0.55] }} transition={{ duration: 2.5, repeat: Infinity }} style={{ background: 'rgba(212,175,55,0.28)', filter: 'blur(14px)' }} />
-                <motion.button
-                  onClick={onCTAClick}
-                  whileHover={{ scale: 1.04, boxShadow: '0 0 50px rgba(212,175,55,0.55), 0 0 100px rgba(0,242,255,0.18)' }}
-                  whileTap={{ scale: 0.97 }}
-                  className="relative inline-flex items-center gap-3 overflow-hidden"
-                  style={{ padding: '1rem 2.4rem', borderRadius: '9999px', background: 'linear-gradient(135deg, #b8891e 0%, #D4AF37 48%, #f0c060 100%)', color: '#050505', fontFamily: '"Manrope",sans-serif', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.10em', textTransform: 'uppercase', boxShadow: '0 0 30px rgba(212,175,55,0.42), 0 4px 24px rgba(0,0,0,0.6)', border: 'none', cursor: 'pointer' }}
-                >
-                  <motion.div className="absolute inset-0 pointer-events-none" animate={{ x: ['-100%','200%'] }} transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 1 }} style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.30), transparent)' }} />
-                  <span style={{ position: 'relative' }}>{t.hero.cta}</span>
-                  <motion.div animate={{ x: [0,4,0] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ position: 'relative' }}><ArrowRight size={14} /></motion.div>
-                </motion.button>
-              </motion.div>
-
-              {/* Divider */}
-              <div style={{ width: 1, height: 48, background: 'linear-gradient(to bottom, rgba(212,175,55,0.50), transparent)' }} />
-
-              {/* Metrics */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 w-full">
-                {metrics.map((m, i) => <MetricCard key={i} icon={m.icon} label={m.label} value={m.value} sub={m.sub} delay={0.1 + i * 0.08} />)}
-              </div>
-            </div>
-          </motion.div>
-      </section>
-
-      {/* Bottom fade */}
       <div className="pointer-events-none" style={{ marginTop: '-80px', height: '80px', background: 'linear-gradient(to bottom, transparent, #050505)', position: 'relative', zIndex: 20 }} />
     </div>
   );
