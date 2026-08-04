@@ -24,6 +24,8 @@ import InvestmentDecisionCharts from './components/charts/InvestmentDecisionChar
 import { fetchDldWeeklyImpact, DldWeeklyResponse } from './services/dldService';
 import { ChartIcon, TrendingUpIcon, RobotAvatarIcon, PercentIcon, EuroIcon, BuildingIcon } from './components/Icons';
 import HeroSection from './components/HeroSection';
+import AgentsSection from './components/AgentsSection';
+import CurtainReveal from './components/CurtainReveal';
 import AITopPick, { scoreProperty } from './components/AITopPick';
 import Footer from './components/Footer';
 import { gtm } from './services/gtm';
@@ -389,11 +391,20 @@ function App() {
             avgYield={7.4}
             avgPrice={1_850_000}
             totalTransactions={14320}
-            onCTAClick={() => document.getElementById('decision-tree')?.scrollIntoView({ behavior: 'smooth' })}
+            onCTAClick={() => document.getElementById('agents')?.scrollIntoView({ behavior: 'smooth' })}
           />
-          <div id="decision-tree" className="relative w-full flex flex-col items-center justify-start py-16 px-4" style={{ background: '#050505' }}>
-            <DecisionTree onSubmit={handleProfileSubmit} isLoading={isChatLoading} />
+          {/* Partie centrale : 3 conseillers IA — révélée en rideau */}
+          <div id="agents">
+            <CurtainReveal>
+              <AgentsSection onConsult={() => document.getElementById('decision-tree')?.scrollIntoView({ behavior: 'smooth' })} />
+            </CurtainReveal>
           </div>
+          {/* Questionnaire — révélé en rideau */}
+          <CurtainReveal>
+            <div id="decision-tree" className="relative w-full flex flex-col items-center justify-start py-16 px-4" style={{ background: '#050505' }}>
+              <DecisionTree onSubmit={handleProfileSubmit} isLoading={isChatLoading} />
+            </div>
+          </CurtainReveal>
         </>
       )}
 
