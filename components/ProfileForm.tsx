@@ -52,10 +52,10 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ onSubmit, isLoading }) => {
 
   return (
     <div className="w-full glass-panel rounded-[1.8rem] overflow-hidden shadow-2xl border border-white/10 relative">
-      <div className="absolute inset-x-8 top-4 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"></div>
+      <div className="absolute inset-x-8 top-4 h-px bg-linear-to-r from-transparent via-white/15 to-transparent"></div>
       <div className="absolute -left-10 top-10 w-40 h-40 bg-aqua-500/5 blur-3xl rounded-full pointer-events-none"></div>
       <div className="absolute -right-8 bottom-10 w-32 h-32 bg-gold-400/10 blur-3xl rounded-full pointer-events-none"></div>
-      <div className="bg-gradient-to-r from-white/5 via-white/0 to-white/5 p-8 border-b border-white/5 relative">
+      <div className="bg-linear-to-r from-white/5 via-white/0 to-white/5 p-8 border-b border-white/5 relative">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.32em] text-aqua-100">Brief Investisseur</p>
@@ -75,11 +75,11 @@ const ProfileForm: React.FC<ProfileFormProps> = ({ onSubmit, isLoading }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="group">
             <label className="block text-[10px] font-bold text-gold-400 uppercase tracking-widest mb-2">Investisseur</label>
-            <input type="text" required className="w-full p-4 bg-midnight-950/50 border border-white/10 rounded-xl text-white focus:border-gold-500 outline-none transition-all" placeholder="Nom complet" value={profile.name} onChange={(e) => handleChange('name', e.target.value)} />
+            <input type="text" required className="w-full p-4 bg-midnight-950/50 border border-white/10 rounded-xl text-white focus:border-gold-500 outline-hidden transition-all" placeholder="Nom complet" value={profile.name} onChange={(e) => handleChange('name', e.target.value)} />
           </div>
           <div className="group">
             <label className="block text-[10px] font-bold text-gold-400 uppercase tracking-widest mb-2">Email</label>
-            <input type="email" required className="w-full p-4 bg-midnight-950/50 border border-white/10 rounded-xl text-white focus:border-gold-500 outline-none transition-all" placeholder="votre@email.com" value={profile.email} onChange={(e) => handleChange('email', e.target.value)} />
+            <input type="email" required className="w-full p-4 bg-midnight-950/50 border border-white/10 rounded-xl text-white focus:border-gold-500 outline-hidden transition-all" placeholder="votre@email.com" value={profile.email} onChange={(e) => handleChange('email', e.target.value)} />
           </div>
         </div>
 

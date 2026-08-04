@@ -169,7 +169,7 @@ const HeroAIChat: React.FC<{ onCTAClick?: () => void }> = ({ onCTAClick }) => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 32, filter: 'blur(10px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ duration: 0.9, delay: 0.3, ease: 'easeOut' }} className="w-full max-w-xl mx-auto relative">
-      <div className="absolute -inset-[1px] rounded-2xl overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
+      <div className="absolute -inset-px rounded-2xl overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
         <motion.div className="absolute w-[300%] h-[300%]" style={{ top: '-100%', left: '-100%', background: 'conic-gradient(from 0deg, transparent 0deg, rgba(212,175,55,0.80) 55deg, rgba(0,242,255,0.55) 110deg, transparent 170deg)' }} animate={{ rotate: 360 }} transition={{ duration: 5, repeat: Infinity, ease: 'linear' }} />
       </div>
       <div className="relative flex flex-col overflow-hidden rounded-2xl" style={{ background: 'rgba(5,5,5,0.88)', backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', border: '1px solid rgba(212,175,55,0.10)', height: 'clamp(220px, 38vh, 300px)', zIndex: 1 }}>
@@ -206,7 +206,7 @@ const HeroAIChat: React.FC<{ onCTAClick?: () => void }> = ({ onCTAClick }) => {
           )}
         </div>
         <div className="flex items-center gap-2 px-3 py-2.5 shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && onCTAClick?.()} placeholder={t.hero.inputPlaceholder} className="flex-1 bg-transparent outline-none min-w-0" style={{ color: 'rgba(240,235,224,0.65)', fontFamily: '"Manrope",sans-serif', fontSize: '0.77rem' }} />
+          <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && onCTAClick?.()} placeholder={t.hero.inputPlaceholder} className="flex-1 bg-transparent outline-hidden min-w-0" style={{ color: 'rgba(240,235,224,0.65)', fontFamily: '"Manrope",sans-serif', fontSize: '0.77rem' }} />
           <motion.button onClick={onCTAClick} whileHover={{ scale: 1.12, boxShadow: '0 0 22px rgba(0,242,255,0.55)' }} whileTap={{ scale: 0.9 }} className="w-8 h-8 rounded-full flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(135deg, #D4AF37, #00F2FF)', cursor: 'pointer' }}>
             <Send size={12} style={{ color: '#050505' }} />
           </motion.button>
@@ -312,7 +312,7 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
     <div style={{ backgroundColor: '#050505' }}>
       {/* Taller-than-viewport section: scrolling through it drives the expansion */}
       <section ref={sectionRef} className="relative" style={{ height: '220vh' }}>
-        <div className="sticky top-0 w-full h-[100dvh] overflow-hidden">
+        <div className="sticky top-0 w-full h-dvh overflow-hidden">
 
           {/* Aurora background */}
           <LiquidAuroraCanvas />

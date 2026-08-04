@@ -36,10 +36,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
   };
 
   return (
-    <div className="flex flex-col h-full w-full max-w-full bg-gradient-to-b from-[#0d1324]/90 to-[#0b1021]/95 backdrop-blur-3xl rounded-[1.5rem] overflow-hidden border border-white/10 shadow-[0_20px_60px_-35px_rgba(0,0,0,0.9)] relative">
+    <div className="flex flex-col h-full w-full max-w-full bg-linear-to-b from-[#0d1324]/90 to-[#0b1021]/95 backdrop-blur-3xl rounded-3xl overflow-hidden border border-white/10 shadow-[0_20px_60px_-35px_rgba(0,0,0,0.9)] relative">
       
       {/* Decorative Accents */}
-      <div className="absolute top-0 left-0 w-10 h-10 border-t-[2px] border-l-[2px] border-gold-300/60 rounded-tl-[1.2rem] z-30 pointer-events-none opacity-60"></div>
+      <div className="absolute top-0 left-0 w-10 h-10 border-t-2 border-l-2 border-gold-300/60 rounded-tl-[1.2rem] z-30 pointer-events-none opacity-60"></div>
       
       {/* Header - Fixed Height */}
       <div className="shrink-0 bg-black/50 p-3 border-b border-white/10 flex items-center justify-between z-20 backdrop-blur-md h-[64px]">
@@ -59,11 +59,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
       */}
       <div 
         ref={scrollContainerRef}
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 space-y-4 scrollbar-thin scrollbar-thumb-white/10 bg-gradient-to-b from-white/5 to-transparent"
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 space-y-4 scrollbar-thin scrollbar-thumb-white/10 bg-linear-to-b from-white/5 to-transparent"
       >
          {messages.length === 0 && (
              <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-4 text-center px-4 opacity-50">
-                 <div className="loader !m-0 !w-8 !h-8 !border-2"></div>
+                 <div className="loader m-0! w-8! h-8! border-2!"></div>
                  <p className="text-[7px] uppercase tracking-[0.2em] font-black">{t.chat.auditing}</p>
              </div>
          )}
@@ -71,7 +71,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
          {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.role === Role.USER ? 'justify-end' : 'justify-start'} animate-fade-up w-full`}>
                 <div className={`
-                  relative px-3 py-2 rounded-xl max-w-full text-[11px] leading-snug shadow-lg border break-words
+                  relative px-3 py-2 rounded-xl max-w-full text-[11px] leading-snug shadow-lg border wrap-break-word
                   ${msg.role === Role.MODEL 
                     ? 'bg-midnight-900/95 border-white/5 text-slate-300 rounded-tl-none ring-1 ring-white/5 w-[95%]' 
                     : 'bg-gold-500/10 border-gold-400/20 text-gold-50 rounded-tr-none font-medium'
@@ -82,8 +82,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
                         const trimmed = line.trim();
                         if (trimmed.startsWith('####')) return <h5 key={i} className="text-white font-bold text-[10px] mt-2 mb-1">{trimmed.replace('#### ', '')}</h5>;
                         if (trimmed.startsWith('###')) return <h4 key={i} className="text-gold-400 font-serif text-[12px] mt-3 mb-1">{trimmed.replace('### ', '')}</h4>;
-                        if (trimmed.startsWith('-')) return <li key={i} className="ml-2 list-disc text-slate-400 my-1 break-words">{trimmed.replace('- ', '')}</li>;
-                        return trimmed === '' ? <div key={i} className="h-2" /> : <p key={i} className="mb-1 break-words whitespace-pre-wrap">{trimmed}</p>;
+                        if (trimmed.startsWith('-')) return <li key={i} className="ml-2 list-disc text-slate-400 my-1 wrap-break-word">{trimmed.replace('- ', '')}</li>;
+                        return trimmed === '' ? <div key={i} className="h-2" /> : <p key={i} className="mb-1 wrap-break-word whitespace-pre-wrap">{trimmed}</p>;
                       })}
                     </div>
                 </div>
@@ -113,14 +113,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
       </div>
 
       {/* Input Area - Fixed height */}
-      <div className="shrink-0 p-3 bg-midnight-900 border-t-[2px] border-gold-500/30 z-30">
+      <div className="shrink-0 p-3 bg-midnight-900 border-t-2 border-gold-500/30 z-30">
         <div className="flex gap-1 mb-2 overflow-x-auto pb-1 scrollbar-hide no-scrollbar">
           {SUGGESTED_QUESTIONS.map((q, idx) => (
             <button
               key={idx}
               onClick={() => onSendMessage(q)}
               disabled={isStreaming}
-              className="whitespace-nowrap px-2 py-1 bg-white/5 hover:bg-gold-500/10 text-slate-500 hover:text-gold-300 text-[7px] uppercase font-black tracking-widest rounded transition-all border border-white/5"
+              className="whitespace-nowrap px-2 py-1 bg-white/5 hover:bg-gold-500/10 text-slate-500 hover:text-gold-300 text-[7px] uppercase font-black tracking-widest rounded-sm transition-all border border-white/5"
             >
               {q}
             </button>
@@ -133,7 +133,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={t.chat.placeholder}
-            className={`flex-1 bg-black/50 border rounded-lg px-2 py-2 focus:bg-black outline-none transition-all text-[11px] text-white placeholder-slate-800 min-w-0
+            className={`flex-1 bg-black/50 border rounded-lg px-2 py-2 focus:bg-black outline-hidden transition-all text-[11px] text-white placeholder-slate-800 min-w-0
               ${isStreaming ? 'border-white/5 opacity-50' : 'border-white/10 focus:border-gold-500/40'}
             `}
             disabled={isStreaming}
@@ -141,7 +141,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
           <button 
             type="submit" 
             disabled={!input.trim() || isStreaming}
-            className="w-10 h-10 bg-gradient-to-br from-aqua-300 via-gold-300 to-gold-500 text-midnight-950 rounded-xl transition-all flex items-center justify-center shrink-0 active:scale-95 shadow-[0_12px_40px_-18px_rgba(23,180,212,0.7)]"
+            className="w-10 h-10 bg-linear-to-br from-aqua-300 via-gold-300 to-gold-500 text-midnight-950 rounded-xl transition-all flex items-center justify-center shrink-0 active:scale-95 shadow-[0_12px_40px_-18px_rgba(23,180,212,0.7)]"
           >
             <SendIcon className="w-4 h-4" />
           </button>

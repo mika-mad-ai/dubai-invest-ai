@@ -207,7 +207,7 @@ const DubaiMap: React.FC<DubaiMapProps> = ({ onSelectDistrict, selectedDistrictI
       `, {
         permanent: false, // Hover only pour ne pas surcharger
         direction: "center",
-        className: "bg-midnight-950/90 border border-white/10 text-white rounded px-2 py-1 shadow-xl",
+        className: "bg-midnight-950/90 border border-white/10 text-white rounded-sm px-2 py-1 shadow-xl",
         opacity: 1
       });
 
@@ -222,18 +222,18 @@ const DubaiMap: React.FC<DubaiMapProps> = ({ onSelectDistrict, selectedDistrictI
       <div ref={mapContainerRef} className="w-full h-full z-10" />
 
       {/* UI LEGEND */}
-      <div className="absolute top-6 left-6 z-[400] pointer-events-none">
+      <div className="absolute top-6 left-6 z-400 pointer-events-none">
          <div className="bg-midnight-950/90 backdrop-blur-md p-4 rounded-xl border border-white/10 shadow-xl">
              <h3 className="text-xl font-serif text-white mb-2">Carte Interactive</h3>
              <div className="flex flex-col gap-2 text-[10px] uppercase tracking-widest font-bold">
-                <span className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-emerald-500 border border-white/20"></span> Fort Potentiel</span>
-                <span className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-yellow-500 border border-white/20"></span> Équilibré</span>
+                <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-emerald-500 border border-white/20"></span> Fort Potentiel</span>
+                <span className="flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-yellow-500 border border-white/20"></span> Équilibré</span>
              </div>
          </div>
       </div>
 
       {/* INFO PANEL */}
-      <div className="absolute bottom-6 right-6 z-[400] w-80">
+      <div className="absolute bottom-6 right-6 z-400 w-80">
          {activeDistrict ? (
            <div className="glass-panel p-6 rounded-2xl border-l-4 border-gold-500 animate-fade-up shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)] bg-midnight-950/95 backdrop-blur-xl">
               

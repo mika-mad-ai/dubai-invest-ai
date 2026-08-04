@@ -80,7 +80,7 @@ const GrowthVisualizer: React.FC<GrowthVisualizerProps> = ({ data, duration }) =
         </div>
         <button 
           onClick={togglePlay}
-          className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors border border-white/10 backdrop-blur"
+          className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-full text-[10px] font-bold uppercase tracking-widest transition-colors border border-white/10 backdrop-blur-sm"
         >
           {isPlaying ? 'Pause' : (currentIndex >= data.length - 1 ? 'Rejouer' : 'Lecture')}
         </button>
@@ -103,7 +103,7 @@ const GrowthVisualizer: React.FC<GrowthVisualizerProps> = ({ data, duration }) =
              className="absolute transition-all duration-500 ease-out z-30 -translate-y-full mb-4"
              style={{ bottom: `${franceHeightPercent}%` }}
            >
-              <div className="bg-slate-800/90 text-blue-200 text-sm font-bold px-3 py-1 rounded-lg border border-blue-500/30 shadow-xl backdrop-blur whitespace-nowrap">
+              <div className="bg-slate-800/90 text-blue-200 text-sm font-bold px-3 py-1 rounded-lg border border-blue-500/30 shadow-xl backdrop-blur-sm whitespace-nowrap">
                 {formatCurrency(currentYearData.scenarioFrance)}
               </div>
            </div>
@@ -129,7 +129,7 @@ const GrowthVisualizer: React.FC<GrowthVisualizerProps> = ({ data, duration }) =
                 className="absolute transition-all duration-500 ease-out z-30 -translate-y-full mb-4"
                 style={{ bottom: `${investedHeightPercent}%` }}
              >
-                <div className="bg-emerald-900/90 text-emerald-200 text-sm font-bold px-3 py-1 rounded-lg border border-emerald-500/30 shadow-xl backdrop-blur whitespace-nowrap">
+                <div className="bg-emerald-900/90 text-emerald-200 text-sm font-bold px-3 py-1 rounded-lg border border-emerald-500/30 shadow-xl backdrop-blur-sm whitespace-nowrap">
                     {formatCurrency(currentYearData.investedAmount)}
                 </div>
              </div>
@@ -142,7 +142,7 @@ const GrowthVisualizer: React.FC<GrowthVisualizerProps> = ({ data, duration }) =
                     background: 'repeating-linear-gradient(0deg, #064e3b, #064e3b 2px, #065f46 2px, #065f46 4px)'
                 }}
              >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent"></div>
              </div>
 
              <div className="mt-4 text-center absolute -bottom-6 w-full">
@@ -158,7 +158,7 @@ const GrowthVisualizer: React.FC<GrowthVisualizerProps> = ({ data, duration }) =
              className="absolute transition-all duration-500 ease-out z-30 -translate-y-full mb-4"
              style={{ bottom: `${dubaiHeightPercent}%` }}
            >
-              <div className="bg-gold-500/90 text-midnight-950 text-base font-bold px-3 py-1 rounded-lg border border-gold-300 shadow-[0_0_20px_rgba(34,211,238,0.4)] backdrop-blur whitespace-nowrap transform scale-110">
+              <div className="bg-gold-500/90 text-midnight-950 text-base font-bold px-3 py-1 rounded-lg border border-gold-300 shadow-[0_0_20px_rgba(34,211,238,0.4)] backdrop-blur-sm whitespace-nowrap transform scale-110">
                 {formatCurrency(currentYearData.scenarioOptimiste)}
               </div>
            </div>
@@ -181,7 +181,7 @@ const GrowthVisualizer: React.FC<GrowthVisualizerProps> = ({ data, duration }) =
       </div>
       
       {/* Floor */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent z-30"></div>
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-white/20 to-transparent z-30"></div>
     </div>
   );
 };

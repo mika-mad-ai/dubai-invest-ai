@@ -12,7 +12,11 @@
     "jsx": "react-jsx",
     "strict": true,
     "skipLibCheck": true,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
   "include": [
     "*.ts",
@@ -21,6 +25,8 @@
     "components/**/*.tsx",
     "services/**/*.ts",
     "services/**/*.tsx",
+    "lib/**/*.ts",
+    "lib/**/*.tsx",
     "types.ts"
   ],
   "exclude": ["node_modules", "dist"]

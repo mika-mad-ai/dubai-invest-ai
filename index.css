@@ -1,6 +1,135 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@theme {
+  --color-gold-50: #fffbeb;
+  --color-gold-100: #fef3c7;
+  --color-gold-200: #fde68a;
+  --color-gold-300: #fcd34d;
+  --color-gold-400: #f0c040;
+  --color-gold-500: #d4a843;
+  --color-gold-600: #b8891e;
+  --color-gold-700: #926d18;
+  --color-gold-800: #6b4f12;
+  --color-gold-900: #4a360c;
+
+  --color-azure-300: #7dd3e8;
+  --color-azure-400: #48cae4;
+  --color-azure-500: #0096c7;
+  --color-azure-600: #0077b6;
+  --color-azure-700: #023e8a;
+
+  --color-midnight-800: #1a1828;
+  --color-midnight-900: #0d0c18;
+  --color-midnight-950: #050508;
+
+  --font-sans: 'Manrope', sans-serif;
+  --font-serif: 'Sora', sans-serif;
+
+  --background-image-luxury-gradient: linear-gradient(
+    to bottom,
+    #060e1a 0%,
+    #0a1828 100%
+  );
+  --background-image-gold-gradient: linear-gradient(
+    135deg,
+    #fef3c7 0%,
+    #f0c040 50%,
+    #b8891e 100%
+  );
+
+  --shadow-glow: 0 0 20px -5px rgba(212, 168, 67, 0.35);
+
+  --animate-slow-zoom: slowZoom 25s linear infinite alternate;
+  --animate-fade-up: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-fade-in: fadeIn 1.5s ease-out forwards;
+  --animate-fall: fall 2s linear infinite;
+  --animate-spin-slow: spin 10s linear infinite;
+  --animate-float: float 3s ease-in-out infinite;
+  --animate-blink: blink 4s infinite;
+  --animate-sound-wave: soundWave 0.5s infinite;
+  --animate-draw-line: draw 1.5s ease-out forwards;
+
+  @keyframes slowZoom {
+    0% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(1.15);
+    }
+  }
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+  @keyframes blink {
+    0%,
+    96%,
+    100% {
+      opacity: 1;
+      transform: scaleY(1);
+    }
+    98% {
+      opacity: 0.5;
+      transform: scaleY(0.1);
+    }
+  }
+  @keyframes soundWave {
+    0%,
+    100% {
+      transform: scaleY(1);
+    }
+    50% {
+      transform: scaleY(1.5);
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
 
 :root {
   --gold: #D4AF37;

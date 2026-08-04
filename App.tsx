@@ -39,8 +39,8 @@ const PropertyCardSkeleton: React.FC = () => (
       <div className="h-5 rounded-md w-3/4" style={{ background: 'rgba(255,255,255,0.06)' }} />
       <div className="h-3 rounded-md w-1/2" style={{ background: 'rgba(255,255,255,0.04)' }} />
       <div className="grid grid-cols-2 gap-2 pt-1">
-        <div className="h-10 rounded" style={{ background: 'rgba(255,255,255,0.04)' }} />
-        <div className="h-10 rounded" style={{ background: 'rgba(255,255,255,0.04)' }} />
+        <div className="h-10 rounded-sm" style={{ background: 'rgba(255,255,255,0.04)' }} />
+        <div className="h-10 rounded-sm" style={{ background: 'rgba(255,255,255,0.04)' }} />
       </div>
       <div className="h-10 rounded-md" style={{ background: 'rgba(255,255,255,0.04)' }} />
     </div>
@@ -50,15 +50,15 @@ const PropertyCardSkeleton: React.FC = () => (
 const AITopPickSkeleton: React.FC = () => (
   <div className="rounded-2xl mb-10 px-6 pt-8 pb-8 animate-pulse" style={{ border: '1px solid rgba(212,175,55,0.15)', background: 'rgba(255,255,255,0.02)' }}>
     <div className="text-center mb-8 space-y-3">
-      <div className="h-3 w-48 mx-auto rounded" style={{ background: 'rgba(212,175,55,0.15)' }} />
-      <div className="h-8 w-72 mx-auto rounded" style={{ background: 'rgba(255,255,255,0.06)' }} />
-      <div className="h-8 w-56 mx-auto rounded" style={{ background: 'rgba(212,175,55,0.10)' }} />
+      <div className="h-3 w-48 mx-auto rounded-sm" style={{ background: 'rgba(212,175,55,0.15)' }} />
+      <div className="h-8 w-72 mx-auto rounded-sm" style={{ background: 'rgba(255,255,255,0.06)' }} />
+      <div className="h-8 w-56 mx-auto rounded-sm" style={{ background: 'rgba(212,175,55,0.10)' }} />
     </div>
     <div className="flex justify-center mb-8">
       <div className="rounded-full" style={{ width: 354, height: 354, background: 'rgba(255,255,255,0.04)', border: '9px solid rgba(212,175,55,0.10)' }} />
     </div>
     <div className="text-center space-y-3 max-w-sm mx-auto">
-      <div className="h-3 w-24 mx-auto rounded" style={{ background: 'rgba(212,175,55,0.12)' }} />
+      <div className="h-3 w-24 mx-auto rounded-sm" style={{ background: 'rgba(212,175,55,0.12)' }} />
       <div className="flex gap-1 items-center justify-center">
         <span className="text-xs animate-pulse" style={{ color: 'rgba(212,175,55,0.55)' }}>{useI18n().t.app.skeletonCollecting}</span>
         <span className="text-xs" style={{ color: 'rgba(212,175,55,0.55)' }}>…</span>
@@ -71,7 +71,7 @@ const AITopPickSkeleton: React.FC = () => (
 function App() {
   const { t, locale, money } = useI18n();
   const sectionClassName =
-    "relative overflow-hidden rounded-3xl border border-white/[0.06] p-5 md:p-8 shadow-[0_18px_60px_rgba(0,0,0,0.5)] before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:bg-gradient-to-b before:from-[#D4AF37] before:via-[#00F2FF] before:to-transparent"
+    "relative overflow-hidden rounded-3xl border border-white/6 p-5 md:p-8 shadow-[0_18px_60px_rgba(0,0,0,0.5)] before:content-[''] before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:bg-linear-to-b before:from-[#D4AF37] before:via-[#00F2FF] before:to-transparent"
   const sectionStyle = { background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' };
 
   const [hasProfile, setHasProfile] = useState(false);
@@ -398,7 +398,7 @@ function App() {
       )}
 
       {hasProfile && (
-        <div className="pt-20 md:pt-24 pb-20 px-4 md:px-8 max-w-[1700px] mx-auto animate-fadeIn flex flex-col xl:flex-row gap-8">
+        <div className="pt-20 md:pt-24 pb-20 px-4 md:px-8 max-w-[1700px] mx-auto animate-fade-in flex flex-col xl:flex-row gap-8">
             
             {/* LEFT COLUMN: 5 THEMATIC SECTIONS */}
             <div className="xl:flex-1 space-y-10 min-w-0 pb-32">
@@ -483,7 +483,7 @@ function App() {
                                     onClick={() => setSimParams({...simParams, strategy: 'long_term'})}
                                     className={`flex-1 py-4 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
                                         simParams.strategy === 'long_term'
-                                        ? 'bg-white/10 text-white shadow-sm border border-white/10'
+                                        ? 'bg-white/10 text-white shadow-xs border border-white/10'
                                         : 'text-slate-500 hover:text-slate-300'
                                     }`}
                                 >
@@ -493,7 +493,7 @@ function App() {
                                     onClick={() => setSimParams({...simParams, strategy: 'short_term'})}
                                     className={`flex-1 py-4 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${
                                         simParams.strategy === 'short_term'
-                                        ? 'bg-gold-500/20 text-gold-400 shadow-sm border border-gold-500/20'
+                                        ? 'bg-gold-500/20 text-gold-400 shadow-xs border border-gold-500/20'
                                         : 'text-slate-500 hover:text-slate-300'
                                     }`}
                                 >
@@ -592,7 +592,7 @@ function App() {
                              </h3>
                              <div className="mb-4">
                                 {propertiesSource === 'live' && (
-                                  <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded border text-emerald-400 border-emerald-500/40 bg-emerald-500/10">
+                                  <span className="text-[10px] uppercase tracking-widest px-2 py-1 rounded-sm border text-emerald-400 border-emerald-500/40 bg-emerald-500/10">
                                     {t.app.s6Live}
                                   </span>
                                 )}

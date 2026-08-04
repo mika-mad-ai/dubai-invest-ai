@@ -20,7 +20,7 @@ const CashflowChart: React.FC<CashflowChartProps> = ({ data }) => {
             <span className="text-green-400">Entrées</span> vs <span className="text-red-400">Sorties</span> • Moyenne estimée
           </p>
         </div>
-        <div className="bg-gold-400/10 border border-gold-400/20 px-2 py-1 rounded text-[10px] font-bold text-gold-400 uppercase tracking-widest">
+        <div className="bg-gold-400/10 border border-gold-400/20 px-2 py-1 rounded-sm text-[10px] font-bold text-gold-400 uppercase tracking-widest">
           Période: Mensuelle
         </div>
       </div>

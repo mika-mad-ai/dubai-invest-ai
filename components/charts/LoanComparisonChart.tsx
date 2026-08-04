@@ -80,7 +80,7 @@ const LoanComparisonChart: React.FC<LoanComparisonProps> = ({ loanAmount, durati
                     if (active && payload && payload.length) {
                     const d = payload[0].payload;
                     return (
-                        <div className="bg-midnight-950 border border-white/10 p-3 rounded shadow-xl">
+                        <div className="bg-midnight-950 border border-white/10 p-3 rounded-sm shadow-xl">
                             <p className="text-white font-serif mb-2">{d.name} (Taux {d.rate}%)</p>
                             <div className="space-y-1 text-xs">
                                 <p className="text-slate-300">Coût Crédit: <span className="text-white font-bold">{formatCurrency(d.interest)}</span></p>

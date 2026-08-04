@@ -377,7 +377,7 @@ const OptionCard: React.FC<{
           filter: isIgnored ? 'blur(2px) grayscale(1)' : 'blur(0px) grayscale(0)',
         }}
         transition={{ duration: 0.45, delay: optIdx * 0.07, ease: 'easeOut' }}
-        className="relative flex flex-col items-center text-center rounded-2xl outline-none select-none overflow-hidden"
+        className="relative flex flex-col items-center text-center rounded-2xl outline-hidden select-none overflow-hidden"
         style={{
           width: '100%', minHeight: 165, padding: '1rem 0.75rem',
           background: isSelected
@@ -392,7 +392,7 @@ const OptionCard: React.FC<{
       >
         {/* ── Rotating conic border (selected) ── */}
         {isSelected && (
-          <div className="absolute inset-[-1px] rounded-2xl overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
+          <div className="absolute -inset-px rounded-2xl overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
             <motion.div
               className="absolute"
               style={{
@@ -404,7 +404,7 @@ const OptionCard: React.FC<{
               transition={{ duration: 3.5, repeat: Infinity, ease: 'linear' }}
             />
             {/* Inner fill to mask conic */}
-            <div className="absolute inset-[1px] rounded-[calc(1rem-1px)]"
+            <div className="absolute inset-px rounded-[calc(1rem-1px)]"
               style={{ background: 'linear-gradient(145deg, rgba(8,8,20,0.96) 0%, rgba(8,8,16,0.94) 100%)' }} />
           </div>
         )}
@@ -594,7 +594,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
           boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
         }}>
           {/* Rotating conic mini */}
-          <div className="absolute -inset-[1px] rounded-2xl overflow-hidden pointer-events-none">
+          <div className="absolute -inset-px rounded-2xl overflow-hidden pointer-events-none">
             <motion.div
               className="absolute w-[400%] h-[400%]"
               style={{
@@ -604,7 +604,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
               animate={{ rotate: 360 }}
               transition={{ duration: 6, repeat: Infinity, ease: 'linear' }}
             />
-            <div className="absolute inset-[1px] rounded-[calc(1rem-1px)]" style={{ background: 'rgba(6,10,18,0.96)' }} />
+            <div className="absolute inset-px rounded-[calc(1rem-1px)]" style={{ background: 'rgba(6,10,18,0.96)' }} />
           </div>
 
           <div className="relative z-10 flex flex-col items-center px-3 py-3 md:px-5 md:py-4">
@@ -784,7 +784,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
               className="w-full max-w-md mt-6 relative"
             >
               {/* Rotating conic border (form) */}
-              <div className="absolute -inset-[1px] rounded-3xl overflow-hidden pointer-events-none">
+              <div className="absolute -inset-px rounded-3xl overflow-hidden pointer-events-none">
                 <motion.div
                   className="absolute w-[300%] h-[300%]"
                   style={{
@@ -794,7 +794,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
                   animate={{ rotate: 360 }}
                   transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
                 />
-                <div className="absolute inset-[1px] rounded-[calc(1.5rem-1px)]" style={{ background: 'rgba(7,7,12,0.97)' }} />
+                <div className="absolute inset-px rounded-[calc(1.5rem-1px)]" style={{ background: 'rgba(7,7,12,0.97)' }} />
               </div>
 
               <div className="relative p-8 rounded-3xl overflow-hidden"
@@ -857,7 +857,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
                     ].map(f => (
                       <input key={f.key} type={f.type} placeholder={f.placeholder} required value={f.value}
                         onChange={e => setProfile({ ...profile, [f.key]: e.target.value })}
-                        className="w-full px-4 py-3.5 rounded-xl outline-none transition-all placeholder:text-[rgba(240,235,224,0.18)]"
+                        className="w-full px-4 py-3.5 rounded-xl outline-hidden transition-all placeholder:text-[rgba(240,235,224,0.18)]"
                         style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: '#f0ebe0', fontFamily: '"Manrope",sans-serif', fontSize: '0.85rem' }}
                         onFocus={e => { e.currentTarget.style.borderColor = 'rgba(20,184,166,0.55)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(20,184,166,0.08)'; }}
                         onBlur={e  => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.boxShadow = 'none'; }}
@@ -887,7 +887,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading }) => {
                       />
                     )}
                     {isLoading
-                      ? <span className="loader !w-4 !h-4 !border-2 !border-black/20 !border-t-black" />
+                      ? <span className="loader w-4! h-4! border-2! border-black/20! border-t-black!" />
                       : <><ArrowRightIcon className="w-4 h-4 relative" /><span className="relative">{t.tree.submit}</span></>
                     }
                   </motion.button>

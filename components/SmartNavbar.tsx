@@ -95,7 +95,7 @@ const SmartNavbar: React.FC<SmartNavbarProps> = ({ message, isStreaming, hasProf
             >
               {/* Bubble tail */}
               <div
-                className="absolute top-1/2 -translate-y-1/2 -left-[7px] w-3.5 h-3.5 rotate-45"
+                className="absolute top-1/2 -translate-y-1/2 left-[-7px] w-3.5 h-3.5 rotate-45"
                 style={{
                   background: 'rgba(10,10,18,0.80)',
                   borderLeft: '1px solid rgba(212,175,55,0.18)',

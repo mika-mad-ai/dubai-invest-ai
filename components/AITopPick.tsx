@@ -129,7 +129,7 @@ const Lightbox: React.FC<LightboxProps> = ({ property: p, images, initialIndex, 
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex flex-col items-center justify-center p-4"
+      className="fixed inset-0 z-200 flex flex-col items-center justify-center p-4"
       style={{ background: 'rgba(3,3,6,0.94)', backdropFilter: 'blur(18px)' }}
       onClick={onClose}
     >

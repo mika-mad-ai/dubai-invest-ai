@@ -21,7 +21,7 @@ const CostBreakdownChart: React.FC<CostBreakdownChartProps> = ({ data }) => {
     <div className="glass-panel p-6 rounded-2xl h-full flex flex-col border border-white/5">
       <div className="flex justify-between items-start mb-4">
         <h3 className="text-lg font-serif text-white">Structure des Coûts</h3>
-        <span className="text-[10px] font-bold text-gold-400 bg-gold-500/10 px-2 py-1 rounded border border-gold-500/20">
+        <span className="text-[10px] font-bold text-gold-400 bg-gold-500/10 px-2 py-1 rounded-sm border border-gold-500/20">
             Total: {formatCurrency(total)}
         </span>
       </div>

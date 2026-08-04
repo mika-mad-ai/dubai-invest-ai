@@ -33,7 +33,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ params, onChange }) => {
                 onClick={() => handleChange('strategy', 'long_term')}
                 className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${
                     params.strategy === 'long_term' 
-                    ? 'bg-white/10 text-white shadow-sm border border-white/10' 
+                    ? 'bg-white/10 text-white shadow-xs border border-white/10' 
                     : 'text-slate-500 hover:text-slate-300'
                 }`}
                 >
@@ -43,7 +43,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ params, onChange }) => {
                 onClick={() => handleChange('strategy', 'short_term')}
                 className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider rounded-md transition-all ${
                     params.strategy === 'short_term' 
-                    ? 'bg-gold-500/20 text-gold-400 shadow-sm border border-gold-500/20' 
+                    ? 'bg-gold-500/20 text-gold-400 shadow-xs border border-gold-500/20' 
                     : 'text-slate-500 hover:text-slate-300'
                 }`}
                 >
@@ -58,7 +58,7 @@ const ControlPanel: React.FC<ControlPanelProps> = ({ params, onChange }) => {
                 <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
                 <ShieldIcon className="w-4 h-4 text-slate-500" /> Volatilité
                 </label>
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm ${
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-xs ${
                     params.riskTolerance > 3 ? 'bg-red-500/20 text-red-400' : 
                     params.riskTolerance < 2 ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'
                 }`}>

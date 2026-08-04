@@ -58,7 +58,7 @@ const StrategyComparison: React.FC<StrategyComparisonProps> = ({ property, param
             <div>
                 <h3 className="text-lg font-serif text-white flex items-center gap-2">
                     {property ? 'Rent vs Flip' : 'Rent vs Flip (Marché)'}
-                    {!property && <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded text-slate-300 uppercase tracking-widest">Estimé</span>}
+                    {!property && <span className="text-[9px] bg-white/10 px-2 py-0.5 rounded-sm text-slate-300 uppercase tracking-widest">Estimé</span>}
                 </h3>
                 <p className="text-[10px] text-slate-500 uppercase tracking-widest">Arbitrage Stratégique</p>
             </div>

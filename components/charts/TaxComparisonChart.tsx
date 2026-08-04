@@ -50,7 +50,7 @@ const TaxComparisonChart: React.FC<TaxComparisonProps> = ({ franceTax, dubaiTax,
 
       <div className="mt-4 text-center">
         {franceTax > 0 && (
-            <div className="inline-block bg-green-500/10 text-green-400 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-sm border border-green-500/20">
+            <div className="inline-block bg-green-500/10 text-green-400 text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-xs border border-green-500/20">
                 Total Économisé : {formatCurrency(franceTax - dubaiTax)}
             </div>
         )}

@@ -69,10 +69,10 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 backdrop-blur-sm transition-opacity animate-fadeIn"
+        className="absolute inset-0 backdrop-blur-xs transition-opacity animate-fade-in"
         style={{ background: 'rgba(5,5,8,0.85)' }}
         onClick={handleClose}
       />
@@ -150,7 +150,7 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
                     placeholder={t.leadModal.phonePlaceholder}
-                    className="w-full pl-10 pr-4 py-3.5 rounded-xl text-white text-sm outline-none transition-all"
+                    className="w-full pl-10 pr-4 py-3.5 rounded-xl text-white text-sm outline-hidden transition-all"
                     style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.35)' }}
                     onFocus={e => { e.currentTarget.style.border = '1px solid rgba(212,175,55,0.75)'; e.currentTarget.style.boxShadow = '0 0 16px rgba(212,175,55,0.12)'; }}
                     onBlur={e => { e.currentTarget.style.border = '1px solid rgba(212,175,55,0.35)'; e.currentTarget.style.boxShadow = 'none'; }}

@@ -3,7 +3,8 @@
     "allow": [
       "Skill(update-config)",
       "Skill(update-config:*)",
-      "WebFetch(domain:kokonutui.com)"
+      "WebFetch(domain:kokonutui.com)",
+      "WebFetch(domain:bklit.com)"
     ]
   }
 }
