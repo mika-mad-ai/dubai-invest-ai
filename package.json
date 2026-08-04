@@ -10,9 +10,13 @@
   "dependencies": {
     "@google/genai": "^1.30.0",
     "@types/react-router-dom": "^5.3.3",
+    "animejs": "^4.5.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.562.0",
+    "motion": "^12.43.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
@@ -20,6 +24,8 @@
     "recharts": "^2.15.0",
     "satori": "^0.26.0",
     "sharp": "^0.35.2",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss-animate": "^1.0.7",
     "twitter-api-v2": "^1.29.0"
   },
   "devDependencies": {
