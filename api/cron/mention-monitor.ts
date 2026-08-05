@@ -100,7 +100,7 @@ RÈGLES :
 Retourne UNIQUEMENT le texte de la réponse, prêt à poster.`;
 
   try {
-    const result = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+    const result = await ai.models.generateContent({ model: 'gemini-flash-latest', contents: prompt });
     return result.text ?? '';
   } catch {
     return '';

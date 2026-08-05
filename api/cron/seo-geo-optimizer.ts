@@ -415,7 +415,7 @@ RÈGLES :
   // Call Gemini for all content in parallel. allSettled (pas all) : si un appel
   // échoue (quota/cap 429), les autres passent et l'article est publié quand
   // même — chaque bloc a son fallback ci-dessous.
-  const model = 'gemini-2.5-flash';
+  const model = 'gemini-flash-latest';
   const settled = await Promise.allSettled([
     ai.models.generateContent({ model, contents: llmsPrompt }),
     ai.models.generateContent({ model, contents: metaPrompt }),

@@ -26,7 +26,7 @@ const GEMINI_KEY = process.env.API_KEY ?? '';
 const SUPABASE_URL = process.env.SUPABASE_URL ?? '';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 
-const TEXT_MODEL  = process.env.SOCIAL_TEXT_MODEL  ?? 'gemini-2.5-flash';
+const TEXT_MODEL  = process.env.SOCIAL_TEXT_MODEL  ?? 'gemini-flash-latest';
 const IMAGE_MODEL = process.env.SOCIAL_IMAGE_MODEL ?? 'gemini-2.5-flash-image';
 const VIDEO_MODEL = process.env.SOCIAL_VIDEO_MODEL ?? 'veo-2.0-generate-001';
 
