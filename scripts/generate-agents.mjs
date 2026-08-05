@@ -1,6 +1,20 @@
 import { GoogleGenAI } from '@google/genai';
-import { writeFileSync } from 'node:fs';
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+import { writeFileSync, readFileSync, existsSync } from 'node:fs';
+
+// Charge la clé depuis .env.local (jamais en clair sur la ligne de commande → évite toute fuite)
+function loadEnvLocal() {
+  if (process.env.API_KEY) return process.env.API_KEY;
+  if (existsSync('.env.local')) {
+    for (const line of readFileSync('.env.local', 'utf8').split('\n')) {
+      const m = line.match(/^\s*API_KEY\s*=\s*(.+?)\s*$/);
+      if (m) return m[1].replace(/^["']|["']$/g, '');
+    }
+  }
+  return undefined;
+}
+const API_KEY = loadEnvLocal();
+if (!API_KEY) { console.error('Aucune clé API_KEY trouvée (ni env, ni .env.local).'); process.exit(1); }
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 const MODEL = 'gemini-2.5-flash-image';
 
 const agents = [
