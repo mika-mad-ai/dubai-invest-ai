@@ -21,10 +21,14 @@ const MODELS = ['gemini-3-pro-image', 'gemini-3.1-flash-image', 'gemini-2.5-flas
 const agents = [
   { file: 'agent-locatif', prompt: 'Ultra-realistic professional corporate headshot photograph of a confident Middle-Eastern Arab male real estate investment advisor, early 40s, warm olive skin, short dark hair, neatly groomed short dark beard, dark brown eyes, wearing a tailored deep navy suit with a subtle tie, warm confident closed-mouth smile, premium studio lighting, shallow depth of field, dark elegant background with soft golden bokeh evoking Dubai skyline at dusk, high-end executive headshot, photorealistic, 8k, sharp eyes, no text, no watermark' },
   { file: 'agent-residence', prompt: 'Ultra-realistic professional corporate headshot photograph of a warm approachable English British Caucasian male real estate advisor specialized in primary homes, mid 30s, fair skin, short neat light-brown hair, clean-shaven with very light stubble, blue-grey eyes, wearing a smart charcoal blazer over an open-collar white shirt, friendly genuine smile, premium studio lighting, shallow depth of field, dark elegant background with soft golden bokeh evoking Dubai skyline, high-end executive headshot, photorealistic, 8k, sharp eyes, no text, no watermark' },
-  { file: 'agent-location', prompt: 'Ultra-realistic professional corporate headshot photograph of an elegant confident mixed-race biracial female real estate rental advisor, early 30s, light caramel skin, striking clear blue eyes, shoulder-length dark brown wavy hair, refined natural makeup, wearing an elegant cream tailored blazer, warm professional smile, premium studio lighting, shallow depth of field, dark elegant background with soft golden bokeh evoking Dubai skyline, high-end executive headshot, photorealistic, 8k, sharp blue eyes, no text, no watermark' },
+  { file: 'agent-location', prompt: 'Ultra-realistic professional corporate headshot photograph of an elegant mixed-race biracial woman, her lips are gently pressed together in a soft serene closed-mouth smile, mouth completely closed, absolutely no teeth visible, calm confident expression. She is a real estate rental advisor, early 30s, light caramel skin, striking clear blue eyes, shoulder-length dark brown wavy hair, refined natural makeup, wearing an elegant cream tailored blazer, premium studio lighting, shallow depth of field, dark elegant background with soft golden bokeh evoking Dubai skyline, high-end executive headshot, photorealistic, 8k, sharp blue eyes, no text, no watermark' },
 ];
 
-for (const a of agents) {
+// Filtre optionnel : node generate-agents.mjs location  → ne régénère que agent-location
+const only = process.argv.slice(2).map(s => `agent-${s}`);
+const toRun = only.length ? agents.filter(a => only.includes(a.file)) : agents;
+
+for (const a of toRun) {
   console.log('Génération', a.file, '…');
   let b64, used;
   for (const model of MODELS) {

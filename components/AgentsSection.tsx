@@ -17,6 +17,7 @@ interface Agent {
   accent: string;
   desc: string;
   tags: string[];
+  noVideo?: boolean; // pas de cinemagraph vidéo → photo « qui respire »
 }
 
 const AGENTS: Agent[] = [
@@ -49,6 +50,7 @@ const AGENTS: Agent[] = [
     accent: '#00F2FF',
     desc: "Elle trouve la location idéale, courte ou longue durée, dans le bon quartier et au juste prix, selon votre style de vie.",
     tags: ['Courte durée', 'Longue durée', 'Meublé'],
+    noVideo: true,
   },
 ];
 
@@ -58,11 +60,11 @@ const Avatar: React.FC<{ agent: Agent }> = ({ agent }) => {
   const reduced = useReducedMotion();
   const initials = agent.name.split(' ').map(w => w[0]).join('');
   const videoSrc = agent.photo.replace(/\.png$/, '.mp4');
-  const showVideo = videoOk && !reduced;
+  const showVideo = videoOk && !reduced && !agent.noVideo;
   return (
     <div className="relative w-full overflow-hidden" style={{ aspectRatio: '3 / 4', borderTopLeftRadius: 18, borderTopRightRadius: 18, background: '#0a0a12' }}>
       {/* Couche vidéo « vivante » (cinemagraph Veo). Reste invisible tant qu'elle ne joue pas → repli photo. */}
-      {!reduced && !failed && (
+      {!reduced && !failed && !agent.noVideo && (
         <video
           src={videoSrc}
           poster={agent.photo}
@@ -106,6 +108,18 @@ const Avatar: React.FC<{ agent: Agent }> = ({ agent }) => {
       )}
       {/* fondu bas vers la carte */}
       <div className="absolute inset-x-0 bottom-0 h-2/5 pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, rgba(10,10,18,0.85) 92%)' }} />
+      {/* faisceau blanc d'APPARITION : balaye une fois de gauche à droite quand la carte entre à l'écran (identique sur les 3) */}
+      {!reduced && (
+        <motion.div
+          aria-hidden
+          className="absolute inset-y-0 z-20 pointer-events-none"
+          style={{ width: '26%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent)', filter: 'blur(7px)', transform: 'skewX(-12deg)', mixBlendMode: 'screen' }}
+          initial={{ left: '-40%', opacity: 0 }}
+          whileInView={{ left: ['-40%', '120%'], opacity: [0, 1, 1, 0] }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 1.15, ease: 'easeInOut', delay: 0.25 }}
+        />
+      )}
       {/* badge spécialité */}
       <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: 'rgba(5,5,5,0.6)', backdropFilter: 'blur(8px)', border: `1px solid ${agent.accent}55`, color: agent.accent }}>
         {agent.icon}
