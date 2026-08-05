@@ -15,7 +15,8 @@ function loadEnvLocal() {
 const API_KEY = loadEnvLocal();
 if (!API_KEY) { console.error('Aucune clé API_KEY trouvée (ni env, ni .env.local).'); process.exit(1); }
 const ai = new GoogleGenAI({ apiKey: API_KEY });
-const MODEL = 'gemini-2.5-flash-image';
+// Ordre de préférence : qualité réaliste max → repli si indispo/quota
+const MODELS = ['gemini-3-pro-image', 'gemini-3.1-flash-image', 'gemini-2.5-flash-image'];
 
 const agents = [
   { file: 'agent-locatif', prompt: 'Ultra-realistic professional corporate headshot photograph of a confident male real estate investment advisor, early 40s, short dark hair, clean well-groomed look, wearing a tailored deep navy suit with a subtle tie, warm confident closed-mouth smile, premium studio lighting, shallow depth of field, dark elegant background with soft golden bokeh evoking Dubai skyline at dusk, high-end LinkedIn executive headshot, photorealistic, 8k, sharp eyes, no text, no watermark' },
@@ -25,15 +26,23 @@ const agents = [
 
 for (const a of agents) {
   console.log('Génération', a.file, '…');
-  const resp = await ai.models.generateContent({
-    model: MODEL,
-    contents: a.prompt,
-    config: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '3:4' } },
-  });
-  const parts = resp?.candidates?.[0]?.content?.parts ?? [];
-  const b64 = parts.find(p => p?.inlineData?.data)?.inlineData?.data;
-  if (!b64) { console.error('  échec', a.file, JSON.stringify(resp).slice(0,200)); continue; }
+  let b64, used;
+  for (const model of MODELS) {
+    try {
+      const resp = await ai.models.generateContent({
+        model,
+        contents: a.prompt,
+        config: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '3:4' } },
+      });
+      const parts = resp?.candidates?.[0]?.content?.parts ?? [];
+      b64 = parts.find(p => p?.inlineData?.data)?.inlineData?.data;
+      if (b64) { used = model; break; }
+    } catch (e) {
+      console.warn(`  ${model} indispo (${String(e.message || e).slice(0, 60)}) → repli…`);
+    }
+  }
+  if (!b64) { console.error('  échec total', a.file); continue; }
   writeFileSync(`public/agents/${a.file}.png`, Buffer.from(b64, 'base64'));
-  console.log('  OK → public/agents/' + a.file + '.png');
+  console.log(`  OK (${used}) → public/agents/${a.file}.png`);
 }
 console.log('Terminé.');
