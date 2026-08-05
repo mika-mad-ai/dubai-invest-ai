@@ -32,7 +32,16 @@ const FFMPEG_CANDIDATES = [
 ];
 const FFMPEG = FFMPEG_CANDIDATES.find(p => { try { execSync(`"${p}" -version`, { stdio: 'ignore' }); return true; } catch { return false; } });
 
-const PROMPT = 'Photorealistic subtle cinemagraph of this exact professional person. Keep the identical face, identity, skin tone, eye color, hair and clothing. The person stays SILENT and does NOT speak: mouth kept closed with a gentle warm closed-mouth smile, no talking, no lip movement, no mouth opening. They only breathe gently and naturally, blink softly once or twice, with a very slight natural head and shoulder movement. Completely silent scene, quiet ambient room tone only, no voice, no speech, no music. Locked-off tripod camera, absolutely no zoom and no camera movement, framing unchanged. Background city bokeh lights twinkle softly. Calm, elegant, alive, high-end corporate portrait. No text, no watermark.';
+// Base commune : réalisme, mouvement PERMANENT, sourire + hochement, sans parole.
+const BASE = 'Photorealistic video, keep the exact same face, identity, skin tone, eye color, hair, clothing and background as the input image. Warm, welcoming and lively person with a genuine warm smile and gentle head nods. Continuous natural motion the ENTIRE time so the person never looks frozen or static — subtle breathing, small head and shoulder sways, occasional natural blink. The person does NOT speak: the lips form a smile, not words, no talking, no lip-sync. Locked-off camera, no zoom, no camera movement. Elegant high-end corporate portrait, no text, no watermark, no subtitles.';
+
+// Geste spécifique par agent (les mains montent dans le cadre pour la salutation).
+const GESTURES = {
+  locatif: ' He brings both palms together in front of his chest in a warm respectful salaam / namaste greeting, gently closing his eyes and giving a small polite bow of the head, then looks back up with a warm smile — repeated as a gentle continuous welcoming motion.',
+  residence: ' He raises one hand up into frame and gives a friendly welcoming wave toward the viewer, smiling warmly and nodding gently, in a relaxed natural continuous way.',
+  location: ' She raises one hand up into frame in a friendly welcoming wave / greeting toward the viewer, smiling warmly and nodding gently, in an elegant natural continuous way.',
+};
+const promptFor = (id) => BASE + (GESTURES[id] ?? '');
 
 const ALL = ['locatif', 'residence', 'location'];
 const targets = (process.argv.slice(2).length ? process.argv.slice(2) : ALL);
@@ -48,7 +57,7 @@ for (const id of targets) {
     console.log(`\n[${id}] Veo 3.1 image→vidéo (essai ${attempt})…`);
     let op = await ai.models.generateVideos({
       model: 'veo-3.1-generate-preview',
-      prompt: PROMPT,
+      prompt: promptFor(id),
       image: { imageBytes, mimeType: 'image/png' },
       config: { aspectRatio: '9:16', numberOfVideos: 1 },
     });
@@ -74,10 +83,11 @@ for (const id of targets) {
 
   const out = `public/agents/agent-${id}.mp4`;
   if (FFMPEG) {
-    // web-léger : muet, recadré 3:4 (supprime le letterbox 9:16 de Veo), 800 de haut, faststart
-    execSync(`"${FFMPEG}" -y -i ${raw} -an -c:v libx264 -crf 26 -preset slow -vf "crop=in_w:in_w*4/3,scale=-2:800" -movflags +faststart -pix_fmt yuv420p ${out}`, { stdio: 'ignore' });
+    // muet + recadré 3:4 (supprime le letterbox 9:16) + BOOMERANG (avant/arrière) →
+    // mouvement continu et boucle parfaitement sans coupure (pas de "reset").
+    execSync(`"${FFMPEG}" -y -i ${raw} -an -filter_complex "[0:v]crop=in_w:in_w*4/3,scale=-2:800,setsar=1,split[a][b];[b]reverse[r];[a][r]concat=n=2:v=1[out]" -map "[out]" -c:v libx264 -crf 28 -preset slow -movflags +faststart -pix_fmt yuv420p ${out}`, { stdio: 'ignore' });
     execSync(`rm -f ${raw}`);
-    console.log(`[${id}] web → ${out}`);
+    console.log(`[${id}] web (boomerang) → ${out}`);
   } else {
     execSync(`mv ${raw} ${out}`);
     console.log(`[${id}] (ffmpeg absent) → ${out} tel quel`);

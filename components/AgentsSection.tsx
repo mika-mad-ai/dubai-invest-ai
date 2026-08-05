@@ -50,7 +50,6 @@ const AGENTS: Agent[] = [
     accent: '#00F2FF',
     desc: "Elle trouve la location idéale, courte ou longue durée, dans le bon quartier et au juste prix, selon votre style de vie.",
     tags: ['Courte durée', 'Longue durée', 'Meublé'],
-    noVideo: true,
   },
 ];
 
