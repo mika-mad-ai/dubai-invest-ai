@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { TrendingUp, Home, KeyRound, ArrowRight, Sparkles } from 'lucide-react';
 
 /**
@@ -22,7 +22,7 @@ interface Agent {
 const AGENTS: Agent[] = [
   {
     id: 'locatif',
-    name: 'Marcus Haddad',
+    name: 'Karim Haddad',
     role: 'Investissement locatif',
     photo: '/agents/agent-locatif.png',
     icon: <TrendingUp size={18} />,
@@ -32,7 +32,7 @@ const AGENTS: Agent[] = [
   },
   {
     id: 'residence',
-    name: 'Nathan Rousseau',
+    name: 'James Bennett',
     role: 'Résidence principale',
     photo: '/agents/agent-residence.png',
     icon: <Home size={18} />,
@@ -54,21 +54,55 @@ const AGENTS: Agent[] = [
 
 const Avatar: React.FC<{ agent: Agent }> = ({ agent }) => {
   const [failed, setFailed] = useState(false);
+  const [videoOk, setVideoOk] = useState(false);
+  const reduced = useReducedMotion();
   const initials = agent.name.split(' ').map(w => w[0]).join('');
+  const videoSrc = agent.photo.replace(/\.png$/, '.mp4');
+  const showVideo = videoOk && !reduced;
   return (
-    <div className="relative w-full overflow-hidden" style={{ aspectRatio: '3 / 4', borderTopLeftRadius: 18, borderTopRightRadius: 18 }}>
+    <div className="relative w-full overflow-hidden" style={{ aspectRatio: '3 / 4', borderTopLeftRadius: 18, borderTopRightRadius: 18, background: '#0a0a12' }}>
+      {/* Couche vidéo « vivante » (cinemagraph Veo). Reste invisible tant qu'elle ne joue pas → repli photo. */}
+      {!reduced && !failed && (
+        <video
+          src={videoSrc}
+          poster={agent.photo}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          onCanPlay={() => setVideoOk(true)}
+          onError={() => setVideoOk(false)}
+          className="absolute inset-0 w-full h-full object-cover object-top"
+          style={{ opacity: showVideo ? 1 : 0, transition: 'opacity .7s ease' }}
+        />
+      )}
+      {/* Couche photo : sert de poster + repli ; « respire » doucement quand il n'y a pas de vidéo. */}
       {!failed ? (
-        <img
+        <motion.img
           src={agent.photo}
           alt={`${agent.name}, conseiller ${agent.role.toLowerCase()} à Dubaï`}
           onError={() => setFailed(true)}
           loading="lazy"
-          className="w-full h-full object-cover object-top"
+          className="absolute inset-0 w-full h-full object-cover object-top"
+          style={{ opacity: showVideo ? 0 : 1, transition: 'opacity .7s ease' }}
+          animate={!reduced && !showVideo ? { scale: [1, 1.035, 1], y: [0, -4, 0] } : { scale: 1, y: 0 }}
+          transition={{ duration: 7.5, repeat: Infinity, ease: 'easeInOut' }}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center" style={{ background: `radial-gradient(ellipse at 50% 35%, ${agent.accent}22, #0a0a12 70%)` }}>
+        <div className="absolute inset-0 w-full h-full flex items-center justify-center" style={{ background: `radial-gradient(ellipse at 50% 35%, ${agent.accent}22, #0a0a12 70%)` }}>
           <span style={{ fontFamily: '"Sora",sans-serif', fontSize: '3.5rem', fontWeight: 700, color: agent.accent, opacity: 0.5 }}>{initials}</span>
         </div>
+      )}
+      {/* halo d'accent qui pulse doucement → renforce l'effet « vivant » */}
+      {!reduced && (
+        <motion.div
+          aria-hidden
+          className="absolute inset-0 pointer-events-none"
+          style={{ boxShadow: `inset 0 -60px 90px -40px ${agent.accent}` }}
+          animate={{ opacity: [0.25, 0.55, 0.25] }}
+          transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+        />
       )}
       {/* fondu bas vers la carte */}
       <div className="absolute inset-x-0 bottom-0 h-2/5 pointer-events-none" style={{ background: 'linear-gradient(to bottom, transparent, rgba(10,10,18,0.85) 92%)' }} />
