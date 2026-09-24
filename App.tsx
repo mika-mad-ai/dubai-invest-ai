@@ -1,8 +1,7 @@
 
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
-import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { UserProfile, Message, Role, ChartDataPoint, SimulationParams, CashflowDataPoint, CostDataPoint, ExchangeRateDataPoint, Property, DistrictData } from './types';
-import { createInvestmentChat, generateInitialAnalysisPrompt } from './services/geminiService';
+import { streamAdvisor, captureLead, type AgentMeta, type MatchedListing, type WireMessage } from './services/agentService';
 import DecisionTree from './components/DecisionTree';
 import ChatInterface from './components/ChatInterface';
 import ProjectionsChart from './components/ProjectionsChart';
@@ -25,6 +24,8 @@ import { fetchDldWeeklyImpact, DldWeeklyResponse } from './services/dldService';
 import { ChartIcon, TrendingUpIcon, RobotAvatarIcon, PercentIcon, EuroIcon, BuildingIcon } from './components/Icons';
 import HeroSection from './components/HeroSection';
 import AgentsSection from './components/AgentsSection';
+import AgentCompanion from './components/AgentCompanion';
+import MatchedListings from './components/MatchedListings';
 import CurtainReveal from './components/CurtainReveal';
 import AITopPick, { scoreProperty } from './components/AITopPick';
 import Footer from './components/Footer';
@@ -78,9 +79,18 @@ function App() {
 
   const [hasProfile, setHasProfile] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  // Conseiller IA choisi (AgentsSection) — spécialise le questionnaire et
+  // fait apparaître l'avatar compagnon sur le bord de l'écran
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [treeStep, setTreeStep] = useState(0);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [groundingSources, setGroundingSources] = useState<any[]>([]);
+  // Biens réels retenus par le moteur de matching pour ce dossier, avec leur
+  // verdict prix face aux transactions DLD.
+  const [matchedListings, setMatchedListings] = useState<MatchedListing[]>([]);
+  const [advisorMeta, setAdvisorMeta] = useState<AgentMeta | null>(null);
+  const [leadResult, setLeadResult] = useState<Awaited<ReturnType<typeof captureLead>> | null>(null);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLeadProperty, setSelectedLeadProperty] = useState<Property | null>(null);
@@ -108,8 +118,11 @@ function App() {
   });
   const serviceChargesSqft = simParams.serviceChargesSqft ?? 0;
 
-  const chatSessionRef = useRef<Chat | null>(null);
-  
+  // Historique au format attendu par l'API Claude — distinct de `messages`,
+  // qui porte en plus l'état d'affichage (streaming, timestamps).
+  const historyRef = useRef<WireMessage[]>([]);
+  const streamAbortRef = useRef<AbortController | null>(null);
+
   const handleSelectProperty = (property: Property) => {
     setSimParams(prev => ({
       ...prev,
@@ -270,42 +283,88 @@ function App() {
     );
   }, [userProfile, properties]);
 
+  /**
+   * Un tour de conversation avec le conseiller IA. Le texte arrive en streaming :
+   * on crée un message vide côté UI puis on l'alimente au fil des chunks.
+   */
+  const runAdvisorTurn = async (profile: UserProfile, userText?: string) => {
+    streamAbortRef.current?.abort();
+    const controller = new AbortController();
+    streamAbortRef.current = controller;
+
+    if (userText) {
+      historyRef.current = [...historyRef.current, { role: 'user', content: userText }];
+      setMessages(prev => [...prev, {
+        id: `u-${Date.now()}`, role: Role.USER, text: userText, timestamp: new Date(),
+      }]);
+    }
+
+    const replyId = `a-${Date.now()}`;
+    setMessages(prev => [...prev, {
+      id: replyId, role: Role.MODEL, text: '', timestamp: new Date(), isStreaming: true,
+    }]);
+    setIsChatLoading(true);
+
+    let accumulated = '';
+    const appendToReply = (text: string) => {
+      setMessages(prev => prev.map(m => (m.id === replyId ? { ...m, text } : m)));
+    };
+
+    await streamAdvisor(
+      {
+        advisorId: selectedAgentId ?? profile.advisorId,
+        profile,
+        messages: historyRef.current,
+        language: t.geminiLanguage,
+        knownListingIds: matchedListings.map(l => l.id),
+        signal: controller.signal,
+      },
+      {
+        onMeta: meta => {
+          setMatchedListings(meta.listings);
+          setAdvisorMeta(meta);
+        },
+        onText: chunk => {
+          accumulated += chunk;
+          appendToReply(accumulated);
+        },
+        onDone: ({ citations }) => {
+          setGroundingSources(citations);
+          historyRef.current = [...historyRef.current, { role: 'assistant', content: accumulated }];
+        },
+        onError: message => {
+          // On affiche l'erreur dans la bulle en cours plutôt que de la perdre en console.
+          appendToReply(accumulated || `Le conseiller est momentanément indisponible.\n\n${message}`);
+        },
+      }
+    );
+
+    setMessages(prev => prev.map(m => (m.id === replyId ? { ...m, isStreaming: false } : m)));
+    setIsChatLoading(false);
+  };
+
   const handleProfileSubmit = async (profile: UserProfile) => {
     gtm.funnelComplete(profile);
-    setUserProfile(profile);
-    setIsChatLoading(true);
+    const withAdvisor: UserProfile = { ...profile, advisorId: selectedAgentId ?? profile.advisorId };
+    setUserProfile(withAdvisor);
     setHasProfile(true);
+    historyRef.current = [];
+    setMessages([]);
 
-    try {
-      chatSessionRef.current = createInvestmentChat(profile, simParams, t.geminiLanguage);
-      const prompt = generateInitialAnalysisPrompt(profile, simParams, t.geminiLanguage);
-      const result = await chatSessionRef.current.sendMessage({ message: prompt });
-      const sources = result.candidates?.[0]?.groundingMetadata?.groundingChunks?.map((chunk: any) => ({ title: chunk.web?.title || "Données DLD", uri: chunk.web?.uri })).filter((s: any) => s.uri) || [];
-      setGroundingSources(sources);
-      setMessages([{ id: '1', role: Role.MODEL, text: result.text || "Analyse terminée.", timestamp: new Date() }]);
-    } catch (error) {
-      console.error("Init Error", error);
-    } finally {
-      setIsChatLoading(false);
-    }
+    // Capture du lead et ouverture du dossier en parallèle : le scoring CRM ne
+    // doit pas retarder l'affichage de l'analyse.
+    void captureLead({
+      profile: withAdvisor,
+      advisorId: withAdvisor.advisorId,
+      messageCount: 0,
+    }).then(result => setLeadResult(result));
+
+    await runAdvisorTurn(withAdvisor);
   };
 
   const handleSendMessage = async (text: string) => {
-    if (!chatSessionRef.current || isChatLoading) return;
-    const newMsg: Message = { id: Date.now().toString(), role: Role.USER, text, timestamp: new Date() };
-    setMessages(prev => [...prev, newMsg]);
-    setIsChatLoading(true);
-
-    try {
-      const result = await chatSessionRef.current.sendMessage({ message: text });
-      const sources = result.candidates?.[0]?.groundingMetadata?.groundingChunks?.map((chunk: any) => ({ title: chunk.web?.title || "Marché Immo", uri: chunk.web?.uri })).filter((s: any) => s.uri) || [];
-      setGroundingSources(sources);
-      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: Role.MODEL, text: result.text || "Analyse en cours...", timestamp: new Date() }]);
-    } catch (error) {
-      console.error("Chat Error", error);
-    } finally {
-      setIsChatLoading(false);
-    }
+    if (!userProfile || isChatLoading || !text.trim()) return;
+    await runAdvisorTurn(userProfile, text.trim());
   };
 
   useEffect(() => {
@@ -380,7 +439,7 @@ function App() {
         message={isChatLoading ? t.nav.aiAnalyzing : fmt(t.nav.aiReady, { name: userProfile?.name?.split(' ')[0] || '' })}
         isStreaming={isChatLoading}
         hasProfile={hasProfile}
-        onReset={() => { setHasProfile(false); setUserProfile(null); setMessages([]); }}
+        onReset={() => { setHasProfile(false); setUserProfile(null); setMessages([]); setSelectedAgentId(null); setTreeStep(0); }}
         exchangeRate={simParams.exchangeRate}
       />
 
@@ -396,13 +455,26 @@ function App() {
           {/* Partie centrale : 3 conseillers IA — révélée en rideau */}
           <div id="agents">
             <CurtainReveal>
-              <AgentsSection onConsult={() => document.getElementById('decision-tree')?.scrollIntoView({ behavior: 'smooth' })} />
+              <AgentsSection
+                onConsult={(id) => {
+                  setSelectedAgentId(id);
+                  setTreeStep(0);
+                  // léger délai : laisse l'avatar compagnon démarrer sa glissade avant le scroll
+                  setTimeout(() => document.getElementById('decision-tree')?.scrollIntoView({ behavior: 'smooth' }), 120);
+                }}
+              />
             </CurtainReveal>
           </div>
-          {/* Questionnaire — révélé en rideau */}
+          {/* Questionnaire — révélé en rideau ; remonté quand on change de conseiller */}
           <CurtainReveal>
             <div id="decision-tree" className="relative w-full flex flex-col items-center justify-start py-16 px-4" style={{ background: '#050505' }}>
-              <DecisionTree onSubmit={handleProfileSubmit} isLoading={isChatLoading} />
+              <DecisionTree
+                key={selectedAgentId ?? 'generic'}
+                agentId={selectedAgentId}
+                onStepChange={setTreeStep}
+                onSubmit={handleProfileSubmit}
+                isLoading={isChatLoading}
+              />
             </div>
           </CurtainReveal>
         </>
@@ -639,31 +711,60 @@ function App() {
 
             </div>
 
-            {/* RIGHT COLUMN: CHAT (STICKY) */}
+            {/* RIGHT COLUMN: SÉLECTION VÉRIFIÉE + CHAT (STICKY) */}
             <div className="hidden xl:block w-[400px] shrink-0">
-                <div className="sticky top-28 h-[calc(100vh-140px)]">
-                    <ChatInterface 
-                        messages={messages} 
-                        onSendMessage={handleSendMessage} 
-                        isStreaming={isChatLoading} 
-                        groundingSources={groundingSources}
-                    />
+                <div className="sticky top-28 flex flex-col gap-5" style={{ maxHeight: 'calc(100vh - 140px)' }}>
+                    {/* Les biens du conseiller, prix déjà croisés avec le DLD */}
+                    <div className="shrink-0 overflow-y-auto pr-1" style={{ maxHeight: '42vh' }}>
+                        <MatchedListings
+                            listings={matchedListings}
+                            market={advisorMeta?.market}
+                            advisorName={advisorMeta?.advisor?.name}
+                            isLoading={isChatLoading}
+                        />
+                    </div>
+                    <div className="flex-1 min-h-[380px]">
+                        <ChatInterface
+                            messages={messages}
+                            onSendMessage={handleSendMessage}
+                            isStreaming={isChatLoading}
+                            groundingSources={groundingSources}
+                        />
+                    </div>
                 </div>
             </div>
 
-            {/* MOBILE CHAT (FIXED BOTTOM TOGGLE OR INLINE - For now inline at bottom) */}
-            <div className="xl:hidden h-[600px] mt-12">
-                 <ChatInterface 
-                    messages={messages} 
-                    onSendMessage={handleSendMessage} 
-                    isStreaming={isChatLoading} 
-                    groundingSources={groundingSources}
+            {/* MOBILE : sélection puis chat, empilés */}
+            <div className="xl:hidden mt-12 flex flex-col gap-8">
+                <MatchedListings
+                    listings={matchedListings}
+                    market={advisorMeta?.market}
+                    advisorName={advisorMeta?.advisor?.name}
+                    isLoading={isChatLoading}
                 />
+                <div className="h-[600px]">
+                    <ChatInterface
+                        messages={messages}
+                        onSendMessage={handleSendMessage}
+                        isStreaming={isChatLoading}
+                        groundingSources={groundingSources}
+                    />
+                </div>
             </div>
         </div>
       )}
 
       <LeadModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} property={selectedLeadProperty} userProfile={userProfile} />
+
+      {/* Avatar compagnon — glisse sur le bord de l'écran dès qu'un conseiller
+          est choisi et reste présent pendant tout le parcours */}
+      {selectedAgentId && (
+        <AgentCompanion
+          agentId={selectedAgentId}
+          phase={hasProfile ? 'dashboard' : 'tree'}
+          step={treeStep}
+        />
+      )}
       </div>
       <Footer />
     </div>

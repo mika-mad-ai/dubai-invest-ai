@@ -206,6 +206,14 @@ function normalizeNextData(e: any): any | null {
     lng,
     source_url: url,
     source: 'propertyfinder',
+    // `scraped_at` pilote le test de fraîcheur de /api/live-listings, qui lit
+    // max(scraped_at). Le `default now()` en base ne se déclenche qu'à
+    // l'insertion : sur cet upsert `merge-duplicates`, une annonce déjà connue
+    // garderait sa date d'origine. Le test passait quand même, parce qu'au moins
+    // une annonce inédite entre chaque nuit — mais une nuit sans nouvel
+    // identifiant aurait fait vieillir le max et tout serait retombé sur du
+    // scraping direct. On l'écrit donc explicitement.
+    scraped_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 }
@@ -265,6 +273,14 @@ function normalizeJsonLd(e: any): any | null {
     lng,
     source_url: url,
     source: 'propertyfinder',
+    // `scraped_at` pilote le test de fraîcheur de /api/live-listings, qui lit
+    // max(scraped_at). Le `default now()` en base ne se déclenche qu'à
+    // l'insertion : sur cet upsert `merge-duplicates`, une annonce déjà connue
+    // garderait sa date d'origine. Le test passait quand même, parce qu'au moins
+    // une annonce inédite entre chaque nuit — mais une nuit sans nouvel
+    // identifiant aurait fait vieillir le max et tout serait retombé sur du
+    // scraping direct. On l'écrit donc explicitement.
+    scraped_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 }

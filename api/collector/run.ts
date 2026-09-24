@@ -21,7 +21,10 @@ const EUR_TO_AED = 4.15;
 
 function isAuthorized(req: any): boolean {
   const expected = process.env.COLLECTOR_SECRET;
-  if (!expected) return true;
+  // Échouer FERMÉ : sans secret configuré, l'endpoint doit refuser, pas ouvrir.
+  // L'ancien `return true` rendait cette route publique dès que COLLECTOR_SECRET
+  // était absent — et elle déclenche des appels payants.
+  if (!expected) return false;
   const provided = req.headers['x-collector-secret'] || req.query?.secret;
   return provided === expected;
 }

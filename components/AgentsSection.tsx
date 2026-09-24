@@ -8,7 +8,7 @@ import { TrendingUp, Home, KeyRound, ArrowRight, Sparkles } from 'lucide-react';
  * l'image n'existe pas, un fallback doré élégant s'affiche (onError).
  */
 
-interface Agent {
+export interface Agent {
   id: string;
   name: string;
   role: string;
@@ -18,9 +18,19 @@ interface Agent {
   desc: string;
   tags: string[];
   noVideo?: boolean; // pas de cinemagraph vidéo → photo « qui respire »
+  /**
+   * Idle construit depuis la photo fixe, mouvement de caméra déjà encodé dans le
+   * fichier — le mouvement CSS est donc désactivé pour ne pas s'y cumuler.
+   *
+   * Écarté deux fois pour cet agent : Veo l'anime en articulant en continu, et le
+   * transfert de mouvement (LivePortrait) déforme le crâne, qui gonfle et dégonfle
+   * au fil de la boucle. C'est le défaut classique du transfert entre morphologies
+   * différentes. Une photo qui respire reste préférable.
+   */
+  idleFromPhoto?: boolean;
 }
 
-const AGENTS: Agent[] = [
+export const AGENTS: Agent[] = [
   {
     id: 'locatif',
     name: 'Karim Haddad',
@@ -50,33 +60,109 @@ const AGENTS: Agent[] = [
     accent: '#00F2FF',
     desc: "Elle trouve la location idéale, courte ou longue durée, dans le bon quartier et au juste prix, selon votre style de vie.",
     tags: ['Courte durée', 'Longue durée', 'Meublé'],
+    idleFromPhoto: true,
   },
 ];
+
+/**
+ * Couches vidéo « vivantes » partagées (cartes + avatar compagnon) :
+ *  1. `-intro.mp4` — le geste de salutation, joué UNE SEULE fois ;
+ *  2. `-idle.mp4`  — boucle boomerang calme (respiration/clignements) qui
+ *     prend le relais en fondu croisé dès la fin de l'intro.
+ * L'intro se termine sur ~sa première image (boomerang), donc le raccord
+ * vers l'idle (généré depuis le même portrait) est quasi invisible.
+ */
+export const LivingVideoLayers: React.FC<{
+  agent: Agent;
+  /** remonte l'état « une vidéo est visible » (pour piloter la couche photo) */
+  onShowVideo: (show: boolean) => void;
+  showVideo: boolean;
+}> = ({ agent, onShowVideo, showVideo }) => {
+  const reduced = useReducedMotion();
+  const [introDone, setIntroDone] = useState(false);
+  const [idleFailed, setIdleFailed] = useState(false);
+  const idleRef = React.useRef<HTMLVideoElement | null>(null);
+  const introRef = React.useRef<HTMLVideoElement | null>(null);
+  const introSrc = agent.photo.replace(/\.png$/, '-intro.mp4');
+  const idleSrc = agent.photo.replace(/\.png$/, '-idle.mp4');
+
+  // Le salut ne démarre qu'à l'entrée dans le viewport — sinon il se jouerait
+  // dès le chargement de la page, hors écran, et personne ne le verrait.
+  React.useEffect(() => {
+    const el = introRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.play().catch(() => {});
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.35 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const handleIntroEnded = () => {
+    setIntroDone(true);
+    if (idleRef.current && !idleFailed) idleRef.current.play().catch(() => {});
+    else if (idleFailed) onShowVideo(false); // idle indisponible → repli photo
+  };
+
+  return (
+    <>
+      {/* idle en dessous : préchargé, figé sur sa 1re image jusqu'à la fin de l'intro.
+          Un mouvement de caméra synthétique lent (zoom + dérive) s'y superpose,
+          pour épaissir un mouvement facial volontairement discret. Il ne touche
+          pas au visage, donc il n'introduit aucun mouvement de bouche. */}
+      <motion.video
+        ref={idleRef}
+        src={idleSrc}
+        loop
+        muted
+        playsInline
+        preload="auto"
+        onError={() => { setIdleFailed(true); if (introDone) onShowVideo(false); }}
+        className="absolute inset-0 w-full h-full object-cover object-top"
+        style={{ opacity: showVideo && introDone && !idleFailed ? 1 : 0, transition: 'opacity .6s ease' }}
+        animate={reduced || !introDone || agent.idleFromPhoto ? { scale: 1.03, y: 0, x: 0 } : {
+          scale: [1.03, 1.075, 1.045, 1.03],
+          y: [0, -6, -2, 0],
+          x: [0, 3, -2, 0],
+        }}
+        transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut', times: [0, 0.38, 0.72, 1] }}
+      />
+      {/* intro au-dessus : le salut, joué une seule fois (pas de loop),
+          déclenché à l'entrée dans le viewport */}
+      <video
+        ref={introRef}
+        src={introSrc}
+        poster={agent.photo}
+        muted
+        playsInline
+        preload="metadata"
+        onCanPlay={() => onShowVideo(true)}
+        onError={() => onShowVideo(false)}
+        onEnded={handleIntroEnded}
+        className="absolute inset-0 w-full h-full object-cover object-top"
+        style={{ opacity: showVideo && !introDone ? 1 : 0, transition: 'opacity .6s ease' }}
+      />
+    </>
+  );
+};
 
 const Avatar: React.FC<{ agent: Agent }> = ({ agent }) => {
   const [failed, setFailed] = useState(false);
   const [videoOk, setVideoOk] = useState(false);
   const reduced = useReducedMotion();
   const initials = agent.name.split(' ').map(w => w[0]).join('');
-  const videoSrc = agent.photo.replace(/\.png$/, '.mp4');
   const showVideo = videoOk && !reduced && !agent.noVideo;
   return (
     <div className="relative w-full overflow-hidden" style={{ aspectRatio: '3 / 4', borderTopLeftRadius: 18, borderTopRightRadius: 18, background: '#0a0a12' }}>
-      {/* Couche vidéo « vivante » (cinemagraph Veo). Reste invisible tant qu'elle ne joue pas → repli photo. */}
+      {/* Couches vidéo « vivantes » : salut une fois, puis boucle idle. */}
       {!reduced && !failed && !agent.noVideo && (
-        <video
-          src={videoSrc}
-          poster={agent.photo}
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-          onCanPlay={() => setVideoOk(true)}
-          onError={() => setVideoOk(false)}
-          className="absolute inset-0 w-full h-full object-cover object-top"
-          style={{ opacity: showVideo ? 1 : 0, transition: 'opacity .7s ease' }}
-        />
+        <LivingVideoLayers agent={agent} showVideo={showVideo} onShowVideo={setVideoOk} />
       )}
       {/* Couche photo : sert de poster + repli ; « respire » doucement quand il n'y a pas de vidéo. */}
       {!failed ? (

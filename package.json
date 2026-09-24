@@ -5,9 +5,12 @@
   "scripts": {
     "dev": "vite",
     "build": "node scripts/generate-sitemaps.mjs && tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify": "node scripts/verify-engine.mjs && node scripts/verify-desk.mjs && node scripts/verify-schema.mjs && node scripts/verify-guard.mjs && node scripts/verify-social.mjs",
+    "avatars:idle": "node scripts/process-veo-idle.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.116.0",
     "@google/genai": "^1.30.0",
     "@types/react-router-dom": "^5.3.3",
     "animejs": "^4.5.0",
@@ -23,6 +26,7 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.18.1",
     "recharts": "^2.15.0",
+    "remark-gfm": "^4.0.1",
     "satori": "^0.26.0",
     "sharp": "^0.35.2",
     "tailwind-merge": "^3.6.0",
@@ -35,6 +39,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "ffmpeg-static": "^5.3.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.7.2",

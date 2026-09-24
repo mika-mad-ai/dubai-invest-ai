@@ -8,7 +8,17 @@
       "Bash(/private/tmp/claude-501/-Users-mickaelabramovici-Desktop-DubaiInvest-AI-Advisor/daba85f1-085f-4218-b351-c9803b50618a/scratchpad/ffmpeg/node_modules/ffmpeg-static/ffmpeg -y -i public/hero-video.mp4 -an -c:v libx264 -crf 26 -preset slow -g 4 -keyint_min 4 -sc_threshold 0 -movflags +faststart -pix_fmt yuv420p public/hero-scrub.mp4)",
       "Bash(/private/tmp/claude-501/-Users-mickaelabramovici-Desktop-DubaiInvest-AI-Advisor/daba85f1-085f-4218-b351-c9803b50618a/scratchpad/ffmpeg/node_modules/ffmpeg-static/ffmpeg -y -i public/hero-veo-raw.mp4 -an -c:v libx264 -crf 25 -preset slow -g 4 -keyint_min 4 -sc_threshold 0 -movflags +faststart -pix_fmt yuv420p public/hero-scrub.mp4)",
       "Bash(/private/tmp/claude-501/-Users-mickaelabramovici-Desktop-DubaiInvest-AI-Advisor/daba85f1-085f-4218-b351-c9803b50618a/scratchpad/ffmpeg/node_modules/ffmpeg-static/ffmpeg -y -ss 0 -i public/hero-scrub.mp4 -frames:v 1 -q:v 4 -vf scale=1280:-2 public/hero-poster.jpg)",
-      "Bash(cp .env.local .env.local.bak)"
+      "Bash(cp .env.local .env.local.bak)",
+      "Bash(export SP=\"/private/tmp/claude-501/-Users-mickaelabramovici-Desktop-DubaiInvest-AI-Advisor/daba85f1-085f-4218-b351-c9803b50618a/scratchpad\")",
+      "Bash(break)",
+      "Bash(awk '{print $9, $5}')",
+      "Bash(awk '{print $9,$5}')",
+      "Bash(rm -f public/agents/*-raw.mp4)",
+      "Bash(rm -f /private/tmp/claude-501/-Users-mickaelabramovici-Desktop-DubaiInvest-AI-Advisor/daba85f1-085f-4218-b351-c9803b50618a/scratchpad/tkey.txt)",
+      "Bash(./ff/node_modules/ffmpeg-static/ffmpeg -y -ss 3.0 -i '/Users/mickaelabramovici/Desktop/DubaiInvest AI Advisor/public/agents/agent-locatif-intro.mp4' -frames:v 1 -q:v 4 -vf scale=140:-2 frames/test.jpg)",
+      "Bash(rm -f agents-greeting.jpeg companion-karim-step1.jpeg)",
+      "Bash(rm -rf .playwright-mcp)",
+      "Bash(awk '{printf \"%-32s %6.0f KB\\\\n\", $9, $5/1024}')"
     ],
     "additionalDirectories": [
       "/tmp"
