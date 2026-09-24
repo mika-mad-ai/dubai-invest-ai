@@ -21,6 +21,7 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { pickDailyPhoto, fetchPhotoBase64 } from './stock-photos';
+import { env } from './env';
 
 const GEMINI_KEY = process.env.API_KEY ?? '';
 const SUPABASE_URL = process.env.SUPABASE_URL ?? '';
@@ -289,7 +290,7 @@ function withHashtags(text: string, tags: string[]): string {
 
 /** Facebook Page : carrousel multi-photos, sinon /photos, /videos ou /feed. */
 async function publishFacebook(content: DailyContent, media: GeneratedMedia): Promise<PublishResult> {
-  const pageId = process.env.FB_PAGE_ID;
+  const pageId = env('FB_PAGE_ID');
   const token = process.env.FB_PAGE_ACCESS_TOKEN;
   if (!pageId || !token) return { platform: 'facebook', ok: false, skipped: true };
 
@@ -345,7 +346,7 @@ async function publishFacebook(content: DailyContent, media: GeneratedMedia): Pr
 
 /** Instagram Business (Graph API) : carrousel natif, sinon container simple → publish. */
 async function publishInstagram(content: DailyContent, media: GeneratedMedia): Promise<PublishResult> {
-  const igUserId = process.env.IG_USER_ID;
+  const igUserId = env('IG_USER_ID');
   const token = process.env.IG_ACCESS_TOKEN ?? process.env.FB_PAGE_ACCESS_TOKEN;
   if (!igUserId || !token) return { platform: 'instagram', ok: false, skipped: true };
   if (!media.carouselUrls?.length && !media.imageUrl && !media.videoUrl) {

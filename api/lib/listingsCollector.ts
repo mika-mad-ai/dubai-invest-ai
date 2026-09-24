@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { env } from './env';/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export type SourceStatus = {
   source: 'propertyfinder' | 'bayut';
@@ -136,7 +137,7 @@ function extractScriptJson(html: string, scriptId: string): any | null {
  * qui a maxDuration=300 dans vercel.json.
  */
 async function runApifyActor(actorId: string, input: object, maxItems: number): Promise<any[]> {
-  const token = process.env.APIFY_API_TOKEN;
+  const token = env('APIFY_API_TOKEN');
   if (!token) return [];
 
   const url = `${APIFY_BASE}/acts/${actorId}/run-sync-get-dataset-items?token=${token}&timeout=100&maxItems=${maxItems}`;
@@ -418,7 +419,7 @@ function dedupeByUrl(listings: Listing[]): Listing[] {
 // ─── Point d'entrée principal ────────────────────────────────────────────────
 
 export async function collectLiveListings(city = 'dubai', limit = 24) {
-  const apifyToken = process.env.APIFY_API_TOKEN;
+  const apifyToken = env('APIFY_API_TOKEN');
 
   let pf: { listings: Listing[]; status: SourceStatus };
   const bayut = await fetchBayut(city); // toujours 0 sans proxy premium
