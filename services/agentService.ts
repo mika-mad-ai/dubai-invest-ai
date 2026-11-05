@@ -87,17 +87,23 @@ export async function streamAdvisor(
       signal: opts.signal,
     });
   } catch (err) {
-    handlers.onError?.(err instanceof Error ? err.message : 'Conseiller injoignable');
+    if ((err as Error)?.name === 'AbortError') return;
+    console.warn('[conseiller] requête impossible', err);
+    handlers.onError?.('Connexion au conseiller impossible. Vérifiez votre réseau puis renvoyez votre message.');
     return;
   }
 
   // L'endpoint répond en JSON (et non en SSE) quand il n'est pas configuré.
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('text/event-stream')) {
-    let reason = `Conseiller indisponible (HTTP ${response.status})`;
+    // Seuls 413 (message trop long) et 429 (débit) portent un motif rédigé
+    // pour le visiteur ; les autres motifs sont techniques (config, quota)
+    // et restent en console.
+    let reason = 'Le conseiller est momentanément indisponible. Réessayez dans quelques minutes.';
     try {
       const data = await response.json();
-      if (data?.reason) reason = data.reason;
+      if (data?.reason && (response.status === 413 || response.status === 429)) reason = data.reason;
+      else if (data?.reason) console.warn(`[conseiller] HTTP ${response.status} : ${data.reason}`);
     } catch {
       /* réponse non JSON : on garde le message par défaut */
     }

@@ -88,10 +88,10 @@ const GrowthVisualizer: React.FC<GrowthVisualizerProps> = ({ data, duration }) =
 
       {/* CENTRAL YEAR DISPLAY */}
       <div className="absolute top-8 left-1/2 -translate-x-1/2 z-20 text-center">
-         <span className="text-6xl font-serif text-white/10 font-bold select-none">
+         <span className="text-6xl font-serif text-white/10 font-bold select-none" aria-hidden="true">
             {currentYearData.year.replace('An ', '')}
          </span>
-         <span className="block text-[10px] text-white/20 uppercase tracking-[0.5em]">Années</span>
+         <span className="block text-[10px] text-white/60 uppercase tracking-[0.5em]">Années</span>
       </div>
 
       <div className="flex-1 grid grid-cols-3 gap-8 relative z-20 pb-0 px-4 items-end max-w-4xl mx-auto w-full">

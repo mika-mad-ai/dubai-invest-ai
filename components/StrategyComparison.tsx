@@ -49,7 +49,7 @@ const StrategyComparison: React.FC<StrategyComparisonProps> = ({ property, param
     <div className="glass-panel p-6 rounded-2xl h-full flex flex-col border border-white/5 relative overflow-hidden">
         {/* Background Hint */}
         {!property && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5" aria-hidden="true">
                 <span className="text-6xl font-black uppercase transform -rotate-12">Simulation</span>
             </div>
         )}
@@ -66,7 +66,7 @@ const StrategyComparison: React.FC<StrategyComparisonProps> = ({ property, param
                 <p className="text-[10px] text-slate-500 uppercase tracking-widest">Net-Net Yield</p>
                 <div className="flex items-baseline justify-end gap-2">
                     <p className="text-xl font-bold text-emerald-400 font-mono">{netNetYield.toFixed(2)}%</p>
-                    <p className="text-[10px] line-through text-slate-600 decoration-red-500 decoration-2">{grossYield}%</p>
+                    <p className="text-[10px] line-through text-slate-400 decoration-red-500 decoration-2">{grossYield}%</p>
                 </div>
                 <p className="text-[9px] text-red-400/80">Charges: -{formatCurrency(serviceChargesYear)}/an</p>
             </div>

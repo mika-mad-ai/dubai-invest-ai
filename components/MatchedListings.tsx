@@ -214,7 +214,7 @@ const MatchedListings: React.FC<{
             {advisorName ? `La sélection de ${advisorName.split(' ')[0]}` : 'Biens retenus pour votre dossier'}
           </h3>
           {market?.avgPriceSqft && (
-            <p style={{ fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem', color: 'rgba(240,235,224,0.48)', marginTop: 3 }}>
+            <p style={{ fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem', color: 'rgba(240,235,224,0.62)', marginTop: 3 }}>
               Référence marché : {Math.round(market.avgPriceSqft).toLocaleString('fr-FR')} AED/sqft
               {market.volume ? ` · ${market.volume.toLocaleString('fr-FR')} transactions` : ''}
               {market.trend ? ` · ${market.trend}` : ''}

@@ -19,7 +19,7 @@ import {
   viewCone,
   type ViewInsight,
 } from './viewAnalysis';
-import { benchmarkFor } from '../../api/lib/priceCheck';
+import { checkPrice } from '../../api/lib/priceCheck';
 import { DLD_BENCHMARK_AS_OF } from '../../api/lib/dldBenchmarks';
 
 /**
@@ -69,9 +69,12 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
     [point]
   );
 
-  const bench = useMemo(() => benchmarkFor(subject.location, subject.type), [subject]);
-  const askingAedSqft =
-    subject.price && subject.sqm ? (subject.price * 4.24) / (subject.sqm * 10.764) : null;
+  // Même verdict que la carte du bien et la sélection du conseiller
+  // (médiane DLD de zone corrigée par nombre de chambres).
+  const price = useMemo(
+    () => checkPrice(subject.price, subject.sqm ?? 0, subject.location, null, { beds: subject.beds, type: subject.type }),
+    [subject]
+  );
 
   // ── Résolution de la position ────────────────────────────────────────────
   useEffect(() => {
@@ -299,7 +302,7 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
         <h4 style={{ fontFamily: display, fontSize: '0.98rem', fontWeight: 700, color: IVORY, lineHeight: 1.3, margin: '4px 0 0' }}>
           {building?.name ?? subject.title}
         </h4>
-        <p style={{ fontFamily: sans, fontSize: '0.7rem', color: 'rgba(240,235,224,0.55)', margin: '2px 0 0' }}>
+        <p style={{ fontFamily: sans, fontSize: '0.7rem', color: 'rgba(240,235,224,0.66)', margin: '2px 0 0' }}>
           {subject.location}
         </p>
 
@@ -319,7 +322,7 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
 
         {views.length > 0 && (
           <>
-            <p style={{ fontFamily: sans, fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(240,235,224,0.45)', margin: '14px 0 6px' }}>
+            <p style={{ fontFamily: sans, fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(240,235,224,0.62)', margin: '14px 0 6px' }}>
               Vues selon étage et orientation
             </p>
             <div className="m3d-chips">
@@ -346,18 +349,21 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
               <span className="m3d-v">{seaView.distanceKm} km ({seaView.direction})</span>
             </div>
           )}
-          {askingAedSqft && (
+          {price.askingAedSqft && price.benchmarkAedSqft && price.deltaPct != null && (
             <div className="m3d-row">
               <span className="m3d-k">Demandé / médiane DLD</span>
               <span className="m3d-v">
-                {Math.round(askingAedSqft).toLocaleString('fr-FR')} / {bench.value.toLocaleString('fr-FR')} AED·sqft
+                {Math.round(price.askingAedSqft).toLocaleString('fr-FR')} / {price.benchmarkAedSqft.toLocaleString('fr-FR')} AED·sqft
+                <em style={{ display: 'block', fontStyle: 'normal', fontWeight: 600, color: price.deltaPct <= -4 ? '#6ee7b7' : price.deltaPct >= 4 ? '#fcd34d' : 'rgba(240,235,224,0.7)' }}>
+                  {price.deltaPct > 0 ? '+' : '−'}{Math.abs(Math.round(price.deltaPct))} %
+                </em>
               </span>
             </div>
           )}
         </div>
 
-        <p style={{ fontFamily: sans, fontSize: '0.6rem', color: 'rgba(240,235,224,0.38)', lineHeight: 1.6, margin: '12px 0 0' }}>
-          {bench.matched ? `Zone DLD « ${bench.zone} » · ` : ''}médiane revente 12 mois au {DLD_BENCHMARK_AS_OF}.
+        <p style={{ fontFamily: sans, fontSize: '0.6rem', color: 'rgba(240,235,224,0.62)', lineHeight: 1.6, margin: '12px 0 0' }}>
+          {price.zone ? `Zone DLD « ${price.zone} » · ` : ''}médiane revente 12 mois au {DLD_BENCHMARK_AS_OF}.
           Bâti et hauteurs : OpenStreetMap.
         </p>
       </aside>
@@ -383,7 +389,7 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
         .m3d-note { font-family: ${sans}; font-size: 0.66rem; color: rgba(251,191,36,0.85); background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.22); border-radius: 8px; padding: 6px 9px; line-height: 1.5; margin: 10px 0 0; }
         .m3d-row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.055); }
         .m3d-row:last-child { border-bottom: none; }
-        .m3d-k { font-family: ${sans}; font-size: 0.68rem; color: rgba(240,235,224,0.5); }
+        .m3d-k { font-family: ${sans}; font-size: 0.68rem; color: rgba(240,235,224,0.66); }
         .m3d-v { font-family: ${sans}; font-size: 0.7rem; font-weight: 700; color: ${IVORY}; text-align: right; }
 
         .m3d-chips { display: flex; flex-wrap: wrap; gap: 6px; }

@@ -195,7 +195,7 @@ const Lightbox: React.FC<LightboxProps> = ({ property: p, images, initialIndex, 
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
           <div>
             <h3 className="text-xl font-serif text-white mb-1">{p.title}</h3>
-            <p className="text-xs flex items-center gap-1" style={{ color: 'rgba(212,175,55,0.70)' }}>
+            <p className="text-xs flex items-center gap-1" style={{ color: 'rgba(212,175,55,0.85)' }}>
               <MapPinIcon className="w-3 h-3" /> {p.location}
             </p>
           </div>
@@ -211,7 +211,7 @@ const Lightbox: React.FC<LightboxProps> = ({ property: p, images, initialIndex, 
             { label: t.topPick.type, value: p.type },
           ].map(({ label, value }) => (
             <div key={label} className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <p className="text-[8px] uppercase tracking-widest mb-1" style={{ color: 'rgba(180,175,165,0.45)' }}>{label}</p>
+              <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'rgba(180,175,165,0.85)' }}>{label}</p>
               <p className="text-sm font-semibold text-white">{value}</p>
             </div>
           ))}
@@ -230,7 +230,7 @@ const Lightbox: React.FC<LightboxProps> = ({ property: p, images, initialIndex, 
         )}
 
         {/* Liquidité + Livraison */}
-        <div className="flex flex-wrap gap-4 text-xs" style={{ color: 'rgba(180,175,165,0.60)' }}>
+        <div className="flex flex-wrap gap-4 text-xs" style={{ color: 'rgba(180,175,165,0.85)' }}>
           {p.liquidity && <span><BuildingIcon className="w-3 h-3 inline mr-1" />{t.topPick.liquidity} <span className="text-white font-semibold">{p.liquidity}</span></span>}
           {p.completion && <span>{t.topPick.delivery} <span className="text-white font-semibold">{p.completion}</span></span>}
           {p.sourceUrl && (
@@ -414,7 +414,7 @@ const ProgressRing: React.FC<ProgressRingProps> = ({ pct, images, title, onOpenL
         }}
       >
         <span className="text-2xl font-black leading-none" style={{ color: '#D4AF37' }}>{pct}%</span>
-        <span className="text-[8px] uppercase tracking-widest mt-0.5" style={{ color: 'rgba(212,175,55,0.60)' }}>{t.topPick.match}</span>
+        <span className="text-[8px] uppercase tracking-widest mt-0.5" style={{ color: 'rgba(212,175,55,0.85)' }}>{t.topPick.match}</span>
       </div>
     </div>
   );
@@ -457,7 +457,7 @@ const AITopPick: React.FC<AITopPickProps> = ({ property: p, profile, score, onSe
 
       {/* ── Title ── */}
       <div className="text-center mb-8">
-        <p className="text-[10px] uppercase tracking-[0.25em] mb-2" style={{ color: 'rgba(212,175,55,0.55)' }}>
+        <p className="text-[10px] uppercase tracking-[0.25em] mb-2" style={{ color: 'rgba(212,175,55,0.85)' }}>
           {t.topPick.badge}
         </p>
         <h2 className="text-2xl md:text-4xl font-serif text-white leading-tight">
@@ -491,7 +491,7 @@ const AITopPick: React.FC<AITopPickProps> = ({ property: p, profile, score, onSe
       {/* ── Property name + location ── */}
       <div className="text-center mb-6">
         <h3 className="text-xl md:text-2xl font-serif text-white">{p.title}</h3>
-        <p className="text-xs mt-1 flex items-center justify-center gap-1" style={{ color: 'rgba(180,175,165,0.60)' }}>
+        <p className="text-xs mt-1 flex items-center justify-center gap-1" style={{ color: 'rgba(180,175,165,0.85)' }}>
           <MapPinIcon className="w-3 h-3" /> {p.location}
         </p>
         {p.sourceUrl ? (
@@ -511,7 +511,7 @@ const AITopPick: React.FC<AITopPickProps> = ({ property: p, profile, score, onSe
           </a>
         ) : (
           <span className="inline-block mt-3 text-[9px] uppercase tracking-widest px-3 py-1 rounded-full"
-            style={{ color: 'rgba(180,175,165,0.35)', border: '1px solid rgba(255,255,255,0.07)' }}>
+            style={{ color: 'rgba(180,175,165,0.85)', border: '1px solid rgba(255,255,255,0.07)' }}>
             {t.topPick.internalListing}
           </span>
         )}
@@ -532,7 +532,7 @@ const AITopPick: React.FC<AITopPickProps> = ({ property: p, profile, score, onSe
               border: `1px solid ${gold ? 'rgba(212,175,55,0.30)' : 'rgba(255,255,255,0.08)'}`,
             }}
           >
-            <p className="text-[8px] uppercase tracking-widest mb-1" style={{ color: 'rgba(180,175,165,0.45)' }}>{label}</p>
+            <p className="text-[10px] uppercase tracking-widest mb-1" style={{ color: 'rgba(180,175,165,0.85)' }}>{label}</p>
             <p className="text-sm font-bold" style={{ color: gold ? '#D4AF37' : 'white' }}>{value}</p>
           </div>
         ))}
