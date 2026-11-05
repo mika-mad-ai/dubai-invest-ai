@@ -8,7 +8,6 @@
 - Data viz: `Recharts`
 - Cartographie: `Leaflet`
 - Backend API (serverless): fonctions `api/*.ts` (style Vercel Functions)
-- Backend secondaire (non branché au frontend): `Python` + `FastAPI` (`backend.py`, actuellement mock)
 - LLM d'analyse et de conseil: `@anthropic-ai/sdk` (Claude `claude-opus-5`)
 - LLM de génération de contenu/médias: `@google/genai` (SEO, blog, social, Veo/Imagen)
 
@@ -43,7 +42,6 @@
 - `components/`: composants UI, charts, carte, formulaires, chat
 - `api/`: endpoints serverless (scraping, agrégateur, DLD, collector, store)
 - `docs/`: documentation d’exploitation (Supabase setup)
-- `backend.py`: FastAPI mock indépendant (non utilisé dans le flux React actuel)
 
 ### Détail des dossiers/fichiers clés
 
@@ -113,8 +111,6 @@
   - Trigger manuel/cron du collecteur
   - Auth simple via `COLLECTOR_SECRET`
 
-- `api/propertyfinder-scrape.ts`
-  - Endpoint legacy PF-only (toujours présent)
 
 - `components/charts/GeopoliticalImpactChart.tsx`
   - Graphiques prix moyen + volume hebdo (DLD/fallback)
