@@ -1,4 +1,80 @@
-# HANDOFF — carte 3D des résultats (session du 2026-11-05)
+# HANDOFF — journal de bord (session cloud autonome du 2026-11-05)
+
+> Session reprise depuis VS Code, puis menée en autonomie dans le cloud.
+> Missions demandées : (1) finaliser la carte 3D, (2) design via Figma /
+> audit design, (3) backlog technique (coût par lead, éval, RGPD, nettoyage).
+> Règles : services gratuits uniquement, aucun appel facturé, aucun
+> déploiement ; `npx tsc --noEmit && npm run build && npm run verify` vert
+> après chaque étape ; PR vers `feat/agence-ia-uae`, jamais de merge.
+
+## État des missions
+
+| Mission | État | PR |
+|---|---|---|
+| 1. Carte 3D | ✅ testée (tuiles de test, voir limite ci-dessous) | voir « PR ouvertes » |
+| 2. Design / Figma | ⏳ | — |
+| 3a. Coût réel par lead | ⏳ | — |
+| 3b. Banc d'éval conseiller | ⏳ | — |
+| 3c. RGPD WhatsApp | ⏳ | — |
+| 3d. Nettoyage code mort | ⏳ | — |
+
+## Mission 1 — carte 3D : fait
+
+Bugs trouvés en test navigateur et corrigés (commit `995378a`) :
+- **Bloquant, dev ET prod** : MapLibre v6 cherche son worker à côté de son
+  module (`new URL('./maplibre-gl-worker.mjs', import.meta.url)`). Bundlé par
+  Vite, ce fichier n'existe plus → « Worker failed to load », **aucune tuile**.
+  Le build de prod n'émettait pas le worker. Corrigé par
+  `setWorkerUrl(import 'maplibre-gl/dist/maplibre-gl-worker.mjs?url')`
+  → `dist/assets/maplibre-gl-worker-*.mjs` (519 kB, chargé à l'ouverture).
+- Error boundary locale au dialogue : avant, une erreur de chargement du chunk
+  remontait à l'ErrorBoundary global et **faisait tomber toute la page**.
+- Mauvaise tour dorée : `queryRenderedFeatures` au pixel écran choisissait la
+  tour du premier plan en vue inclinée. Remplacé par `pickBuilding()` (test
+  point-dans-polygone sur `querySourceFeatures`, repli « plus proche < 35 m »).
+- Z-fighting (rayures) entre la tour dorée et l'originale → filtre par id +
+  empreinte gonflée de 1,5 %. Effet « rayon X » (bâti voisin à 55 %).
+- Vue mer fausse (« NE » à la Marina au lieu de NO) : distance au sommet de
+  côte le plus proche → distance au **segment** ; côte densifiée ; îles.
+- Nominatim appelé 2× (StrictMode) → requêtes en vol dédupliquées ; requête
+  « Arjan, Arjan, Dubai » corrigée ; 429/5xx plus mis en cache comme négatif ;
+  géocodage d'un quartier seul marqué `approx` (avant : `exact` à tort).
+- UI : panneau sous le bouton fermer (chevauchement), halo pointillé en mode
+  quartier, attribution OSM dégagée en mobile, focus clavier géré.
+- `vite.config.ts` : `optimizeDeps.include: ['maplibre-gl']` (évite le reload
+  dev au premier clic).
+- `scripts/verify-map3d.mjs` : 28 assertions ajoutées à `npm run verify`.
+
+Screenshots : `docs/screenshots/map3d/` (bureau 1440, mobile 390, reduced-motion).
+
+### ⚠️ Limite du test visuel (décision prise)
+Le réseau de la session cloud **refuse `tiles.openfreemap.org` et
+`nominatim.openstreetmap.org`** (politique réseau de l'environnement). Décision :
+tester le code avec des **tuiles synthétiques** au schéma OpenMapTiles servies
+par Playwright (`scripts/visual/`), annonces et Nominatim simulés. Les
+screenshots montrent donc du bâti **factice** (blocs générés), pas Dubaï.
+Validé : worker, extrusions, tour dorée, cône, panneau, 3 cas de localisation,
+mobile, reduced-motion, console propre. **Non validé** : rendu avec les vraies
+tuiles OpenFreeMap (densité, labels/glyphes, présence de `id` sur les
+bâtiments). À refaire sur un poste avec réseau ouvert :
+`npm run dev` → profil → « Carte 3D ». Pour autoriser ces hôtes dans le cloud :
+paramètres de l'environnement → Network access → Allowed domains.
+
+Rejouer le banc :
+```bash
+npm i --no-save geojson-vt@3.2.1 vt-pbf@3.1.3
+npm run dev &
+node scripts/visual/map3d-harness.cjs /tmp/shots desktop   # ou mobile / reduced
+```
+En dev Vite, `/api/live-listings` n'existe pas : **aucune carte de bien ne
+s'affiche** (contrairement à ce que disait le handoff précédent, il n'y a pas
+de fallback statique côté front — « Erreur de chargement des annonces »). Le
+banc intercepte la route avec 3 annonces de test.
+
+---
+
+# Historique — handoff VS Code (avant reprise)
+
 
 ## Tâche demandée
 
