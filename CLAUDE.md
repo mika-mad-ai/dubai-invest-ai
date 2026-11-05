@@ -322,8 +322,11 @@ implémentées. Ce qui reste :
    connecteur MCP DXB interact (médianes DLD revente 12 mois). Reste à
    automatiser : la grille demeure statique entre deux recalages manuels
 4. **Débloquer Bayut** (proxy premium Apify) pour doubler le volume d'annonces
-5. **Jeu d'évaluation du conseiller** : aucune mesure systématique de la
-   qualité des réponses aujourd'hui
+5. ~~Jeu d'évaluation du conseiller~~ — banc hors-ligne `npm run eval`
+   (`scripts/eval-advisor.mjs` + correcteur `api/lib/advisorEval.ts`) :
+   matching par scénario, verdicts DLD, fidélité du prompt, détection
+   d'hallucinations chiffrées. Reste : brancher le correcteur sur les
+   transcripts réels (`--reply fichier.txt`) pour une mesure continue
 6. **Consentement et RGPD** : la capture WhatsApp exige un opt-in explicite,
    aujourd'hui porté par le seul champ `consentWhatsApp`
 
