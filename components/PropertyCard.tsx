@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Property } from '../types';
 import { MapPinIcon, CheckIcon, TrendingUpIcon } from './Icons';
 import { useI18n } from '../i18n';
+import { Map3DButton } from './map3d/Map3DDialog';
 
 interface PropertyCardProps {
   property: Property;
@@ -106,9 +107,28 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSel
 
         {/* Title Overlay */}
         <div className="absolute bottom-4 left-4 right-4 z-20">
-          <h3 className="font-serif text-xl text-white mb-1 leading-none drop-shadow-md truncate">{property.title}</h3>
-          <div className="flex items-center gap-1 text-slate-300 text-xs">
-            <MapPinIcon className="w-3 h-3 text-gold-500" /> {property.location}
+          <div className="flex items-end justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="font-serif text-xl text-white mb-1 leading-none drop-shadow-md truncate">{property.title}</h3>
+              <div className="flex items-center gap-1 text-slate-300 text-xs">
+                <MapPinIcon className="w-3 h-3 text-gold-500" /> {property.location}
+              </div>
+            </div>
+            <div className="shrink-0">
+              <Map3DButton
+                compact
+                subject={{
+                  title: property.title,
+                  location: property.location,
+                  price: property.price,
+                  beds: property.beds,
+                  sqm: property.sqm,
+                  type: property.type,
+                  lat: property.lat,
+                  lng: property.lng,
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>

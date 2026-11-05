@@ -22,6 +22,9 @@ export type Listing = {
   baths: number;
   sqm: number;
   completion: string;
+  /** Coordonnées quand la source les donne — sinon géocodage côté client. */
+  lat?: number | null;
+  lng?: number | null;
   serviceChargesSqft: number;
   marketPriceSqft: number;
   liquidity: 'High' | 'Medium' | 'Low';
@@ -250,6 +253,8 @@ function normalizePropertyFinderItem(item: Record<string, any>): Listing | null 
     baths,
     sqm,
     completion,
+    lat: Number(item.coordinates?.lat ?? item.latitude ?? NaN) || null,
+    lng: Number(item.coordinates?.lon ?? item.coordinates?.lng ?? item.longitude ?? NaN) || null,
     serviceChargesSqft: 16,
     marketPriceSqft: benchmarkFor(location, type).value,
     liquidity: inferLiquidity(location),
@@ -345,6 +350,8 @@ function mapPropertyFinder(schema: any, limit: number): Listing[] {
       baths,
       sqm,
       completion: 'Prêt',
+      lat: Number(e?.geo?.latitude ?? NaN) || null,
+      lng: Number(e?.geo?.longitude ?? NaN) || null,
       serviceChargesSqft: 16,
       marketPriceSqft: benchmarkFor(location, type).value,
       liquidity: inferLiquidity(location),

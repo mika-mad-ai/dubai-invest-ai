@@ -116,6 +116,7 @@ export default async function handler(req: any, res: any) {
         id: l.id, title: l.title, location: l.location, price: l.price,
         beds: l.beds, sqm: l.sqm, yield: l.yield, netYield: l.netYield,
         image: l.image, sourceUrl: l.sourceUrl, completion: l.completion,
+        type: l.type, lat: l.lat ?? null, lng: l.lng ?? null,
         matchScore: l.matchScore, matchReasons: l.matchReasons,
         priceVerdict: l.priceVerdict, priceCode: l.priceCheck.code,
       })),
