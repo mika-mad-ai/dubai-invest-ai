@@ -321,6 +321,16 @@ h1, h2, h3, h4, .font-serif {
   text-shadow: 0 2px 4px rgba(0,0,0,0.8);
 }
 
+/* ── Accessibilité : focus clavier ─────────────────────────────────────────
+   Anneau or visible uniquement à la navigation clavier (:focus-visible).
+   :where() = spécificité nulle : tout utilitaire Tailwind posé sur l'élément
+   garde la main (champs qui ont déjà leur bordure focus). */
+:where(a, button, [role='button'], [tabindex]:not([tabindex='-1']), summary, input[type='range'], input[type='checkbox'], input[type='radio']):focus-visible {
+  outline: 2px solid #D4AF37;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
 /* ── Accessibilité : motion réduit ──────────────────────────────────────────
    Toutes les animations décoratives (aurora, scans, pulses, keyframes
    Tailwind) sont neutralisées quand l'utilisateur demande moins de motion.
