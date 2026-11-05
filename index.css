@@ -238,6 +238,9 @@ h1, h2, h3, h4, .font-serif {
   100% { filter: drop-shadow(0 0 4px rgba(255,255,255,0.95)) drop-shadow(0 0 10px rgba(212,175,55,1.0)) drop-shadow(0 0 22px rgba(212,175,55,0.55)) drop-shadow(0 0 40px rgba(0,242,255,0.20)); }
 }
 .logo-holo { animation: holoPulse 3.5s ease-in-out infinite; }
+/* Même halo, figé : le logo (lettrage sombre) reste lisible sur fond nuit
+   sans animation permanente (footer). */
+.logo-glow { filter: drop-shadow(0 0 3px rgba(255,255,255,0.9)) drop-shadow(0 0 9px rgba(212,175,55,0.8)) drop-shadow(0 0 18px rgba(212,175,55,0.35)); }
 
 /* ═══ AURORA BACKGROUND ANIMATIONS ═══ */
 @keyframes aurora1 {

@@ -334,7 +334,7 @@ function App() {
         },
         onError: message => {
           // On affiche l'erreur dans la bulle en cours plutôt que de la perdre en console.
-          appendToReply(accumulated || `Le conseiller est momentanément indisponible.\n\n${message}`);
+          appendToReply(accumulated ? `${accumulated}\n\n_${message}_` : message);
         },
       }
     );

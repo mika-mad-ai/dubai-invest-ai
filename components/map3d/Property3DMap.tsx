@@ -19,7 +19,7 @@ import {
   viewCone,
   type ViewInsight,
 } from './viewAnalysis';
-import { benchmarkFor } from '../../api/lib/priceCheck';
+import { checkPrice } from '../../api/lib/priceCheck';
 import { DLD_BENCHMARK_AS_OF } from '../../api/lib/dldBenchmarks';
 
 /**
@@ -69,9 +69,12 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
     [point]
   );
 
-  const bench = useMemo(() => benchmarkFor(subject.location, subject.type), [subject]);
-  const askingAedSqft =
-    subject.price && subject.sqm ? (subject.price * 4.24) / (subject.sqm * 10.764) : null;
+  // Même verdict que la carte du bien et la sélection du conseiller
+  // (médiane DLD de zone corrigée par nombre de chambres).
+  const price = useMemo(
+    () => checkPrice(subject.price, subject.sqm ?? 0, subject.location, null, { beds: subject.beds, type: subject.type }),
+    [subject]
+  );
 
   // ── Résolution de la position ────────────────────────────────────────────
   useEffect(() => {
@@ -346,18 +349,21 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
               <span className="m3d-v">{seaView.distanceKm} km ({seaView.direction})</span>
             </div>
           )}
-          {askingAedSqft && (
+          {price.askingAedSqft && price.benchmarkAedSqft && price.deltaPct != null && (
             <div className="m3d-row">
               <span className="m3d-k">Demandé / médiane DLD</span>
               <span className="m3d-v">
-                {Math.round(askingAedSqft).toLocaleString('fr-FR')} / {bench.value.toLocaleString('fr-FR')} AED·sqft
+                {Math.round(price.askingAedSqft).toLocaleString('fr-FR')} / {price.benchmarkAedSqft.toLocaleString('fr-FR')} AED·sqft
+                <em style={{ display: 'block', fontStyle: 'normal', fontWeight: 600, color: price.deltaPct <= -4 ? '#6ee7b7' : price.deltaPct >= 4 ? '#fcd34d' : 'rgba(240,235,224,0.7)' }}>
+                  {price.deltaPct > 0 ? '+' : '−'}{Math.abs(Math.round(price.deltaPct))} %
+                </em>
               </span>
             </div>
           )}
         </div>
 
         <p style={{ fontFamily: sans, fontSize: '0.6rem', color: 'rgba(240,235,224,0.62)', lineHeight: 1.6, margin: '12px 0 0' }}>
-          {bench.matched ? `Zone DLD « ${bench.zone} » · ` : ''}médiane revente 12 mois au {DLD_BENCHMARK_AS_OF}.
+          {price.zone ? `Zone DLD « ${price.zone} » · ` : ''}médiane revente 12 mois au {DLD_BENCHMARK_AS_OF}.
           Bâti et hauteurs : OpenStreetMap.
         </p>
       </aside>
