@@ -237,6 +237,7 @@ const es: Dict = {
     partners: "Acepto que mi expediente (datos de contacto y proyecto) se transmita a agencias inmobiliarias y promotores asociados en Dubái, que podrán contactarme.",
     note: "Sus datos sirven para preparar su análisis y no se transmiten a ningún socio sin la casilla anterior. Acceso, rectificación, supresión: responda STOP en WhatsApp",
     noteContact: " o escriba a {email}",
+    privacyLink: "Política de privacidad",
   },
 };
 

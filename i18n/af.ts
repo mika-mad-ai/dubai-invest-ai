@@ -237,6 +237,7 @@ const af: Dict = {
     partners: "Ek stem in dat my lêer (kontakbesonderhede en projek) met vennoot-eiendomsagentskappe en ontwikkelaars in Dubai gedeel word, wat my mag kontak.",
     note: "Jou data word gebruik om jou ontleding voor te berei en word met geen vennoot gedeel sonder die blokkie hierbo nie. Toegang, regstelling, skrapping: antwoord STOP op WhatsApp",
     noteContact: " of skryf aan {email}",
+    privacyLink: "Privaatheidsbeleid",
   },
 };
 

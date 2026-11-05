@@ -7,6 +7,25 @@
 > déploiement ; `npx tsc --noEmit && npm run build && npm run verify` vert
 > après chaque étape ; PR vers `feat/agence-ia-uae`, jamais de merge.
 
+## Mise à jour — mise en production (2026-11-05, fin d'après-midi)
+
+Fait avec l'accord explicite de l'utilisateur (« fais tout ») :
+- **Coûts** : crons/webhooks payants en échec fermé, mergé en prod (#4) et
+  dans feat (#5). Plafonds de dépense posés par l'utilisateur chez les
+  fournisseurs. Clé Gemini : présente en clair dans le bundle de l'ancien
+  `main` (vérifié par build avec une fausse clé) — absente du bundle `feat`,
+  et `vite.config.ts` n'injecte plus aucune clé. **L'ancienne clé Gemini
+  reste à remplacer** (elle a été publique).
+- **Base Supabase `ifayvyzrearwzdcajlqz` (DubAInvest)** : migrations
+  `revoke_anon_bump_usage_daily` et `consent_and_usage_by_lead` appliquées
+  (ajouts uniquement, 5 leads intacts). Advisor sécurité : plus aucun WARN.
+- **Politique de confidentialité** : `/confidentialite`, responsable mad-ai.
+- **Prod** : `feat/agence-ia-uae` → `main`.
+
+Reste à l'utilisateur : e-mail de contact RGPD, remplacement de la clé
+Gemini, `CRON_SECRET` dans Vercel pour réactiver les crons. Reste technique :
+purge 3 ans, bandeau cookies GTM.
+
 ## État final (fin de session cloud, 2026-11-05)
 
 | Mission | État | Branche | PR (draft, base `feat/agence-ia-uae`) |

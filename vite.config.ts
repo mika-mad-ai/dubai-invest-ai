@@ -1,12 +1,10 @@
 
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
-  // Charge les variables du fichier .env
-  const env = loadEnv(mode, process.cwd(), '');
+export default defineConfig(() => {
   
   return {
     plugins: [react()],
@@ -34,9 +32,8 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-    define: {
-      // Permet au code d'utiliser process.env.API_KEY comme prévu par le SDK Gemini
-      'process.env.API_KEY': JSON.stringify(env.API_KEY),
-    },
+    // Ne JAMAIS injecter de clé d'API dans le bundle navigateur (`define`) :
+    // tout ce qui est injecté ici est lisible par n'importe quel visiteur.
+    // Les appels Gemini / Claude passent par les fonctions serveur `api/*`.
   }
 })

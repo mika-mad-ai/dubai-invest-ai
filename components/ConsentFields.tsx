@@ -41,7 +41,10 @@ const ConsentFields: React.FC<{
       {row('partners', t.consent.partners)}
       <p style={{ fontSize: '0.66rem', lineHeight: 1.55, color: 'rgba(240,235,224,0.62)', margin: '4px 0 0' }}>
         {t.consent.note}
-        {PRIVACY_CONTACT ? fmt(t.consent.noteContact, { email: PRIVACY_CONTACT }) : ''}.
+        {PRIVACY_CONTACT ? fmt(t.consent.noteContact, { email: PRIVACY_CONTACT }) : ''}.{' '}
+        <a href="/confidentialite" target="_blank" rel="noopener" style={{ color: '#D4AF37', textDecoration: 'underline' }}>
+          {t.consent.privacyLink}
+        </a>
       </p>
     </fieldset>
   );
