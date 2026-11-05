@@ -7,16 +7,57 @@
 > déploiement ; `npx tsc --noEmit && npm run build && npm run verify` vert
 > après chaque étape ; PR vers `feat/agence-ia-uae`, jamais de merge.
 
-## État des missions
+## État final (fin de session cloud, 2026-11-05)
 
-| Mission | État | PR |
-|---|---|---|
-| 1. Carte 3D | ✅ testée (tuiles de test, voir limite ci-dessous) | voir « PR ouvertes » |
-| 2. Design / Figma | ⏳ | — |
-| 3a. Coût réel par lead | ⏳ | — |
-| 3b. Banc d'éval conseiller | ⏳ | — |
-| 3c. RGPD WhatsApp | ⏳ | — |
-| 3d. Nettoyage code mort | ⏳ | — |
+| Mission | État | Branche | PR (draft, base `feat/agence-ia-uae`) |
+|---|---|---|---|
+| 1. Carte 3D | ✅ testée sur tuiles synthétiques | `handoff/vscode` | [#1](https://github.com/mika-mad-ai/dubai-invest-ai/pull/1) |
+| 2. Design (audit, Figma inexploitable) | ✅ | `handoff/design-audit` (empilée sur #1) | [#2](https://github.com/mika-mad-ai/dubai-invest-ai/pull/2) |
+| 3a. Coût réel par lead | ✅ | `handoff/backlog` (empilée sur #2) | [#3](https://github.com/mika-mad-ai/dubai-invest-ai/pull/3) |
+| 3b. Banc d'éval conseiller | ✅ | idem | #3 |
+| 3c. RGPD / consentement | ✅ mécanique — ⚠️ politique de confidentialité manquante | idem | #3 |
+| 3d. Nettoyage code mort | ✅ | idem | #3 |
+
+**Ordre de merge : #1 → #2 → #3** (branches empilées ; une même branche ne
+peut pas porter plusieurs PR, d'où la décision d'empiler).
+
+`npm run verify` : **251 assertions, 0 échec** (127 au départ). Aucune API
+payante appelée, aucun message envoyé, aucun déploiement.
+
+### Décisions prises en autonomie (option la plus sûre)
+- **Réseau cloud** : OpenFreeMap et Nominatim refusés par la politique réseau
+  → carte testée sur tuiles synthétiques (voir Mission 1). À revalider en vrai.
+- **Figma** : le connecteur ne liste pas les fichiers (accès par lien
+  uniquement) ; aucun lien dans le dépôt ni les mails → audit design complet.
+  Pour aligner sur une maquette : fournir l'URL figma.com/design/….
+- **Badge « Deal Score / Opportunité confirmée »** supprimé : décrété sur le
+  seul rendement > 6,5 %, contraire au principe « chiffres sourcés ». Remplacé
+  par l'écart à la médiane DLD (checkPrice).
+- **RGPD** : la revente d'un lead exige son propre consentement → le CSV agences
+  n'exporte QUE les dossiers ayant coché « partenaires ». Impact business
+  assumé : les leads antérieurs (sans `consent`) ne sont plus exportables.
+- **RPC de comptabilité** (`bump_usage_*`) : `revoke execute … from anon` —
+  elles étaient appelables avec la clé publique (sabotage du disjoncteur).
+- **Coût IA** visible au bureau, jamais dans le CSV livré aux agences.
+- **Endpoint `propertyfinder-scrape`** supprimé (aucun consommateur dans le
+  dépôt). Si un outil externe l'appelait, le restaurer depuis l'historique.
+
+### Reste pour la prochaine session
+1. **Exécuter `docs/supabase-schema.sql`** sur la base (table `usage_by_lead`,
+   RPC `bump_usage_lead`, colonne `leads.consent`, revokes).
+2. **BLOQUANT prod (RGPD)** : page de politique de confidentialité avec
+   l'identité du responsable de traitement + `VITE_PRIVACY_CONTACT`
+   (adresse d'exercice des droits). Je ne l'ai pas rédigée : elle exige des
+   informations légales que je n'ai pas.
+3. Valider la carte 3D avec les **vraies tuiles** (réseau ouvert) : densité,
+   labels, présence d'`id` sur les bâtiments (sinon seul le gonflement 1,5 %
+   évite le z-fighting).
+4. Brancher `npm run eval -- --reply` sur les transcripts réels (export de
+   `leads.transcript`) pour une mesure continue de la fidélité.
+5. Modèle Meta pré-approuvé pour la veille hors 24 h : y ajouter la mention
+   « Répondez STOP pour ne plus recevoir de messages ».
+
+---
 
 ## Mission 1 — carte 3D : fait
 
