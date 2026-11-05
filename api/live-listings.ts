@@ -13,6 +13,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { benchmarkFor } from './lib/priceCheck';
+
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const TABLE = 'listings';
@@ -91,7 +93,7 @@ async function readFromSupabase(budgetEur: number, limit: number): Promise<any[]
       sqm: r.sqm ?? 50,
       completion: r.completion ?? 'Prêt',
       serviceChargesSqft: 16,
-      marketPriceSqft: 5500,
+      marketPriceSqft: benchmarkFor(String(r.location ?? ''), r.type).value,
       liquidity: r.liquidity ?? 'Medium',
       catalysts: ['Annonce PropertyFinder'],
       sourceUrl: r.source_url,
@@ -222,7 +224,7 @@ function normalizeScrape(e: any): any | null {
       sqm,
       completion: e?.completion_status === 'off_plan' ? 'Off-plan' : 'Prêt',
       serviceChargesSqft: 16,
-      marketPriceSqft: 5500,
+      marketPriceSqft: benchmarkFor(locationFull, type).value,
       liquidity: inferLiquidity(locationFull),
       catalysts: ['Annonce PropertyFinder'],
       sourceUrl: url,
@@ -265,7 +267,7 @@ function normalizeScrape(e: any): any | null {
     sqm,
     completion: 'Prêt',
     serviceChargesSqft: 16,
-    marketPriceSqft: 5500,
+    marketPriceSqft: benchmarkFor(location, type).value,
     liquidity: inferLiquidity(location),
     catalysts: ['Annonce PropertyFinder'],
     sourceUrl: url,

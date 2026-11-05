@@ -229,7 +229,14 @@
   fenêtre et le dit dans son rapport plutôt que d'échouer en silence
 
 ### Grille de prix de référence
-- `BENCHMARK_AED_SQFT` dans `api/lib/priceCheck.ts` est **datée 2025**
+- La grille vit dans `api/lib/dldBenchmarks.ts`, **recalée au 2026-11-05** sur
+  les médianes DLD revente 12 mois (connecteur MCP « DXB interact », disponible
+  dans les sessions Claude Code — refaire ce recalage périodiquement) :
+  ~50 clés quartier appartements + ~35 villas (grilles séparées : Palm villa
+  7 061 vs appart 2 796), correctif par nombre de chambres (studio ×1,14,
+  2 ch. ×0,90, 3 ch.+ ×0,87), zone DLD source et volume 12 mois par entrée
+- `checkPrice` accepte `{ beds, type }` et porte `asOf` + `zone` dans son
+  verdict ; `marketPriceSqft` des annonces est désormais en AED/sqft DLD
 - Sans credentials DLD, tous les verdicts prix s'appuient sur elle
   (`basis: 'benchmark'` au lieu de `'dld'`) — à recaler périodiquement
 - **Point le plus sensible du système** : une grille trop haute fait passer un
@@ -309,8 +316,9 @@ implémentées. Ce qui reste :
    branchement et vérifications par étape
 2. **Instrumenter le coût réel par lead** — `usage` est retourné dans
    l'événement `done` mais n'est ni agrégé ni stocké
-3. **Recaler la grille de prix par quartier** sur une agrégation DLD réelle,
-   au lieu de la table statique 2025
+3. ~~Recaler la grille de prix par quartier~~ — fait le 2026-11-05 via le
+   connecteur MCP DXB interact (médianes DLD revente 12 mois). Reste à
+   automatiser : la grille demeure statique entre deux recalages manuels
 4. **Débloquer Bayut** (proxy premium Apify) pour doubler le volume d'annonces
 5. **Jeu d'évaluation du conseiller** : aucune mesure systématique de la
    qualité des réponses aujourd'hui

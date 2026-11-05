@@ -20,6 +20,9 @@ export type MatchedListing = {
   image: string;
   sourceUrl: string;
   completion: string;
+  type?: string;
+  lat?: number | null;
+  lng?: number | null;
   matchScore: number;
   matchReasons: string[];
   priceVerdict: string;

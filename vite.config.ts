@@ -15,6 +15,12 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    // MapLibre n'est importé que par un chunk lazy : sans pré-bundling, Vite le
+    // découvre au premier clic « Carte 3D » et recharge la page en dev. Le
+    // worker, lui, est fourni explicitement (setWorkerUrl, Property3DMap.tsx).
+    optimizeDeps: {
+      include: ['maplibre-gl'],
+    },
     build: {
       // Keep warnings quiet and encourage better chunking
       chunkSizeWarningLimit: 1500, // kB

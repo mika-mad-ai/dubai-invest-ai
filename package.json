@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "node scripts/generate-sitemaps.mjs && tsc && vite build",
     "preview": "vite preview",
-    "verify": "node scripts/verify-engine.mjs && node scripts/verify-desk.mjs && node scripts/verify-schema.mjs && node scripts/verify-guard.mjs && node scripts/verify-social.mjs",
+    "verify": "node scripts/verify-engine.mjs && node scripts/verify-desk.mjs && node scripts/verify-schema.mjs && node scripts/verify-guard.mjs && node scripts/verify-social.mjs && node scripts/verify-map3d.mjs",
     "avatars:idle": "node scripts/process-veo-idle.mjs"
   },
   "dependencies": {
@@ -19,6 +19,7 @@
     "framer-motion": "^12.38.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.562.0",
+    "maplibre-gl": "^6.16.0",
     "motion": "^12.43.0",
     "radix-ui": "^1.6.7",
     "react": "^19.0.0",

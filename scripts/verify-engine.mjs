@@ -80,8 +80,33 @@ for (const [loc, sqm, lo, hi] of realWorld) {
 check('valeur AED/sqft aberrante ignorée', m.checkPrice(150000, 45, 'JVC', 45000).basis === 'benchmark');
 check('valeur AED/sqft de quartier plausible acceptée', m.checkPrice(150000, 45, 'JVC', 1400).basis === 'dld');
 check('Palm Jumeirah reconnu', m.benchmarkFor('Palm Jumeirah, Dubai').key === 'palm jumeirah');
-check('variante "Jumeirah Village" mappe sur JVC', m.benchmarkFor('Jumeirah Village Triangle').key === 'jvc');
+check('JVT a sa propre référence (plus JVC)', m.benchmarkFor('Jumeirah Village Triangle').key === 'jumeirah village triangle');
+check('"Jumeirah Village" seul mappe sur JVC', m.benchmarkFor('Jumeirah Village, Dubai').value === m.benchmarkFor('JVC').value);
 check('quartier inconnu retombe sur "other"', m.benchmarkFor('Zone Inconnue').key === 'other');
+
+// Granularité ajoutée au recalage DLD du 2026-11-05 : grille villa séparée,
+// spécificité des clés, correctif par nombre de chambres, traçabilité.
+check(
+  'villa Palm ≫ appartement Palm (grilles séparées)',
+  m.benchmarkFor('Palm Jumeirah', 'Villa').value > 2 * m.benchmarkFor('Palm Jumeirah', 'Appartement').value
+);
+check(
+  'Damac Hills 2 ne retombe pas sur Damac Hills',
+  m.benchmarkFor('Damac Hills 2, Dubailand', 'Villa').value < m.benchmarkFor('Damac Hills, Dubailand', 'Villa').value
+);
+check(
+  'townhouse en zone sans donnée villa → médiane appartement de la zone',
+  m.benchmarkFor('Business Bay', 'Townhouse').value === m.benchmarkFor('Business Bay', 'Appartement').value
+);
+const pcStudio = m.checkPrice(150000, 40, 'JVC', null, { beds: 0, type: 'Studio' });
+const pcTwoBed = m.checkPrice(150000, 40, 'JVC', null, { beds: 2, type: 'Appartement' });
+check('un studio se compare à une référence psf plus haute qu\'un 2 ch.', pcStudio.benchmarkAedSqft > pcTwoBed.benchmarkAedSqft);
+check('le correctif chambre reste borné (±20 %)', (() => {
+  const base = m.benchmarkFor('JVC').value;
+  return pcStudio.benchmarkAedSqft <= base * 1.2 && pcTwoBed.benchmarkAedSqft >= base * 0.8;
+})());
+check('le verdict porte la date de recalage DLD', /^\d{4}-\d{2}-\d{2}$/.test(pcStudio.asOf));
+check('le verdict porte la zone DLD source', typeof pcStudio.zone === 'string' && pcStudio.zone.length > 0);
 
 // ── netYield ──────────────────────────────────────────────────────────────────
 console.log('\nRENDEMENT NET');

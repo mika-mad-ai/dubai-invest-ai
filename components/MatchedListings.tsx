@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, TrendingDown, TrendingUp, Minus, ExternalLink, ChevronDown, Sparkles } from 'lucide-react';
 import type { MatchedListing, MarketSummary } from '../services/agentService';
+import { Map3DButton } from './map3d/Map3DDialog';
 
 /**
  * Biens réels retenus par le moteur de matching pour le dossier en cours.
@@ -109,6 +110,21 @@ const ListingRow: React.FC<{ listing: MatchedListing; index: number }> = ({ list
                 {listing.netYield}% net
               </span>
             )}
+            <span className="ml-auto">
+              <Map3DButton
+                compact
+                subject={{
+                  title: listing.title,
+                  location: listing.location,
+                  price: listing.price,
+                  beds: listing.beds,
+                  sqm: listing.sqm,
+                  type: listing.type,
+                  lat: listing.lat,
+                  lng: listing.lng,
+                }}
+              />
+            </span>
           </div>
 
           {/* Le verdict prix : ce que l'annonce ne dit pas. */}

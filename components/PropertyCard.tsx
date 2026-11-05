@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Property } from '../types';
 import { MapPinIcon, CheckIcon, TrendingUpIcon } from './Icons';
 import { useI18n } from '../i18n';
+import { Map3DButton } from './map3d/Map3DDialog';
 
 interface PropertyCardProps {
   property: Property;
@@ -27,14 +28,14 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSel
 
   const formatPrice = (price: number) => money(price);
 
-  // Calcul du Deal Score
-  // On compare le prix au m2 de cette propriété avec le prix du marché moyen défini dans les données
+  // Calcul du Deal Score : prix demandé vs médiane DLD du quartier,
+  // les deux en AED/sqft (prix EUR × 4,24 AED/EUR ÷ surface en sqft).
   const marketPriceSqft = property.marketPriceSqft ?? 0;
-  const currentPriceSqft = property.price / property.sqm; // Approximation si marketPriceSqft est en sqft
-  const discount = marketPriceSqft > 0 
-    ? ((marketPriceSqft - (property.price / property.sqm * 10.764)) / marketPriceSqft) * 100
+  const askingAedSqft = (property.price * 4.24) / (property.sqm * 10.764);
+  const discount = marketPriceSqft > 0
+    ? ((marketPriceSqft - askingAedSqft) / marketPriceSqft) * 100
     : 0;
-  // Si le discount est positif, c'est un bon deal (Note: * 10.764 pour convertir sqm en sqft pour la comparaison)
+  // discount > 0 = demandé sous la médiane DLD du quartier
   
   // Simplification pour l'affichage : on force l'affichage du Deal Score si c'est une des propriétés "Star"
   const isGoodDeal = property.yield > 6.5; 
@@ -106,9 +107,28 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSel
 
         {/* Title Overlay */}
         <div className="absolute bottom-4 left-4 right-4 z-20">
-          <h3 className="font-serif text-xl text-white mb-1 leading-none drop-shadow-md truncate">{property.title}</h3>
-          <div className="flex items-center gap-1 text-slate-300 text-xs">
-            <MapPinIcon className="w-3 h-3 text-gold-500" /> {property.location}
+          <div className="flex items-end justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="font-serif text-xl text-white mb-1 leading-none drop-shadow-md truncate">{property.title}</h3>
+              <div className="flex items-center gap-1 text-slate-300 text-xs">
+                <MapPinIcon className="w-3 h-3 text-gold-500" /> {property.location}
+              </div>
+            </div>
+            <div className="shrink-0">
+              <Map3DButton
+                compact
+                subject={{
+                  title: property.title,
+                  location: property.location,
+                  price: property.price,
+                  beds: property.beds,
+                  sqm: property.sqm,
+                  type: property.type,
+                  lat: property.lat,
+                  lng: property.lng,
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
