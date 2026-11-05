@@ -9,6 +9,7 @@
 import { normalizePropertyFinderItems } from './lib/listingsCollector';
 import { saveListingsSnapshot, getStoreInfo } from './lib/listingsStore';
 import { env } from './lib/env';
+import { secretMatches } from './lib/cronAuth';
 
 const APIFY_BASE = 'https://api.apify.com/v2';
 const DATA_KEY_PREFIX = 'live-listings';
@@ -23,7 +24,8 @@ export default async function handler(req: any, res: any) {
 
   // Vérification du secret si configuré
   const expectedSecret = process.env.COLLECTOR_SECRET;
-  if (expectedSecret && body.secret !== expectedSecret) {
+  // Échec fermé : sans COLLECTOR_SECRET, le webhook est refusé.
+  if (!secretMatches(expectedSecret, body.secret)) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }

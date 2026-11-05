@@ -8,6 +8,7 @@
  * Peut aussi être déclenché manuellement :
  *   GET /api/cron/refresh-listings?secret=CRON_SECRET
  */
+import { isCronAuthorized } from '../lib/cronAuth';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -327,16 +328,10 @@ async function upsertListings(rows: any[]): Promise<{ inserted: number; error?: 
 
 export default async function handler(req: any, res: any) {
   // Sécurité : vérifier le secret Vercel Cron ou CRON_SECRET manuel
-  const cronSecret = process.env.CRON_SECRET;
-  const authHeader = req.headers['authorization'];
-  const querySecret = req.query?.secret;
-
-  if (cronSecret) {
-    const provided = authHeader?.replace('Bearer ', '') || querySecret;
-    if (provided !== cronSecret) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
+  // Échec fermé : sans CRON_SECRET, personne ne peut lancer le scraping.
+  if (!isCronAuthorized(req)) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
   }
 
   const startedAt = Date.now();

@@ -13,6 +13,7 @@ import { env, envOr } from '../lib/env';/**
  *   3. Apify POST /api/apify-webhook → normalise + sauvegarde dataset
  *   4. /api/live-listings lit le dataset
  */
+import { secretMatches } from '../lib/cronAuth';
 
 const APIFY_BASE = 'https://api.apify.com/v2';
 const PF_ACTOR = 'shahidirfan~propertyfinder-scraper';
@@ -20,14 +21,9 @@ const PF_ACTOR = 'shahidirfan~propertyfinder-scraper';
 // 1 EUR ≈ 4 AED (marge de 15% pour absorber les fluctuations)
 const EUR_TO_AED = 4.15;
 
+// Échec fermé : chaque run Apify est facturé.
 function isAuthorized(req: any): boolean {
-  const expected = process.env.COLLECTOR_SECRET;
-  // Échouer FERMÉ : sans secret configuré, l'endpoint doit refuser, pas ouvrir.
-  // L'ancien `return true` rendait cette route publique dès que COLLECTOR_SECRET
-  // était absent — et elle déclenche des appels payants.
-  if (!expected) return false;
-  const provided = req.headers['x-collector-secret'] || req.query?.secret;
-  return provided === expected;
+  return secretMatches(process.env.COLLECTOR_SECRET, req.headers['x-collector-secret'] || req.query?.secret);
 }
 
 function buildStartUrls(_city: string, maxPriceAED: number): { url: string }[] {
