@@ -237,6 +237,7 @@ const en: Dict = {
     partners: "I agree that my file (contact details and project) may be shared with partner real-estate agencies and developers in Dubai, who may contact me.",
     note: "Your data is used to prepare your analysis and is never shared with partners unless you tick the box above. Access, correction, deletion: reply STOP on WhatsApp",
     noteContact: " or write to {email}",
+    privacyLink: "Privacy policy",
   },
 };
 

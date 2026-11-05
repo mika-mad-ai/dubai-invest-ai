@@ -237,6 +237,7 @@ const zh: Dict = {
     partners: "我同意将我的资料（联系方式和投资计划）提供给迪拜的合作房产中介和开发商，他们可能会联系我。",
     note: "您的数据仅用于准备分析，未勾选上方选项时不会提供给任何合作方。查询、更正、删除：在 WhatsApp 回复 STOP",
     noteContact: "，或发送邮件至 {email}",
+    privacyLink: "隐私政策",
   },
 };
 

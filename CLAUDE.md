@@ -327,9 +327,12 @@ implémentées. Ce qui reste :
    finalités distinctes (WhatsApp / transmission partenaires), cases non
    pré-cochées, décision horodatée + version du texte (`leads.consent`),
    STOP honoré avant tout (même budget épuisé), veille et export CSV filtrés
-   sur le consentement. **Reste BLOQUANT avant prod** : politique de
-   confidentialité avec l'identité du responsable de traitement, et
-   `VITE_PRIVACY_CONTACT` (adresse d'exercice des droits)
+   sur le consentement. Politique de confidentialité publiée
+   (`public/confidentialite.html`, route `/confidentialite`, responsable :
+   mad-ai). **Reste** : adresse e-mail d'exercice des droits
+   (`VITE_PRIVACY_CONTACT` + la page), purge automatique des dossiers
+   inactifs depuis 3 ans (durée annoncée dans la politique), bandeau cookies
+   pour Google Tag Manager
 
 ---
 
@@ -340,7 +343,9 @@ Détail et ordre de branchement : `docs/AGENCY_SETUP.md`.
 - LLM conseiller (**obligatoire**):
   - `ANTHROPIC_API_KEY`
 - LLM contenu SEO / médias:
-  - `API_KEY` (Gemini)
+  - `API_KEY` (Gemini) — **serveur uniquement** : ne jamais l'injecter dans le
+    bundle navigateur (`vite.config.ts` n'a plus de `define`, verify-guard le
+    garantit)
 - DLD:
   - `DLD_API_KEY`
   - `DLD_API_SECRET`

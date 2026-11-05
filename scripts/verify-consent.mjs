@@ -91,5 +91,12 @@ check('textes de consentement présents dans les 7 langues', locales.every(l => 
 check('plus de promesse « Données confidentielles » alors que le dossier peut être transmis', !/Données confidentielles/.test(read('i18n/fr.ts')));
 check('schéma : colonne consent sur leads', /alter table public\.leads\s+add column if not exists consent\s+jsonb/.test(read('docs/supabase-schema.sql')));
 
+const privacy = read('public/confidentialite.html');
+check('politique de confidentialité publiée, responsable mad-ai nommé', /responsable du traitement/i.test(privacy) && /mad-ai/.test(privacy));
+check('politique : retrait par STOP et réclamation CNIL décrits', /STOP/.test(privacy) && /CNIL/.test(privacy));
+check('politique : version des textes de consentement = celle du code', privacy.includes(m.CONSENT_TEXT_VERSION));
+check('route /confidentialite servie par Vercel', JSON.parse(read('vercel.json')).rewrites.some(r => r.source === '/confidentialite' && r.destination === '/confidentialite.html'));
+check('lien vers la politique sous les cases de consentement et dans le footer', /href="\/confidentialite"/.test(ui) && /href="\/confidentialite"/.test(read('components/Footer.tsx')));
+
 console.log(`\n${pass} vérifications passées, ${fail} échec(s)`);
 process.exit(fail ? 1 : 0);

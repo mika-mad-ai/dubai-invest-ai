@@ -238,6 +238,7 @@ const fr = {
     partners: "J’accepte que mon dossier (coordonnées et projet) soit transmis à des agences immobilières et promoteurs partenaires à Dubaï, qui pourront me contacter.",
     note: "Vos données servent à préparer votre analyse et ne sont transmises à aucun partenaire sans la case ci-dessus. Accès, rectification, suppression : répondez STOP sur WhatsApp",
     noteContact: " ou écrivez à {email}",
+    privacyLink: "Politique de confidentialité",
   },
 };
 

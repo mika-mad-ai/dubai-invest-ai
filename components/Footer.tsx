@@ -91,6 +91,10 @@ const Footer: React.FC = () => {
         </p>
         <p style={{ color: 'rgba(200,192,178,0.62)', fontSize: 11 }}>
           {t.footer.disclaimer}
+          {' · '}
+          <a href="/confidentialite" style={{ color: 'rgba(212,175,55,0.9)', textDecoration: 'underline' }}>
+            {t.consent.privacyLink}
+          </a>
         </p>
       </div>
     </div>

@@ -85,6 +85,10 @@
       "destination": "/api/leads-desk"
     },
     {
+      "source": "/confidentialite",
+      "destination": "/confidentialite.html"
+    },
+    {
       "source": "/:locale(en|es|ru|zh|ar|af)",
       "destination": "/index.html"
     },

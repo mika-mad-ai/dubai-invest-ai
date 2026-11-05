@@ -204,5 +204,7 @@ check('agent-chat impute le coût au lead et au modèle servi', /recordUsage\('a
 check('webhook WhatsApp impute le coût au lead', /recordUsage\('whatsapp-qualifier', turn\.usage, \{ leadHandle: handle \}\)/.test(readFileSync(resolve(ROOT, 'api/whatsapp/webhook.ts'), 'utf8')));
 check('veille nocturne impute le coût au lead', (readFileSync(resolve(ROOT, 'api/cron/watch.ts'), 'utf8').match(/leadHandle: lead\.handle/g) || []).length === 2);
 
+check('aucune clé d’API injectée dans le bundle navigateur (vite define)', !/process\.env\.API_KEY|define:\s*\{[^}]*KEY/.test(readFileSync(resolve(ROOT, 'vite.config.ts'), 'utf8')));
+
 console.log(`\n${pass} vérifications passées, ${fail} échec(s)`);
 process.exit(fail ? 1 : 0);
