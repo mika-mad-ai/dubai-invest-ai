@@ -22,6 +22,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { GoogleGenAI } from '@google/genai';
+import { secretMatches } from './lib/cronAuth';
 
 const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -211,7 +212,8 @@ export default async function handler(
 
   // Security check
   const secret = (req.headers as any)['x-webhook-secret'] ?? '';
-  if (WEBHOOK_SECRET && secret !== WEBHOOK_SECRET) {
+  // Échec fermé : chaque appel génère des réponses Gemini (payant).
+  if (!secretMatches(WEBHOOK_SECRET, secret)) {
     return res.status(401).json({ error: 'Invalid webhook secret' });
   }
 

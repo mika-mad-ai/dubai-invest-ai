@@ -21,6 +21,7 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { pickDailyPhoto } from '../lib/stock-photos';
+import { isCronAuthorized } from '../lib/cronAuth';
 
 const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -488,12 +489,7 @@ export default async function handler(
 ) {
   // Auth : Vercel Cron envoie l'Authorization header automatiquement en prod.
   // En dev, accepter ?secret=CRON_SECRET
-  const authHeader = (req.headers as any)['authorization'] ?? '';
-  const querySecret = (req as any).query?.secret ?? '';
-  const isVercelCron = authHeader === `Bearer ${process.env.CRON_SECRET ?? ''}`;
-  const isManualRun = CRON_SECRET && querySecret === CRON_SECRET;
-
-  if (!isVercelCron && !isManualRun) {
+  if (!isCronAuthorized(req)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
