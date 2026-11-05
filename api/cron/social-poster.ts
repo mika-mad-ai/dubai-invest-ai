@@ -18,6 +18,7 @@
 
 import { generateDailyContent, generateMedia, publishAll, type PublishResult, type ArticleContext } from '../lib/social';
 import { generateCarousel, type DayFacts } from '../lib/carousel';
+import { isCronAuthorized } from '../lib/cronAuth';
 
 const CRON_SECRET = process.env.CRON_SECRET ?? '';
 const SUPABASE_URL = (process.env.SUPABASE_URL ?? '').trim();
@@ -53,13 +54,10 @@ export default async function handler(
   req: { method: string; headers: Record<string, string>; query?: Record<string, string> },
   res: { status: (code: number) => { json: (data: object) => void } }
 ) {
-  const authHeader = (req.headers as any)['authorization'] ?? '';
-  const querySecret = (req as any).query?.secret ?? '';
-  const isVercelCron = authHeader === `Bearer ${CRON_SECRET}`;
-  const isManualRun = CRON_SECRET && querySecret === CRON_SECRET;
+
   const dryRun = (req as any).query?.dry === '1';
 
-  if (!isVercelCron && !isManualRun) {
+  if (!isCronAuthorized(req)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   if (!process.env.API_KEY) {

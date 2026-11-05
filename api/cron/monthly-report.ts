@@ -20,6 +20,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { GoogleGenAI } from '@google/genai';
+import { isCronAuthorized } from '../lib/cronAuth';
 
 const SUPABASE_URL = process.env.SUPABASE_URL!;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -210,10 +211,7 @@ export default async function handler(
   req: { headers: Record<string, string>; query?: Record<string, string> },
   res: { status: (code: number) => { json: (d: object) => void } }
 ) {
-  const querySecret = (req as any).query?.secret ?? '';
-  const authHeader = (req.headers as any)['authorization'] ?? '';
-  const isAuth = authHeader === `Bearer ${process.env.CRON_SECRET}` || querySecret === process.env.CRON_SECRET;
-  if (!isAuth) return res.status(401).json({ error: 'Unauthorized' });
+  if (!isCronAuthorized(req)) return res.status(401).json({ error: 'Unauthorized' });
 
   const now = new Date();
   const month = MONTHS_FR[now.getMonth()];

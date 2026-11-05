@@ -20,6 +20,7 @@ const entry = join(out, 'e.ts');
 writeFileSync(entry, `
 export * from '${ROOT}/api/lib/guard';
 export { verifyInbound } from '${ROOT}/api/lib/whatsapp';
+export { isCronAuthorized, secretMatches } from '${ROOT}/api/lib/cronAuth';
 `);
 const bundle = join(out, 'b.mjs');
 await build({ entryPoints: [entry], bundle: true, format: 'esm', platform: 'node', outfile: bundle, logLevel: 'error' });
@@ -119,8 +120,31 @@ console.log('\nENDPOINTS PAYANTS FERMÉS PAR DÉFAUT');
 for (const f of ['api/cron/watch.ts', 'api/collector/run.ts']) {
   const src = readFileSync(resolve(ROOT, f), 'utf8');
   check(`${f} échoue fermé sans secret`,
-    /if \(!expected\) return false;/.test(src) && !/if \(!expected\) return true;/.test(src));
+    (/if \(!expected\) return false;/.test(src) || /secretMatches\(process\.env\.COLLECTOR_SECRET/.test(src)) && !/if \(!expected\) return true;/.test(src));
 }
+// Crons et webhooks qui appellent Gemini/Imagen/Veo/Apify : garde-fou commun
+// en échec fermé (lib/cronAuth). Les anciens tests « Bearer ${CRON_SECRET ?? ''} »
+// laissaient passer un en-tête « Bearer » vide ou « Bearer undefined ».
+for (const f of ['api/cron/refresh-listings.ts', 'api/cron/seo-geo-optimizer.ts', 'api/cron/mention-monitor.ts', 'api/cron/monthly-report.ts', 'api/cron/social-poster.ts']) {
+  const src = readFileSync(resolve(ROOT, f), 'utf8');
+  check(`${f} protégé par isCronAuthorized (échec fermé)`, /if \(!isCronAuthorized\(req\)\)/.test(src) && !/Bearer \$\{(process\.env\.)?CRON_SECRET/.test(src));
+}
+{
+  const saved = process.env.CRON_SECRET;
+  delete process.env.CRON_SECRET;
+  check('cron : sans CRON_SECRET, « Bearer » vide refusé', !m.isCronAuthorized({ headers: { authorization: 'Bearer ' } }));
+  check('cron : sans CRON_SECRET, « Bearer undefined » refusé', !m.isCronAuthorized({ headers: { authorization: 'Bearer undefined' }, query: { secret: 'undefined' } }));
+  process.env.CRON_SECRET = 'secret-de-test-cron';
+  check('cron : bon secret Bearer accepté', m.isCronAuthorized({ headers: { authorization: 'Bearer secret-de-test-cron' } }));
+  check('cron : bon secret ?secret accepté', m.isCronAuthorized({ headers: {}, query: { secret: 'secret-de-test-cron' } }));
+  check('cron : mauvais secret refusé', !m.isCronAuthorized({ headers: { authorization: 'Bearer autre' } }));
+  check('webhook : secret trop court (< 8) jamais accepté', !m.secretMatches('abc', 'abc'));
+  if (saved === undefined) delete process.env.CRON_SECRET; else process.env.CRON_SECRET = saved;
+}
+for (const f of ['api/haro-webhook.ts', 'api/apify-webhook.ts']) {
+  check(`${f} exige son secret (échec fermé)`, /if \(!secretMatches\(/.test(readFileSync(resolve(ROOT, f), 'utf8')));
+}
+
 for (const f of ['api/agent-chat.ts', 'api/whatsapp/webhook.ts']) {
   const src = readFileSync(resolve(ROOT, f), 'utf8');
   check(`${f} consulte le disjoncteur`, /checkDailyBudget/.test(src));
