@@ -127,5 +127,58 @@ for (const f of ['api/agent-chat.ts', 'api/whatsapp/webhook.ts']) {
   check(`${f} enregistre la consommation`, /recordUsage/.test(src));
 }
 
+console.log('\nCOÛT RÉEL PAR LEAD (usage → usage_by_lead, sans appel Anthropic)');
+// Usage représentatif d'un tour de chat mis en cache (valeurs mesurées en doc).
+const turn = { input_tokens: 2, output_tokens: 600, cache_creation_input_tokens: 0, cache_read_input_tokens: 4550 };
+const opusCost = m.costUsd(turn, 'claude-opus-5');
+check('coût d’un tour Opus = 600×25 + 2×5 + 4550×0,5 par million',
+  Math.abs(opusCost - (600 * 25 + 2 * 5 + 4550 * 0.5) / 1e6) < 1e-12, String(opusCost));
+check('le tarif suit le modèle réellement servi (repli Sonnet moins cher)',
+  m.costUsd(turn, 'claude-sonnet-5') < opusCost);
+let agg = m.addLeadUsage(undefined, '+971500000000', 'agent-chat', turn, opusCost);
+agg = m.addLeadUsage(agg, '+971500000000', 'agent-chat', turn, opusCost);
+agg = m.addLeadUsage(agg, '+971500000000', 'whatsapp-qualifier', { input_tokens: 900, output_tokens: 300 }, 0.01);
+check('agrégat : 3 requêtes, tokens cumulés', agg.requests === 3 && agg.output_tokens === 1500 && agg.cache_read === 9100 && agg.input_tokens === 904);
+check('agrégat : coût total = somme des coûts', Math.abs(agg.cost_usd - (2 * opusCost + 0.01)) < 1e-12);
+check('agrégat : ventilation par canal', agg.by_endpoint['agent-chat'].requests === 2 && agg.by_endpoint['whatsapp-qualifier'].cost_usd === 0.01);
+check('visiteur anonyme non imputé', !m.isAttributableHandle('anon:abc123') && !m.isAttributableHandle(null) && m.isAttributableHandle('a@b.fr'));
+
+// Repli mémoire (pas de Supabase dans ce bundle)
+await m.recordUsage('agent-chat', turn, { leadHandle: 'lead@example.invalid', model: 'claude-opus-5' });
+await m.recordUsage('agent-chat', turn, { leadHandle: 'lead@example.invalid', model: 'claude-opus-5' });
+await m.recordUsage('agent-chat', turn, { leadHandle: 'anon:zz' });
+const mem = await m.leadUsage('lead@example.invalid');
+check('repli mémoire : coût du lead cumulé sur 2 tours', mem?.requests === 2 && Math.abs(mem.cost_usd - 2 * opusCost) < 1e-12);
+check('repli mémoire : anonyme absent', (await m.leadUsage('anon:zz')) === null);
+
+// Avec Supabase : on vérifie les appels RPC envoyés (fetch simulé).
+process.env.SUPABASE_URL = 'https://projet.supabase.invalid';
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'cle-service';
+const sb = await import(pathToFileURL(bundle).href + '?supabase');
+const calls = [];
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (url, init) => { calls.push({ url: String(url), body: init?.body ? JSON.parse(init.body) : null }); return { ok: true, status: 204, text: async () => '', json: async () => [] }; };
+await sb.recordUsage('agent-chat', turn, { leadHandle: '+971500000000', model: 'claude-sonnet-5' });
+const daily = calls.find(c => c.url.endsWith('/rpc/bump_usage_daily'));
+const perLead = calls.find(c => c.url.endsWith('/rpc/bump_usage_lead'));
+check('Supabase : incrément quotidien ET incrément du lead', !!daily && !!perLead, calls.map(c => c.url).join(', '));
+check('Supabase : le lead est la clé handle, tokens et coût transmis',
+  perLead?.body.p_handle === '+971500000000' && perLead.body.p_output === 600 && perLead.body.p_cache_read === 4550 &&
+  Math.abs(perLead.body.p_cost - sb.costUsd(turn, 'claude-sonnet-5')) < 1e-12);
+check('Supabase : même coût dans les deux tables', daily?.body.p_cost === perLead?.body.p_cost);
+calls.length = 0;
+await sb.recordUsage('agent-chat', turn, { leadHandle: 'anon:xyz' });
+check('Supabase : visiteur anonyme → quotidien seulement', calls.length === 1 && calls[0].url.endsWith('/rpc/bump_usage_daily'));
+globalThis.fetch = async () => { throw new Error('Supabase down'); };
+let threw = false;
+try { await sb.recordUsage('agent-chat', turn, { leadHandle: 'x@y.fr' }); } catch { threw = true; }
+check('Supabase en panne : la comptabilité ne fait jamais échouer la réponse', !threw);
+globalThis.fetch = realFetch;
+
+const chatSrc = readFileSync(resolve(ROOT, 'api/agent-chat.ts'), 'utf8');
+check('agent-chat impute le coût au lead et au modèle servi', /recordUsage\('agent-chat', final\.usage, \{ leadHandle, model: final\.model \}\)/.test(chatSrc));
+check('webhook WhatsApp impute le coût au lead', /recordUsage\('whatsapp-qualifier', turn\.usage, \{ leadHandle: handle \}\)/.test(readFileSync(resolve(ROOT, 'api/whatsapp/webhook.ts'), 'utf8')));
+check('veille nocturne impute le coût au lead', (readFileSync(resolve(ROOT, 'api/cron/watch.ts'), 'utf8').match(/leadHandle: lead\.handle/g) || []).length === 2);
+
 console.log(`\n${pass} vérifications passées, ${fail} échec(s)`);
 process.exit(fail ? 1 : 0);

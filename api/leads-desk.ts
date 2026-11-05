@@ -16,6 +16,7 @@
  * bureau doit être ouvert à des tiers.
  */
 
+import { leadUsageMany, type LeadUsage } from './lib/guard';
 import { listActiveLeads, upsertLead, LEAD_STATUSES, type LeadStatus, type StoredLead } from './lib/leadStore';
 import { SIGNAL_LABELS, type BuyingSignal } from './lib/leadScore';
 import { ADVISORS } from './lib/claude';
@@ -60,6 +61,14 @@ function lastMessageOf(lead: StoredLead): string {
   return '';
 }
 
+/** Coût IA réel cumulé (usage_by_lead). Interne : jamais dans l'export CSV
+ *  livré aux agences. */
+function aiCostCell(u?: LeadUsage): string {
+  if (!u) return '<div class="meta">coût IA —</div>';
+  const usd = u.cost_usd < 1 ? u.cost_usd.toFixed(3) : u.cost_usd.toFixed(2);
+  return `<div class="meta" title="${u.requests} appels Claude">coût IA ${usd} $</div>`;
+}
+
 function toCsv(leads: StoredLead[]): string {
   const head = [
     'handle', 'nom', 'email', 'telephone', 'conseiller', 'score', 'palier', 'statut',
@@ -79,7 +88,12 @@ function toCsv(leads: StoredLead[]): string {
   return [head.join(','), ...rows].join('\n');
 }
 
-function page(leads: StoredLead[], filters: { tier?: string; status?: string }, key: string): string {
+function page(
+  leads: StoredLead[],
+  filters: { tier?: string; status?: string },
+  key: string,
+  usage: Map<string, LeadUsage> = new Map()
+): string {
   const pipelineValue = leads
     .filter(l => l.status !== 'sold' && l.status !== 'discarded')
     .reduce((sum, l) => sum + (TIER_VALUE[l.tier] ?? 0), 0);
@@ -99,7 +113,7 @@ function page(leads: StoredLead[], filters: { tier?: string; status?: string }, 
   <td>${esc(ADVISORS[(l.advisor_id as keyof typeof ADVISORS)]?.name ?? l.advisor_id ?? '—')}</td>
   <td class="num"><span class="score" style="--c:${tierColor}">${l.score}</span>
     <div class="meta" style="color:${tierColor}">${esc(l.tier)}</div></td>
-  <td class="num">${eur(TIER_VALUE[l.tier])}</td>
+  <td class="num">${eur(TIER_VALUE[l.tier])}${aiCostCell(usage.get(l.handle))}</td>
   <td>${eur((l.profile as any)?.totalBudget)}<div class="meta">${esc((l.profile as any)?.objective || '')}</div></td>
   <td>${signals.length ? signals.map(s => `<span class="sig">${esc(s)}</span>`).join('') : '<span class="meta">aucun</span>'}</td>
   <td class="msg">${esc(lastMessageOf(l).slice(0, 160)) || '<span class="meta">—</span>'}</td>
@@ -232,5 +246,6 @@ export default async function handler(req: any, res: any) {
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
-  res.status(200).send(page(leads, { tier, status }, key));
+  const usage = await leadUsageMany(leads.map(l => l.handle));
+  res.status(200).send(page(leads, { tier, status }, key, usage));
 }

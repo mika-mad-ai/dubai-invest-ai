@@ -69,6 +69,26 @@ check('RLS activé sur leads',
   /alter table public\.leads\s+enable row level security/.test(sql) ? [] : ['RLS absent sur leads']);
 
 
+// Coût par lead : la table et la RPC doivent correspondre exactement à ce
+// qu'envoie guard.recordUsage, sinon PostgREST répond 404 et le coût par
+// lead reste vide sans bruit.
+const usageLead = colsOf('usage_by_lead');
+check('usage_by_lead couvre le type LeadUsage',
+  ['handle','requests','input_tokens','output_tokens','cache_write','cache_read','cost_usd','by_endpoint'].filter(c => !usageLead.has(c)));
+const guardSrc = read('api/lib/guard.ts');
+const rpcParams = fn => {
+  const m = sql.match(new RegExp(`function public\\.${fn}\\(([\\s\\S]*?)\\) returns`));
+  return m ? [...m[1].matchAll(/(p_\w+)/g)].map(x => x[1]) : null;
+};
+const sentByGuard = ['p_handle', 'p_endpoint', ...[...guardSrc.matchAll(/(p_(?:input|output|cache_write|cache_read|cost)):/g)].map(x => x[1])];
+check('bump_usage_lead accepte exactement les paramètres envoyés par guard',
+  (() => { const p = rpcParams('bump_usage_lead'); return p ? [...new Set(sentByGuard)].filter(x => !p.includes(x)) : ['RPC absente']; })());
+check('RPC de comptabilité non exécutables par anon (sinon le disjoncteur est sabotable)',
+  ['bump_usage_daily', 'bump_usage_lead'].filter(fn =>
+    !new RegExp(`revoke execute on function public\\.${fn}\\([^)]*\\)\\s+from public, anon`).test(sql)));
+check('RLS activé sur usage_by_lead',
+  /alter table public\.usage_by_lead\s+enable row level security/.test(sql) ? [] : ['RLS absent']);
+
 // Les tables du post quotidien. Sans elles, PostgREST répond 404 et le module
 // dégrade en silence : plus d'historique de prix (donc jamais de slide « baisse
 // détectée ») et plus d'exclusions (donc le même bien peut ressortir). Le défaut

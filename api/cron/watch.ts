@@ -220,7 +220,7 @@ export default async function handler(req: any, res: any) {
           report.push({ handle: lead.handle, status: 'rédaction impossible' });
           continue;
         }
-        void recordUsage('watch-freeform', usage);
+        void recordUsage('watch-freeform', usage, { leadHandle: lead.handle });
         messageForTranscript = text.trim();
         sent = await sendWhatsApp(lead.phone!, messageForTranscript);
       } else {
@@ -246,7 +246,7 @@ export default async function handler(req: any, res: any) {
           continue;
         }
 
-        void recordUsage('watch-template', res.usage);
+        void recordUsage('watch-template', res.usage, { leadHandle: lead.handle });
         messageForTranscript = `[modèle] ${vars.firstName} · ${vars.fact} ${vars.priceNote}`;
         sent = await sendWhatsAppTemplate(lead.phone!, [vars.firstName, vars.fact, vars.priceNote]);
       }

@@ -314,8 +314,10 @@ implémentées. Ce qui reste :
 
 1. **Brancher les credentials** — voir `docs/AGENCY_SETUP.md`, ordre de
    branchement et vérifications par étape
-2. **Instrumenter le coût réel par lead** — `usage` est retourné dans
-   l'événement `done` mais n'est ni agrégé ni stocké
+2. ~~Instrumenter le coût réel par lead~~ — fait : `usage_by_lead` (RPC
+   atomique `bump_usage_lead`), imputé par `recordUsage(…, { leadHandle,
+   model })` depuis le chat, WhatsApp et la veille ; affiché au bureau
+   (`/bureau`, jamais dans le CSV agences). Reste : exécuter le SQL sur la base
 3. ~~Recaler la grille de prix par quartier~~ — fait le 2026-11-05 via le
    connecteur MCP DXB interact (médianes DLD revente 12 mois). Reste à
    automatiser : la grille demeure statique entre deux recalages manuels

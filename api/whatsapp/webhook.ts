@@ -127,7 +127,7 @@ export default async function handler(req: any, res: any) {
       missing: current.missing,
     });
 
-    if (turn.usage) void recordUsage('whatsapp-qualifier', turn.usage);
+    if (turn.usage) void recordUsage('whatsapp-qualifier', turn.usage, { leadHandle: handle });
 
     // ── Fusion des champs extraits dans le dossier ──────────────────────────
     const e = turn.extracted;

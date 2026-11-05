@@ -22,6 +22,7 @@ import { MODEL } from './claude';
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const USAGE_TABLE = process.env.SUPABASE_USAGE_TABLE || 'usage_daily';
+const LEAD_USAGE_TABLE = process.env.SUPABASE_LEAD_USAGE_TABLE || 'usage_by_lead';
 
 // ─── 1. Bornes sur l'entrée ─────────────────────────────────────────────────
 
@@ -206,34 +207,143 @@ export async function checkDailyBudget(): Promise<{ ok: true } | { ok: false; sp
 }
 
 /**
+ * Coût IA par lead — la métrique qui compte pour la revente (un lead vendu
+ * 500-2000 € doit coûter quelques centimes à qualifier). Agrégé par `handle`
+ * (téléphone normalisé, sinon email), la même clé que la table `leads`.
+ */
+export type LeadUsage = {
+  handle: string;
+  requests: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_write: number;
+  cache_read: number;
+  cost_usd: number;
+  by_endpoint: Record<string, { requests: number; cost_usd: number }>;
+};
+
+/** Seul un vrai identifiant (téléphone/email) mérite une ligne : les
+ *  visiteurs anonymes (`anon:…`) restent comptés dans `usage_daily` seulement. */
+export function isAttributableHandle(handle?: string | null): handle is string {
+  return !!handle && !handle.startsWith('anon:') && handle.length >= 5;
+}
+
+/** Ajoute une consommation à un agrégat — fonction pure, miroir exact de la
+ *  RPC `bump_usage_lead` (testée sans base). */
+export function addLeadUsage(
+  prev: LeadUsage | undefined,
+  handle: string,
+  endpoint: string,
+  usage: UsageLike,
+  cost: number
+): LeadUsage {
+  const base: LeadUsage = prev ?? {
+    handle, requests: 0, input_tokens: 0, output_tokens: 0, cache_write: 0, cache_read: 0, cost_usd: 0, by_endpoint: {},
+  };
+  const ep = base.by_endpoint[endpoint] ?? { requests: 0, cost_usd: 0 };
+  return {
+    ...base,
+    requests: base.requests + 1,
+    input_tokens: base.input_tokens + (usage.input_tokens ?? 0),
+    output_tokens: base.output_tokens + (usage.output_tokens ?? 0),
+    cache_write: base.cache_write + (usage.cache_creation_input_tokens ?? 0),
+    cache_read: base.cache_read + (usage.cache_read_input_tokens ?? 0),
+    cost_usd: base.cost_usd + cost,
+    by_endpoint: { ...base.by_endpoint, [endpoint]: { requests: ep.requests + 1, cost_usd: ep.cost_usd + cost } },
+  };
+}
+
+/** Repli mémoire (par instance) quand Supabase n'est pas configuré. */
+const memoryLeadUsage = new Map<string, LeadUsage>();
+
+/** Lecture de l'agrégat d'un lead (Supabase si configuré, sinon mémoire). */
+export async function leadUsage(handle: string): Promise<LeadUsage | null> {
+  if (SUPABASE_URL && SUPABASE_KEY) {
+    try {
+      const url = `${SUPABASE_URL}/rest/v1/${LEAD_USAGE_TABLE}?handle=eq.${encodeURIComponent(handle)}&limit=1`;
+      const res = await fetch(url, { headers: headers(), signal: AbortSignal.timeout(3_000) });
+      if (res.ok) {
+        const rows = (await res.json()) as LeadUsage[];
+        return rows?.[0] ? { ...rows[0], cost_usd: Number(rows[0].cost_usd) || 0 } : null;
+      }
+    } catch {
+      /* base muette : repli mémoire */
+    }
+  }
+  return memoryLeadUsage.get(handle) ?? null;
+}
+
+/** Lecture groupée pour le bureau des leads (une requête, pas N). */
+export async function leadUsageMany(handles: string[]): Promise<Map<string, LeadUsage>> {
+  const out = new Map<string, LeadUsage>();
+  const wanted = handles.filter(isAttributableHandle);
+  if (!wanted.length) return out;
+  if (SUPABASE_URL && SUPABASE_KEY) {
+    try {
+      const list = wanted.map(h => `"${h.replace(/"/g, '')}"`).join(',');
+      const url = `${SUPABASE_URL}/rest/v1/${LEAD_USAGE_TABLE}?handle=in.(${encodeURIComponent(list)})&limit=${wanted.length}`;
+      const res = await fetch(url, { headers: headers(), signal: AbortSignal.timeout(4_000) });
+      if (res.ok) {
+        for (const r of (await res.json()) as LeadUsage[]) out.set(r.handle, { ...r, cost_usd: Number(r.cost_usd) || 0 });
+        return out;
+      }
+    } catch {
+      /* base muette : repli mémoire */
+    }
+  }
+  for (const h of wanted) {
+    const u = memoryLeadUsage.get(h);
+    if (u) out.set(h, u);
+  }
+  return out;
+}
+
+/**
  * Enregistre la consommation APRÈS l'appel. À appeler sans `await` bloquant :
  * une erreur de comptabilité ne doit pas dégrader la réponse au prospect.
+ *
+ * @param opts.leadHandle  impute aussi le coût au lead (table `usage_by_lead`)
+ * @param opts.model       modèle réellement servi (`final.model`) : le tarif
+ *   doit suivre un éventuel repli de modèle, pas la configuration.
  */
-export async function recordUsage(endpoint: string, usage: UsageLike): Promise<void> {
-  const cost = costUsd(usage);
+export async function recordUsage(
+  endpoint: string,
+  usage: UsageLike,
+  opts: { leadHandle?: string | null; model?: string | null } = {}
+): Promise<void> {
+  const cost = costUsd(usage, opts.model || MODEL);
   if (memoryDay !== today()) { memoryDay = today(); memorySpend = 0; }
   memorySpend += cost;
 
+  const lead = isAttributableHandle(opts.leadHandle) ? opts.leadHandle : null;
+  if (lead) memoryLeadUsage.set(lead, addLeadUsage(memoryLeadUsage.get(lead), lead, endpoint, usage, cost));
+
   if (!SUPABASE_URL || !SUPABASE_KEY) return;
 
-  try {
+  const tokens = {
+    p_input: usage.input_tokens ?? 0,
+    p_output: usage.output_tokens ?? 0,
+    p_cache_write: usage.cache_creation_input_tokens ?? 0,
+    p_cache_read: usage.cache_read_input_tokens ?? 0,
+    p_cost: cost,
+  };
+  const rpc = async (fn: string, body: Record<string, unknown>) => {
     // Incrément atomique côté Postgres via une fonction RPC : deux requêtes
     // simultanées ne doivent pas s'écraser l'une l'autre.
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/bump_usage_daily`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
       method: 'POST',
       headers: headers(),
-      body: JSON.stringify({
-        p_day: today(),
-        p_endpoint: endpoint,
-        p_input: usage.input_tokens ?? 0,
-        p_output: usage.output_tokens ?? 0,
-        p_cache_write: usage.cache_creation_input_tokens ?? 0,
-        p_cache_read: usage.cache_read_input_tokens ?? 0,
-        p_cost: cost,
-      }),
+      body: JSON.stringify(body),
       signal: AbortSignal.timeout(4_000),
     });
-    if (!res.ok) console.error('[guard] bump_usage_daily', res.status, await res.text());
+    if (!res.ok) console.error(`[guard] ${fn}`, res.status, await res.text());
+  };
+
+  try {
+    await Promise.all([
+      rpc('bump_usage_daily', { p_day: today(), p_endpoint: endpoint, ...tokens }),
+      lead ? rpc('bump_usage_lead', { p_handle: lead, p_endpoint: endpoint, ...tokens }) : null,
+    ]);
   } catch (err: any) {
     console.error('[guard] recordUsage', err?.message ?? err);
   }

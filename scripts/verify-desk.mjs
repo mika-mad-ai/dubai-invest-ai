@@ -17,6 +17,7 @@ writeFileSync(entry, `
 import handler from '${ROOT}/api/leads-desk';
 export { handler };
 export { upsertLead } from '${ROOT}/api/lib/leadStore';
+export { recordUsage } from '${ROOT}/api/lib/guard';
 `);
 const bundle = join(out, 'b.mjs');
 await build({ entryPoints: [entry], bundle: true, format: 'esm', platform: 'node', outfile: bundle, logLevel: 'error' });
@@ -104,6 +105,16 @@ check('statut passé à Vendu', /option value="sold" selected/.test(res.body));
 res = mkRes();
 await m.handler({ method: 'POST', query: { key: 'test-secret' }, body: { handle: 'x', status: 'bogus' } }, res);
 check('statut invalide rejeté (400)', res.code === 400);
+
+// Coût IA par lead : visible au bureau, jamais dans le CSV livré aux agences.
+await m.recordUsage('agent-chat', { input_tokens: 2, output_tokens: 600, cache_read_input_tokens: 4550 }, { leadHandle: '+33612345678', model: 'claude-opus-5' });
+res = mkRes();
+await m.handler({ method: 'GET', query: { key: 'test-secret' } }, res);
+check('bureau : coût IA réel affiché pour le lead imputé', /coût IA 0\.017 \$/.test(res.body), (res.body.match(/coût IA[^<]*/g) || []).join(' | '));
+check('bureau : lead sans consommation → « coût IA — »', /coût IA —/.test(res.body));
+res = mkRes();
+await m.handler({ method: 'GET', query: { key: 'test-secret', format: 'csv' } }, res);
+check('CSV agences : aucun coût interne exporté', !/coût IA|cost_usd/i.test(res.body));
 
 console.log(`\n${pass} vérifications passées, ${fail} échec(s)`);
 process.exit(fail ? 1 : 0);
