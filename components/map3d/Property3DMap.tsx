@@ -1,12 +1,21 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+// MapLibre v6 cherche son worker à côté de son propre module
+// (`new URL('./maplibre-gl-worker.mjs', import.meta.url)`). Une fois bundlé par
+// Vite, ce fichier voisin n'existe plus : sans URL explicite, aucune tuile ne
+// se charge (« Worker failed to load »). `?url` fait émettre le worker comme
+// asset, chargé seulement à l'ouverture de la carte.
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { dubaiMidnightStyle } from './dubaiMidnightStyle';
 import { resolveCoords, type ResolvedPoint } from './geocode';
 import {
   estimateViews,
   floorsFromHeight,
+  circlePolygon,
   haversineKm,
+  inflateGeometry,
+  pickBuilding,
   viewCone,
   type ViewInsight,
 } from './viewAnalysis';
@@ -30,6 +39,8 @@ export type MapSubject = {
   lat?: number | null;
   lng?: number | null;
 };
+
+maplibregl.setWorkerUrl(maplibreWorkerUrl);
 
 const GOLD = '#D4AF37';
 const IVORY = '#f0ebe0';
@@ -131,21 +142,40 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
 
       // L'immeuble exact, extrait des tuiles OSM, re-extrudé en or.
       if (point.precision === 'exact') {
-        const feats = map.queryRenderedFeatures(map.project([lng, lat]), {
-          layers: ['buildings-3d'],
-        });
-        const f = feats[0];
+        // Test géométrique sur les empreintes (pas le pixel écran : en vue
+        // inclinée, une tour au premier plan masquerait la cible).
+        const feats = map.querySourceFeatures('openmaptiles', { sourceLayer: 'building' });
+        const f = pickBuilding(feats, lat, lng);
         if (f && (f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon')) {
+          // Un immeuble à cheval sur deux tuiles arrive en morceaux : on les
+          // regroupe par identifiant pour dorer l'empreinte entière.
+          const parts = f.id != null ? feats.filter(o => o.id === f.id) : [f];
+          const polys = parts.flatMap(o =>
+            o.geometry.type === 'Polygon'
+              ? [o.geometry.coordinates]
+              : o.geometry.type === 'MultiPolygon'
+                ? o.geometry.coordinates
+                : []
+          );
+          const geometry: GeoJSON.Geometry =
+            polys.length > 1 ? { type: 'MultiPolygon', coordinates: polys } : f.geometry;
           const h = Number(f.properties?.render_height) || 24;
           setBuilding({
             heightM: Math.round(h),
             floors: floorsFromHeight(h),
             name: typeof f.properties?.name === 'string' ? f.properties.name : undefined,
           });
+          // Retire la tour d'origine de la couche de base : deux extrusions
+          // identiques se disputent la profondeur (rayures « z-fighting »).
+          if (f.id != null) map.setFilter('buildings-3d', ['!=', ['id'], f.id]);
+          // « Rayon X » : le bâti voisin s'efface à moitié pour que la tour
+          // dorée reste visible même derrière plus haut qu'elle.
+          map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity-transition', { duration: reduced ? 0 : 900 });
+          map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.55);
           if (!map.getSource('unit-building')) {
             map.addSource('unit-building', {
               type: 'geojson',
-              data: { type: 'Feature', properties: { h }, geometry: f.geometry },
+              data: { type: 'Feature', properties: { h }, geometry: inflateGeometry(geometry) },
             });
             map.addLayer({
               id: 'unit-building-3d',
@@ -164,13 +194,20 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
         // Précision quartier : un halo doux plutôt qu'un faux immeuble.
         map.addSource('unit-area', {
           type: 'geojson',
-          data: viewCone(lat, lng, 0, { spreadDeg: 180, lengthKm: 0.45 }),
+          data: circlePolygon(lat, lng, 0.45),
         });
         map.addLayer({
           id: 'unit-area-fill',
           type: 'fill',
           source: 'unit-area',
-          paint: { 'fill-color': GOLD, 'fill-opacity': 0.07 },
+          paint: { 'fill-color': GOLD, 'fill-opacity': 0.1 },
+        });
+        // Contour pointillé : on lit tout de suite « zone », pas « immeuble ».
+        map.addLayer({
+          id: 'unit-area-line',
+          type: 'line',
+          source: 'unit-area',
+          paint: { 'line-color': GOLD, 'line-opacity': 0.75, 'line-width': 1.4, 'line-dasharray': [2, 2] },
         });
       }
 
@@ -334,13 +371,13 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
         @keyframes m3d-sweep { to { transform: rotate(360deg); } }
 
         .m3d-panel {
-          position: absolute; top: 14px; right: 14px; width: 300px; max-height: calc(100% - 28px);
+          position: absolute; top: 58px; right: 14px; width: 300px; max-height: calc(100% - 72px);
           overflow-y: auto; padding: 16px 16px 14px; border-radius: 16px;
           background: rgba(10,16,32,0.86); border: 1px solid rgba(255,255,255,0.09);
           backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
         }
         @media (max-width: 720px) {
-          .m3d-panel { top: auto; right: 8px; left: 8px; bottom: 8px; width: auto; max-height: 46%; }
+          .m3d-panel { top: auto; right: 8px; left: 8px; bottom: 34px; width: auto; max-height: 46%; }
         }
 
         .m3d-note { font-family: ${sans}; font-size: 0.66rem; color: rgba(251,191,36,0.85); background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.22); border-radius: 8px; padding: 6px 9px; line-height: 1.5; margin: 10px 0 0; }

@@ -118,13 +118,30 @@ function writeCache(cache: Record<string, ResolvedPoint | null>) {
   }
 }
 
+/**
+ * Requête Nominatim à envoyer pour une annonce, ou la même requête que la
+ * communauté seule quand le « nom d'immeuble » extrait n'est que le quartier
+ * (« Studio, Arjan » → « Arjan, Dubai », pas « Arjan, Arjan, Dubai »).
+ */
+export function geocodeQuery(title: string, location: string): string {
+  const building = buildingNameFrom(title, location);
+  const community = location.split(',')[0]?.trim() || location;
+  const norm = (x: string) => x.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const sameAsCommunity =
+    !!building && (norm(building) === norm(community) || norm(community).includes(norm(building)));
+  return building && !sameAsCommunity ? `${building}, ${community}, Dubai` : `${community}, Dubai`;
+}
+
+/** Erreur transitoire (réseau, 429, 5xx) : ne doit PAS être mise en cache. */
+class TransientGeocodeError extends Error {}
+
 /** Géocodage Nominatim (politique d'usage : volume faible, 1 req à la fois). */
 async function nominatim(query: string): Promise<ResolvedPoint | null> {
   const url =
     'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=ae&q=' +
     encodeURIComponent(query);
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!res.ok) return null;
+  if (!res.ok) throw new TransientGeocodeError(`nominatim ${res.status}`);
   const rows = (await res.json()) as Array<{ lat: string; lon: string; display_name: string }>;
   const r = rows?.[0];
   if (!r) return null;
@@ -149,25 +166,52 @@ export async function resolveCoords(listing: {
     return { lat: listing.lat, lng: listing.lng, precision: 'exact', label: listing.title };
   }
 
-  const building = buildingNameFrom(listing.title, listing.location);
-  const community = listing.location.split(',')[0]?.trim() || listing.location;
-  const query = building ? `${building}, ${community}, Dubai` : `${community}, Dubai`;
+  const query = geocodeQuery(listing.title, listing.location);
+  const centroid = communityCentroid(listing.location) ?? communityCentroid(listing.title);
+  const hasBuilding = !query.startsWith(`${listing.location.split(',')[0]?.trim()}, Dubai`);
 
-  const cache = readCache();
-  if (query in cache) {
-    const hit = cache[query];
-    if (hit) return hit;
-    // négatif en cache → centroïde direct
-  } else {
-    try {
-      const geo = await nominatim(query);
-      cache[query] = geo;
-      writeCache(cache);
-      if (geo) return geo;
-    } catch {
-      /* réseau indisponible → centroïde */
-    }
+  if (!hasBuilding) {
+    // Sans nom d'immeuble, Nominatim ne rendrait qu'un quartier : ce n'est pas
+    // une position « exacte ». Centroïde embarqué d'abord, réseau en dernier.
+    if (centroid) return centroid;
+    const geo = await cachedGeocode(query);
+    return geo ? { ...geo, precision: 'approx' } : null;
   }
 
-  return communityCentroid(listing.location) ?? communityCentroid(listing.title);
+  const geo = await cachedGeocode(query);
+  return geo ?? centroid;
 }
+
+/**
+ * Une seule requête réseau par requête textuelle, même si plusieurs cartes
+ * (ou le double montage de React StrictMode) la demandent en même temps.
+ */
+const inflight = new Map<string, Promise<ResolvedPoint | null>>();
+
+async function cachedGeocode(query: string): Promise<ResolvedPoint | null> {
+  const cache = readCache();
+  if (query in cache) return cache[query]; // positif, ou négatif confirmé
+  const pending = inflight.get(query);
+  if (pending) return pending;
+
+  const p = (async () => {
+    try {
+      const geo = await nominatim(query);
+      // Réponse 200 (trouvé ou vide) : fiable, on la garde.
+      const next = readCache();
+      next[query] = geo;
+      writeCache(next);
+      return geo;
+    } catch {
+      // Réseau coupé, 429, 5xx : on réessaiera à la prochaine ouverture.
+      return null;
+    } finally {
+      inflight.delete(query);
+    }
+  })();
+  inflight.set(query, p);
+  return p;
+}
+
+/** Centroïde de quartier exposé pour les tests. */
+export { communityCentroid };

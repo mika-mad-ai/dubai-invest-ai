@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Box } from 'lucide-react';
@@ -9,7 +9,47 @@ const Property3DMap = lazy(() => import('./Property3DMap'));
 
 const sans = '"Manrope",sans-serif';
 
+/**
+ * Isole les pannes de la scène (chunk MapLibre introuvable après un
+ * déploiement, WebGL indisponible…) : sans ce garde-fou, l'erreur remonte à
+ * l'ErrorBoundary global et c'est toute la page qui tombe.
+ */
+class MapErrorBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(error: unknown) {
+    console.warn('[map3d] scène indisponible', error);
+  }
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <div role="alert" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, height: '100%', padding: 24, textAlign: 'center' }}>
+        <p style={{ fontFamily: sans, fontSize: '0.85rem', color: 'rgba(240,235,224,0.78)', maxWidth: 380, lineHeight: 1.6, margin: 0 }}>
+          La carte 3D n’a pas pu démarrer (connexion ou carte graphique non
+          prise en charge). Le reste de l’analyse reste disponible.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          style={{ fontFamily: sans, fontSize: '0.75rem', fontWeight: 700, color: '#0a1020', background: '#D4AF37', border: 'none', borderRadius: 999, padding: '8px 16px', cursor: 'pointer' }}
+        >
+          Recharger la page
+        </button>
+      </div>
+    );
+  }
+}
+
 const Map3DDialog: React.FC<{ subject: MapSubject; onClose: () => void }> = ({ subject, onClose }) => {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    // Focus dans le dialogue à l'ouverture, rendu à l'élément d'origine ensuite.
+    const opener = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus({ preventScroll: true });
+    return () => opener?.focus?.({ preventScroll: true });
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
@@ -53,6 +93,7 @@ const Map3DDialog: React.FC<{ subject: MapSubject; onClose: () => void }> = ({ s
         }}
       >
         <button
+          ref={closeRef}
           onClick={onClose}
           aria-label="Fermer la carte"
           style={{
@@ -66,6 +107,7 @@ const Map3DDialog: React.FC<{ subject: MapSubject; onClose: () => void }> = ({ s
           <X size={16} />
         </button>
 
+        <MapErrorBoundary>
         <Suspense
           fallback={
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -77,6 +119,7 @@ const Map3DDialog: React.FC<{ subject: MapSubject; onClose: () => void }> = ({ s
         >
           <Property3DMap subject={subject} />
         </Suspense>
+        </MapErrorBoundary>
       </motion.div>
     </motion.div>,
     document.body
