@@ -6,12 +6,13 @@
  * Chaque étape est indépendante : un CRM non configuré n'empêche pas la capture,
  * un WhatsApp non configuré n'empêche pas le push CRM.
  *
- * POST { profile, advisorId?, viewedListings?, messageCount?, consentWhatsApp? }
+ * POST { profile, advisorId?, viewedListings?, messageCount?, consent?: { whatsapp?, partners? }, consentSource?, consentWhatsApp? (ancien) }
  */
 
 import { pushLeadToCrm } from './lib/crm';
 import { scoreLead, type BuyingSignal } from './lib/leadScore';
-import { normalizeHandle, upsertLead } from './lib/leadStore';
+import { getLead, normalizeHandle, upsertLead } from './lib/leadStore';
+import { applyConsent, canMessageWhatsApp, type ConsentSource } from './lib/consent';
 import { ADVISORS, resolveAdvisor, type InvestorProfile } from './lib/claude';
 import { sendWhatsApp, normalizePhone } from './lib/whatsapp';
 
@@ -65,8 +66,21 @@ export default async function handler(req: any, res: any) {
     signals,
   });
 
+  // Consentements : deux cases distinctes, jamais pré-cochées. `consentWhatsApp`
+  // (ancien champ) reste accepté. Une finalité absente du formulaire n'est ni
+  // accordée ni retirée.
+  const decision = {
+    whatsapp: typeof body.consent?.whatsapp === 'boolean' ? body.consent.whatsapp
+      : typeof body.consentWhatsApp === 'boolean' ? body.consentWhatsApp : undefined,
+    partners: typeof body.consent?.partners === 'boolean' ? body.consent.partners : undefined,
+  };
+  const source: ConsentSource = body.consentSource === 'lead_modal' ? 'lead_modal' : 'web_form';
+  const previous = await getLead(handle);
+  const consent = applyConsent(previous?.consent, decision, source);
+
   const lead = await upsertLead({
     handle,
+    consent,
     name: profile.name,
     email: profile.email,
     phone,
@@ -98,7 +112,7 @@ export default async function handler(req: any, res: any) {
   // Premier contact WhatsApp : bascule la conversation sur le canal où l'agent
   // de qualification peut travailler en autonomie. Uniquement avec consentement.
   let whatsapp: string | undefined;
-  if (phone && body.consentWhatsApp) {
+  if (phone && canMessageWhatsApp(consent) && !previous?.transcript?.some(t => t.channel === 'whatsapp')) {
     const firstName = (profile.name || '').split(' ')[0];
     const sent = await sendWhatsApp(
       phone,

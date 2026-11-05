@@ -327,8 +327,13 @@ implémentées. Ce qui reste :
    matching par scénario, verdicts DLD, fidélité du prompt, détection
    d'hallucinations chiffrées. Reste : brancher le correcteur sur les
    transcripts réels (`--reply fichier.txt`) pour une mesure continue
-6. **Consentement et RGPD** : la capture WhatsApp exige un opt-in explicite,
-   aujourd'hui porté par le seul champ `consentWhatsApp`
+6. **Consentement et RGPD** — mécanique faite (`api/lib/consent.ts`) : deux
+   finalités distinctes (WhatsApp / transmission partenaires), cases non
+   pré-cochées, décision horodatée + version du texte (`leads.consent`),
+   STOP honoré avant tout (même budget épuisé), veille et export CSV filtrés
+   sur le consentement. **Reste BLOQUANT avant prod** : politique de
+   confidentialité avec l'identité du responsable de traitement, et
+   `VITE_PRIVACY_CONTACT` (adresse d'exercice des droits)
 
 ---
 

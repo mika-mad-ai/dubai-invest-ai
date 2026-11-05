@@ -29,6 +29,8 @@ export interface UserProfile {
   zonePreference?: string; // high_yield | capital_appreciation | premium_lifestyle | emerging | balanced
   investmentHorizon?: string; // short | medium | long | permanent
   advisorId?: string; // locatif | residence | location — conseiller IA choisi (AgentsSection)
+  /** Consentements RGPD cochés dans le formulaire (horodatés côté serveur). */
+  consent?: { whatsapp: boolean; partners: boolean };
 }
 
 export type RentalStrategy = 'long_term' | 'short_term';

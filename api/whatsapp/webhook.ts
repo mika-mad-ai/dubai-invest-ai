@@ -20,6 +20,7 @@ import { appendTurn, getLead, normalizeHandle, upsertLead } from '../lib/leadSto
 import { qualifyTurn } from '../lib/qualifier';
 import { parseInbound, sendWhatsApp, verifyInbound } from '../lib/whatsapp';
 import { checkDailyBudget, recordUsage } from '../lib/guard';
+import { OPT_OUT_CONFIRMATION, isOptOutMessage, withdrawAll } from '../lib/consent';
 
 /** Déduplication : les fournisseurs renvoient le même message en cas de timeout. */
 const seenMessages = new Map<string, number>();
@@ -61,13 +62,6 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
-  const budget = await checkDailyBudget();
-  if (!budget.ok) {
-    console.warn(`[whatsapp/webhook] budget quotidien atteint : ${budget.spent.toFixed(2)} / ${budget.budget} $`);
-    res.status(200).json({ ok: false, reason: 'budget quotidien atteint' });
-    return;
-  }
-
   const body = typeof req.body === 'string' ? tryParse(req.body) : req.body;
   const inbound = parseInbound(body);
 
@@ -81,6 +75,26 @@ export default async function handler(req: any, res: any) {
     res.status(200).json({ ok: true, skipped: 'message déjà traité' });
     return;
   }
+
+  // STOP passe AVANT tout le reste (budget, clé Claude) : un retrait de
+  // consentement doit toujours être honoré, même quand l'agent est coupé.
+  if (isOptOutMessage(inbound.text)) {
+    const optHandle = normalizeHandle({ phone: inbound.from });
+    const prev = await getLead(optHandle);
+    await upsertLead({ handle: optHandle, phone: inbound.from, consent: withdrawAll(prev?.consent) });
+    await appendTurn(optHandle, { role: 'user', content: inbound.text, channel: 'whatsapp' });
+    await sendWhatsApp(inbound.from, OPT_OUT_CONFIRMATION);
+    res.status(200).json({ ok: true, optOut: true });
+    return;
+  }
+
+  const budget = await checkDailyBudget();
+  if (!budget.ok) {
+    console.warn(`[whatsapp/webhook] budget quotidien atteint : ${budget.spent.toFixed(2)} / ${budget.budget} $`);
+    res.status(200).json({ ok: false, reason: 'budget quotidien atteint' });
+    return;
+  }
+
 
   if (!hasClaude()) {
     res.status(200).json({ ok: false, reason: 'ANTHROPIC_API_KEY non configurée' });

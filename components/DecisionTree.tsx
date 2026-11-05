@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
+import ConsentFields from './ConsentFields';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useI18n, fmt } from '../i18n';
 import { UserProfile, PropertyStatus } from '../types';
@@ -1426,6 +1427,14 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading, agentI
                       />
                     ))}
                   </div>
+
+                  {/* Consentements RGPD — facultatifs, non pré-cochés. Pas de
+                      numéro collecté ici : seule la transmission partenaires est demandée. */}
+                  <ConsentFields
+                    value={{ whatsapp: false, partners: !!profile.consent?.partners }}
+                    onChange={c => setProfile({ ...profile, consent: { whatsapp: false, partners: c.partners } })}
+                    showWhatsApp={false}
+                  />
 
                   {/* Submit */}
                   <motion.button

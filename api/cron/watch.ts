@@ -16,6 +16,7 @@
 import { ask, assembleSystem, buildListingsBlock, buildProfileBlock, buildStableSystem, getClaude, hasClaude, MODEL, outputConfig, resolveAdvisor, textOf, type InvestorProfile } from '../lib/claude';
 import { loadDossierContext } from '../lib/context';
 import { listActiveLeads, upsertLead, type StoredLead } from '../lib/leadStore';
+import { canMessageWhatsApp } from '../lib/consent';
 import { isInsideServiceWindow, sendWhatsApp, sendWhatsAppTemplate } from '../lib/whatsapp';
 import { checkDailyBudget, recordUsage } from '../lib/guard';
 import type { ScoredListing } from '../lib/matchEngine';
@@ -154,9 +155,12 @@ export default async function handler(req: any, res: any) {
 
   const all = await listActiveLeads(200);
 
-  // Éligibilité : joignable sur WhatsApp, budget connu, pas déjà alerté récemment.
+  // Éligibilité : joignable sur WhatsApp ET consentement explicite non retiré
+  // (une alerte de veille est un message à notre initiative : RGPD art. 6.1.a),
+  // budget connu, pas déjà alerté récemment.
   const eligible = all.filter(l => {
     if (!l.phone) return false;
+    if (!canMessageWhatsApp(l.consent)) return false;
     if (!(l.profile as any)?.totalBudget) return false;
     if (l.tier === 'cold') return false;
     return hoursSince(readState(l).lastAlertAt) >= MIN_HOURS_BETWEEN_ALERTS;

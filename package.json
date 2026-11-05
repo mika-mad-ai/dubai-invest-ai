@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "node scripts/generate-sitemaps.mjs && tsc && vite build",
     "preview": "vite preview",
-    "verify": "node scripts/verify-engine.mjs && node scripts/verify-desk.mjs && node scripts/verify-schema.mjs && node scripts/verify-guard.mjs && node scripts/verify-social.mjs && node scripts/verify-map3d.mjs && node scripts/eval-advisor.mjs",
+    "verify": "node scripts/verify-engine.mjs && node scripts/verify-desk.mjs && node scripts/verify-schema.mjs && node scripts/verify-guard.mjs && node scripts/verify-social.mjs && node scripts/verify-map3d.mjs && node scripts/verify-consent.mjs && node scripts/eval-advisor.mjs",
     "avatars:idle": "node scripts/process-veo-idle.mjs",
     "eval": "node scripts/eval-advisor.mjs"
   },

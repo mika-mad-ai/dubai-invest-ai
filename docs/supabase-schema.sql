@@ -253,6 +253,9 @@ alter table public.leads    add column if not exists status         text not nul
 alter table public.leads    add column if not exists sold_to        text;
 alter table public.leads    add column if not exists sold_at        timestamptz;
 alter table public.leads    add column if not exists sold_price_eur numeric;
+-- Consentements RGPD (lib/consent.ts) : { whatsapp: {granted, at, source,
+-- textVersion}, partners: {…} }. Preuve du consentement (art. 7.1).
+alter table public.leads    add column if not exists consent        jsonb not null default '{}'::jsonb;
 alter table public.listings add column if not exists scraped_at     timestamptz not null default now();
 alter table public.listings add column if not exists price_aed      integer;
 

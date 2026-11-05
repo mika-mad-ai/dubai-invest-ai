@@ -31,6 +31,7 @@ await m.upsertLead({
   advisor_id: 'locatif', score: 82, tier: 'qualified', status: 'new',
   profile: { totalBudget: 800000, objective: 'rental_income' },
   signals: ['budget_confirmed', 'visit_requested'],
+  consent: { partners: { granted: true, at: '2026-11-05T10:00:00.000Z', source: 'web_form', textVersion: 'test-v1' } },
   transcript: [{ role: 'user', content: 'Je veux visiter la semaine prochaine <script>alert(1)</script>', at: new Date().toISOString(), channel: 'whatsapp' }],
 });
 await m.upsertLead({
@@ -88,7 +89,9 @@ check('filtre palier=warm exclut le qualified', res.body.includes('Jean Martin')
 res = mkRes();
 await m.handler({ method: 'GET', query: { key: 'test-secret', format: 'csv' } }, res);
 check('CSV servi en text/csv', res.headers['content-type'].includes('text/csv'));
-check('CSV a un en-tête + 2 lignes', res.body.trim().split('\n').length === 3, `${res.body.trim().split('\n').length} lignes`);
+check('CSV RGPD : seul le lead ayant consenti à la transmission est exporté (en-tête + 1 ligne)', res.body.trim().split('\n').length === 2, `${res.body.trim().split('\n').length} lignes`);
+check('CSV RGPD : Jean (sans consentement partenaires) absent', !res.body.includes('Jean Martin'));
+check('CSV RGPD : date et version du consentement exportées', res.body.includes('2026-11-05T10:00:00.000Z') && res.body.includes('test-v1'));
 check('CSV échappe les guillemets', res.body.includes('"Marie Dupont"'));
 
 // 6. POST : marquer vendu
