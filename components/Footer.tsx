@@ -20,7 +20,7 @@ const Footer: React.FC = () => {
 
         {/* Brand */}
         <div>
-          <img src="/NewLogoDubAInvestV2.png" alt="DubaiInvest" style={{ height: 56, marginBottom: 16 }} />
+          <img src="/NewLogoDubAInvestV2.png" alt="DubaiInvest" className="logo-glow" style={{ height: 56, marginBottom: 16 }} />
           <p style={{ color: 'rgba(200,192,178,0.85)', fontSize: 13, lineHeight: 1.6, maxWidth: 280 }}>
             {t.footer.brand}
           </p>
@@ -91,6 +91,10 @@ const Footer: React.FC = () => {
         </p>
         <p style={{ color: 'rgba(200,192,178,0.62)', fontSize: 11 }}>
           {t.footer.disclaimer}
+          {' · '}
+          <a href="/confidentialite" style={{ color: 'rgba(212,175,55,0.9)', textDecoration: 'underline' }}>
+            {t.consent.privacyLink}
+          </a>
         </p>
       </div>
     </div>

@@ -36,10 +36,12 @@ const FFMPEG = FFMPEG_CANDIDATES.find(p => { try { execSync(`"${p}" -version`, {
 const BASE = 'Photorealistic video, keep the exact same face, identity, skin tone, eye color, hair, clothing and background as the input image. Warm, welcoming and lively person with a genuine warm smile and gentle head nods. Continuous natural motion the ENTIRE time so the person never looks frozen or static — subtle breathing, small head and shoulder sways, occasional natural blink. The person does NOT speak: the lips form a smile, not words, no talking, no lip-sync. Locked-off camera, no zoom, no camera movement. Elegant high-end corporate portrait, no text, no watermark, no subtitles.';
 
 // Geste spécifique par agent (les mains montent dans le cadre pour la salutation).
+// Le salut est joué UNE seule fois à l'écran : demander un geste unique qui se
+// termine en pose neutre, et surtout pas une salutation répétée en boucle.
 const GESTURES = {
-  locatif: ' He brings both palms together in front of his chest in a warm respectful salaam / namaste greeting, gently closing his eyes and giving a small polite bow of the head, then looks back up with a warm smile — repeated as a gentle continuous welcoming motion.',
-  residence: ' He raises one hand up into frame and gives a friendly welcoming wave toward the viewer, smiling warmly and nodding gently, in a relaxed natural continuous way.',
-  location: ' She raises one hand up into frame in a friendly welcoming wave / greeting toward the viewer, smiling warmly and nodding gently, in an elegant natural continuous way.',
+  locatif: ' He brings both palms together in front of his chest in a warm respectful salaam / namaste greeting, gently closing his eyes and giving a small polite bow of the head, then looks back up with a warm smile and lowers his hands back down, returning to a calm neutral resting pose for the rest of the clip. The greeting happens ONCE only, it is never repeated.',
+  residence: ' He raises one hand up into frame and gives a friendly welcoming wave toward the viewer, smiling warmly and nodding gently, then lowers his hand back down and returns to a calm neutral resting pose for the rest of the clip. The wave happens ONCE only, it is never repeated.',
+  location: ' She raises one hand up into frame in a friendly welcoming wave / greeting toward the viewer, smiling warmly and nodding gently, then lowers her hand back down and returns to a calm neutral resting pose for the rest of the clip. The wave happens ONCE only, it is never repeated.',
 };
 const promptFor = (id) => BASE + (GESTURES[id] ?? '');
 
@@ -81,13 +83,16 @@ for (const id of targets) {
   else { const r = await fetch(`${v.uri}&key=${KEY}`); writeFileSync(raw, Buffer.from(await r.arrayBuffer())); }
   console.log(`\n[${id}] brut → ${raw}`);
 
-  const out = `public/agents/agent-${id}.mp4`;
+  // `-intro.mp4` : geste de salutation joué UNE fois côté front, qui enchaîne
+  // ensuite sur `agent-${id}-idle.mp4` (boucle calme, générée séparément).
+  const out = `public/agents/agent-${id}-intro.mp4`;
   if (FFMPEG) {
-    // muet + recadré 3:4 (supprime le letterbox 9:16) + BOOMERANG (avant/arrière) →
-    // mouvement continu et boucle parfaitement sans coupure (pas de "reset").
-    execSync(`"${FFMPEG}" -y -i ${raw} -an -filter_complex "[0:v]crop=in_w:in_w*4/3,scale=-2:800,setsar=1,split[a][b];[b]reverse[r];[a][r]concat=n=2:v=1[out]" -map "[out]" -c:v libx264 -crf 28 -preset slow -movflags +faststart -pix_fmt yuv420p ${out}`, { stdio: 'ignore' });
+    // muet + recadré 3:4 (supprime le letterbox 9:16), SANS boomerang : le geste
+    // doit se jouer une seule fois. Un aller-retour rejouerait le salut à
+    // l'envers et donnerait l'impression d'un double bonjour.
+    execSync(`"${FFMPEG}" -y -i ${raw} -an -vf "crop=in_w:in_w*4/3,scale=-2:800,setsar=1" -c:v libx264 -crf 28 -preset slow -movflags +faststart -pix_fmt yuv420p ${out}`, { stdio: 'ignore' });
     execSync(`rm -f ${raw}`);
-    console.log(`[${id}] web (boomerang) → ${out}`);
+    console.log(`[${id}] web (geste, aller simple) → ${out}`);
   } else {
     execSync(`mv ${raw} ${out}`);
     console.log(`[${id}] (ffmpeg absent) → ${out} tel quel`);

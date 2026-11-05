@@ -11,6 +11,9 @@ export interface LeadPayload {
   name: string;
   email: string;
   phone: string;
+  // Consentements RGPD (cochés ou non — la décision est tracée)
+  consentWhatsApp?: boolean;
+  consentPartners?: boolean;
   // Étape 1 — Objectif
   objective?: string;
   // Étape 2 — Budget
@@ -87,7 +90,7 @@ export function formatPayloadForSheet(p: LeadPayload) {
 }
 
 export async function sendLeadToSheet(payload: LeadPayload): Promise<{ ok: boolean; error?: string }> {
-  const webhookUrl = import.meta.env.VITE_GOOGLE_SHEET_WEBHOOK as string | undefined;
+  const webhookUrl = (import.meta.env.VITE_GOOGLE_SHEET_WEBHOOK as string | undefined)?.trim() || undefined;
 
   if (!webhookUrl) {
     console.warn('[GoogleSheets] VITE_GOOGLE_SHEET_WEBHOOK is not configured — lead not sent.');

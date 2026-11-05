@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { env } from './env';/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export type SourceStatus = {
   source: 'propertyfinder' | 'bayut';
@@ -21,6 +22,9 @@ export type Listing = {
   baths: number;
   sqm: number;
   completion: string;
+  /** Coordonnées quand la source les donne — sinon géocodage côté client. */
+  lat?: number | null;
+  lng?: number | null;
   serviceChargesSqft: number;
   marketPriceSqft: number;
   liquidity: 'High' | 'Medium' | 'Low';
@@ -29,13 +33,9 @@ export type Listing = {
   source: 'propertyfinder' | 'bayut';
 };
 
-const MARKET_PRICE_BY_DISTRICT: Record<string, number> = {
-  downtown: 6300,
-  marina: 5800,
-  creek: 5200,
-  palm: 7500,
-  other: 5000
-};
+// La référence marché par annonce vient de la grille DLD par quartier
+// (dldBenchmarks via priceCheck), en AED/sqft — plus de grille locale.
+import { benchmarkFor } from './priceCheck';
 
 // Taux de change AED → EUR (1 AED ≈ 0.236 EUR, soit 1 EUR ≈ 4.24 AED)
 const AED_TO_EUR = 1 / 4.24;
@@ -136,7 +136,7 @@ function extractScriptJson(html: string, scriptId: string): any | null {
  * qui a maxDuration=300 dans vercel.json.
  */
 async function runApifyActor(actorId: string, input: object, maxItems: number): Promise<any[]> {
-  const token = process.env.APIFY_API_TOKEN;
+  const token = env('APIFY_API_TOKEN');
   if (!token) return [];
 
   const url = `${APIFY_BASE}/acts/${actorId}/run-sync-get-dataset-items?token=${token}&timeout=100&maxItems=${maxItems}`;
@@ -253,8 +253,10 @@ function normalizePropertyFinderItem(item: Record<string, any>): Listing | null 
     baths,
     sqm,
     completion,
+    lat: Number(item.coordinates?.lat ?? item.latitude ?? NaN) || null,
+    lng: Number(item.coordinates?.lon ?? item.coordinates?.lng ?? item.longitude ?? NaN) || null,
     serviceChargesSqft: 16,
-    marketPriceSqft: MARKET_PRICE_BY_DISTRICT[districtId] ?? MARKET_PRICE_BY_DISTRICT.other,
+    marketPriceSqft: benchmarkFor(location, type).value,
     liquidity: inferLiquidity(location),
     catalysts: ['Annonce Property Finder via Apify'],
     sourceUrl: url,
@@ -348,8 +350,10 @@ function mapPropertyFinder(schema: any, limit: number): Listing[] {
       baths,
       sqm,
       completion: 'Prêt',
+      lat: Number(e?.geo?.latitude ?? NaN) || null,
+      lng: Number(e?.geo?.longitude ?? NaN) || null,
       serviceChargesSqft: 16,
-      marketPriceSqft: MARKET_PRICE_BY_DISTRICT[districtId] || MARKET_PRICE_BY_DISTRICT.other,
+      marketPriceSqft: benchmarkFor(location, type).value,
       liquidity: inferLiquidity(location),
       catalysts: ['Annonce réelle PF'],
       sourceUrl: url,
@@ -418,7 +422,7 @@ function dedupeByUrl(listings: Listing[]): Listing[] {
 // ─── Point d'entrée principal ────────────────────────────────────────────────
 
 export async function collectLiveListings(city = 'dubai', limit = 24) {
-  const apifyToken = process.env.APIFY_API_TOKEN;
+  const apifyToken = env('APIFY_API_TOKEN');
 
   let pf: { listings: Listing[]; status: SourceStatus };
   const bayut = await fetchBayut(city); // toujours 0 sans proxy premium

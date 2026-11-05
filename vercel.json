@@ -81,6 +81,14 @@
   ],
   "rewrites": [
     {
+      "source": "/bureau",
+      "destination": "/api/leads-desk"
+    },
+    {
+      "source": "/confidentialite",
+      "destination": "/confidentialite.html"
+    },
+    {
       "source": "/:locale(en|es|ru|zh|ar|af)",
       "destination": "/index.html"
     },
@@ -156,12 +164,31 @@
     },
     "api/cron/social-poster.ts": {
       "maxDuration": 300
+    },
+    "api/agent-chat.ts": {
+      "maxDuration": 300
+    },
+    "api/whatsapp/webhook.ts": {
+      "maxDuration": 60
+    },
+    "api/lead.ts": {
+      "maxDuration": 30
+    },
+    "api/cron/watch.ts": {
+      "maxDuration": 300
+    },
+    "api/leads-desk.ts": {
+      "maxDuration": 30
     }
   },
   "crons": [
     {
       "path": "/api/cron/refresh-listings",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/watch",
+      "schedule": "30 3 * * *"
     },
     {
       "path": "/api/cron/seo-geo-optimizer",

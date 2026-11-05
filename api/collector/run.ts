@@ -1,4 +1,5 @@
-/**
+
+import { env, envOr } from '../lib/env';/**
  * Collector endpoint — démarre un run Apify ciblé sur le budget utilisateur.
  *
  * Params:
@@ -57,7 +58,7 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
-  const token = process.env.APIFY_API_TOKEN;
+  const token = env('APIFY_API_TOKEN');
   if (!token) {
     res.status(200).json({ ok: false, reason: 'APIFY_API_TOKEN not configured' });
     return;
@@ -75,7 +76,7 @@ export default async function handler(req: any, res: any) {
 
   const appUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
-    : process.env.APP_URL || 'https://dubainvest.eu';
+    : envOr('APP_URL', 'https://dubainvest.eu');
 
   const webhookUrl = `${appUrl}/api/apify-webhook`;
   const startUrls = buildStartUrls(city, maxPriceAED);

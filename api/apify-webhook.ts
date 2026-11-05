@@ -8,6 +8,7 @@
 
 import { normalizePropertyFinderItems } from './lib/listingsCollector';
 import { saveListingsSnapshot, getStoreInfo } from './lib/listingsStore';
+import { env } from './lib/env';
 import { secretMatches } from './lib/cronAuth';
 
 const APIFY_BASE = 'https://api.apify.com/v2';
@@ -29,7 +30,7 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
-  const token = process.env.APIFY_API_TOKEN;
+  const token = env('APIFY_API_TOKEN');
   if (!token) {
     res.status(200).json({ ok: false, reason: 'APIFY_API_TOKEN not configuré' });
     return;

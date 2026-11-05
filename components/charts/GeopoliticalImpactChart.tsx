@@ -95,9 +95,9 @@ const GeopoliticalImpactChart: React.FC<GeopoliticalImpactChartProps> = ({ baseP
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="period" tick={{ fontSize: 10, fill: '#64748b' }} stroke="transparent" />
+                <XAxis dataKey="period" tick={{ fontSize: 10, fill: '#8a96ab' }} stroke="transparent" />
                 <YAxis
-                  tick={{ fontSize: 10, fill: '#64748b' }}
+                  tick={{ fontSize: 10, fill: '#8a96ab' }}
                   stroke="transparent"
                   domain={priceDomain}
                   tickFormatter={(value: number) => `${(value / 1_000_000).toFixed(1)}M`}
@@ -135,9 +135,9 @@ const GeopoliticalImpactChart: React.FC<GeopoliticalImpactChartProps> = ({ baseP
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={volumeSeries} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="period" tick={{ fontSize: 10, fill: '#64748b' }} stroke="transparent" />
+                <XAxis dataKey="period" tick={{ fontSize: 10, fill: '#8a96ab' }} stroke="transparent" />
                 <YAxis
-                  tick={{ fontSize: 10, fill: '#64748b' }}
+                  tick={{ fontSize: 10, fill: '#8a96ab' }}
                   stroke="transparent"
                   domain={volumeDomain}
                   tickFormatter={(value: number) => `${(value / 1000).toFixed(1)}k`}

@@ -1,5 +1,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Message, Role } from '../types';
 import { SendIcon } from './Icons';
 import { useI18n } from '../i18n';
@@ -77,14 +79,43 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
                     : 'bg-gold-500/10 border-gold-400/20 text-gold-50 rounded-tr-none font-medium'
                   }
                 `}>
+                    {/* Le conseiller répond en markdown (gras, titres, listes, tableaux).
+                        Un rendu ligne par ligne laissait passer les `**` en clair. */}
                     <div className="w-full overflow-hidden">
-                      {msg.text.split('\n').map((line, i) => {
-                        const trimmed = line.trim();
-                        if (trimmed.startsWith('####')) return <h5 key={i} className="text-white font-bold text-[10px] mt-2 mb-1">{trimmed.replace('#### ', '')}</h5>;
-                        if (trimmed.startsWith('###')) return <h4 key={i} className="text-gold-400 font-serif text-[12px] mt-3 mb-1">{trimmed.replace('### ', '')}</h4>;
-                        if (trimmed.startsWith('-')) return <li key={i} className="ml-2 list-disc text-slate-400 my-1 wrap-break-word">{trimmed.replace('- ', '')}</li>;
-                        return trimmed === '' ? <div key={i} className="h-2" /> : <p key={i} className="mb-1 wrap-break-word whitespace-pre-wrap">{trimmed}</p>;
-                      })}
+                      <Markdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          p: ({ children }) => <p className="mb-2 last:mb-0 wrap-break-word">{children}</p>,
+                          strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
+                          em: ({ children }) => <em className="text-gold-100/90">{children}</em>,
+                          h1: ({ children }) => <h4 className="text-gold-400 font-serif text-[12px] mt-3 mb-1.5">{children}</h4>,
+                          h2: ({ children }) => <h4 className="text-gold-400 font-serif text-[12px] mt-3 mb-1.5">{children}</h4>,
+                          h3: ({ children }) => <h4 className="text-gold-400 font-serif text-[12px] mt-3 mb-1.5">{children}</h4>,
+                          h4: ({ children }) => <h5 className="text-white font-bold text-[10px] mt-2 mb-1">{children}</h5>,
+                          ul: ({ children }) => <ul className="list-disc ml-3.5 my-1.5 space-y-0.5">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal ml-3.5 my-1.5 space-y-0.5">{children}</ol>,
+                          li: ({ children }) => <li className="text-slate-300 wrap-break-word">{children}</li>,
+                          a: ({ href, children }) => (
+                            <a href={href} target="_blank" rel="noopener noreferrer" className="text-aqua-300 underline underline-offset-2">{children}</a>
+                          ),
+                          code: ({ children }) => <code className="bg-black/40 rounded-sm px-1 py-0.5 text-[10px] text-gold-200">{children}</code>,
+                          hr: () => <hr className="my-2.5 border-white/10" />,
+                          blockquote: ({ children }) => (
+                            <blockquote className="border-l-2 border-gold-500/40 pl-2 my-1.5 text-slate-400 italic">{children}</blockquote>
+                          ),
+                          // Les tableaux doivent défiler seuls : sinon ils élargissent
+                          // la bulle et cassent la colonne de chat de 400 px.
+                          table: ({ children }) => (
+                            <div className="overflow-x-auto my-2 -mx-1 px-1">
+                              <table className="w-full text-[10px] border-collapse">{children}</table>
+                            </div>
+                          ),
+                          th: ({ children }) => <th className="text-left font-semibold text-gold-300/80 border-b border-white/10 px-1.5 py-1">{children}</th>,
+                          td: ({ children }) => <td className="border-b border-white/5 px-1.5 py-1 align-top">{children}</td>,
+                        }}
+                      >
+                        {msg.text}
+                      </Markdown>
                     </div>
                 </div>
             </div>

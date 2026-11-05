@@ -4,6 +4,8 @@ import { XIcon, CheckIcon, BuildingIcon } from './Icons';
 import { sendLeadToSheet } from '../services/googleSheets';
 import { gtm } from '../services/gtm';
 import { useI18n, fmt } from '../i18n';
+import ConsentFields, { EMPTY_CONSENT, type ConsentChoice } from './ConsentFields';
+import { captureLead } from '../services/agentService';
 
 interface LeadModalProps {
   isOpen: boolean;
@@ -22,6 +24,7 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
   const { t } = useI18n();
   const [step, setStep] = useState<'form' | 'success'>('form');
   const [phone, setPhone] = useState('');
+  const [consent, setConsent] = useState<ConsentChoice>(EMPTY_CONSENT);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen || !property) return null;
@@ -30,6 +33,18 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
     e.preventDefault();
     setIsSubmitting(true);
     gtm.leadFormSubmit({ title: property!.title, price: property!.price });
+
+    // Le numéro rejoint le dossier du lead (scoring, CRM, agent WhatsApp) avec
+    // les deux décisions de consentement — cochées ou non, elles sont tracées.
+    if (userProfile) {
+      void captureLead({
+        profile: { ...userProfile, phone },
+        advisorId: userProfile.advisorId,
+        viewedListings: [property!.id],
+        consent,
+        consentSource: 'lead_modal',
+      });
+    }
 
     await sendLeadToSheet({
       // Identité
@@ -54,6 +69,8 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
       propertyYield:       property.yield,
       propertyLocation:    property.location,
       propertyPrice:       property.price,
+      consentWhatsApp:     consent.whatsapp,
+      consentPartners:     consent.partners,
     });
 
     setIsSubmitting(false);
@@ -64,6 +81,7 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
   const handleClose = () => {
     setStep('form');
     setPhone('');
+    setConsent(EMPTY_CONSENT);
     setIsSubmitting(false);
     onClose();
   };
@@ -129,7 +147,7 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
                   <PhoneIcon className="w-6 h-6" style={{ color: '#D4AF37' }} />
                 </div>
                 <p className="text-white font-serif text-xl">{t.leadModal.title}</p>
-                <p className="text-xs mt-1" style={{ color: 'rgba(180,175,165,0.70)' }}>
+                <p className="text-xs mt-1" style={{ color: 'rgba(180,175,165,0.85)' }}>
                   {fmt(t.leadModal.sub, { h: t.leadModal.hours })}
                 </p>
               </div>
@@ -158,6 +176,8 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
                 </div>
               </div>
 
+              <ConsentFields value={consent} onChange={setConsent} accent="#D4AF37" />
+
               {/* Submit */}
               <button
                 type="submit"
@@ -183,7 +203,7 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
                 )}
               </button>
 
-              <p className="text-[9px] text-center uppercase tracking-widest" style={{ color: 'rgba(180,175,165,0.35)' }}>
+              <p className="text-[9px] text-center uppercase tracking-widest" style={{ color: 'rgba(180,175,165,0.85)' }}>
                 {t.leadModal.smallprint}
               </p>
             </form>
@@ -209,7 +229,7 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
               </p>
               <div
                 className="mt-5 mx-auto rounded-xl p-4 text-xs text-left"
-                style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.18)', color: 'rgba(180,175,165,0.70)' }}
+                style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.18)', color: 'rgba(180,175,165,0.85)' }}
               >
                 <p className="font-semibold text-white mb-1 text-xs">{property.title}</p>
                 <p>{t.leadModal.yieldEstimated} <span style={{ color: '#D4AF37' }}>{property.yield}%</span> · {property.location}</p>

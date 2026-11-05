@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { generateDailyContent, generateMedia, publishAll, type PublishResult, type ArticleContext } from '../lib/social';
-import { generateCarousel } from '../lib/carousel';
+import { generateCarousel, type DayFacts } from '../lib/carousel';
 import { isCronAuthorized } from '../lib/cronAuth';
 
 const CRON_SECRET = process.env.CRON_SECRET ?? '';
@@ -78,20 +78,29 @@ export default async function handler(
     log.push(`✓ Sujet : ${content.topic}`);
     log.push(`✓ Titre : ${content.title}`);
 
+    let dayFacts: DayFacts | null = null;
+
     log.push('Génération des médias (image / vidéo)…');
     const media = await generateMedia(content);
     log.push(`✓ Image : ${media.imageUrl ? 'ok (hébergée)' : media.imageBase64 ? 'ok (bytes, non hébergée)' : 'aucune'}`);
     log.push(`✓ Vidéo : ${media.videoUrl ? 'ok (hébergée)' : media.videoBase64 ? 'ok (bytes)' : (process.env.SOCIAL_ENABLE_VIDEO === 'true' ? 'échec/timeout' : 'désactivée')}`);
 
-    // Carrousel infographique (5 slides data) — mode par défaut FB/IG.
-    // La photo IA du jour sert de fond à la slide de couverture.
-    log.push('Génération du carrousel infographique (5 slides)…');
-    const carousel = await generateCarousel(media.imageBase64);
+    // Carrousel du jour — mode par défaut FB/IG. Le contenu et les photos
+    // viennent des annonces arrivées dans les dernières 24 h, en excluant tout
+    // ce qui a déjà été publié : c'est ce qui garantit qu'aucun post ne répète
+    // le précédent.
+    log.push('Génération du carrousel (faits du jour + photos d\'annonces)…');
+    const carousel = await generateCarousel();
     if (carousel) {
       media.carouselUrls = carousel.urls;
-      log.push(`✓ Carrousel : 5 slides (${carousel.stats.total} annonces, top rendement ${carousel.stats.topYield.zone} ${carousel.stats.topYield.yield}%)`);
+      const d = carousel.day;
+      log.push(`✓ Carrousel : angle « ${d.angle} », ${d.newLast24h} annonces nouvelles sur ${d.totalListings} suivies`);
+      for (const f of d.facts) {
+        log.push(`   · ${f.kicker} — ${f.headline} : ${f.value}${f.photoDataUri ? ' (photo annonce)' : ' (sans photo)'}`);
+      }
+      dayFacts = d;
     } else {
-      log.push('⚠ Carrousel indisponible (stats/upload) — repli sur l\'image simple.');
+      log.push('⚠ Carrousel indisponible (aucun fait exploitable) — repli sur l\'image simple.');
     }
 
     // dry=1 : on génère mais on ne publie pas (utile pour tester sans poster).
@@ -125,6 +134,7 @@ export default async function handler(
         per_platform: content.perPlatform,
       },
       media: { image: !!media.imageUrl, video: !!media.videoUrl, image_url: media.imageUrl, video_url: media.videoUrl, carousel: media.carouselUrls ?? [] },
+      day_facts: dayFacts ? { angle: dayFacts.angle, new_last_24h: dayFacts.newLast24h, facts: dayFacts.facts.map(f => ({ kind: f.kind, headline: f.headline, value: f.value })) } : null,
       results,
       log,
     });
