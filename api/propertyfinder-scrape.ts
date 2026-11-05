@@ -2,12 +2,14 @@
 
 const PF_BASE = 'https://www.propertyfinder.ae';
 
+// Médianes DLD revente 12 mois, AED/sqft (recalées 2026-11-05 — voir
+// api/lib/dldBenchmarks.ts pour la grille fine par quartier).
 const MARKET_PRICE_BY_DISTRICT: Record<string, number> = {
-  downtown: 6300,
-  marina: 5800,
-  creek: 5200,
-  palm: 7500,
-  other: 5000
+  downtown: 2705,
+  marina: 2115,
+  creek: 2357,
+  palm: 2796,
+  other: 1550
 };
 
 function inferDistrictId(location: string): 'downtown' | 'marina' | 'creek' | 'palm' | 'other' {

@@ -5,39 +5,17 @@
  * C'est le cœur de la promesse de l'agence : une annonce affiche un prix demandé,
  * le DLD enregistre des prix payés. L'écart entre les deux est l'information que
  * l'investisseur ne peut pas obtenir seul.
+ *
+ * Les grilles de référence vivent dans `dldBenchmarks.ts` : médianes DLD
+ * revente 12 mois par quartier, appartements et villas séparés, avec correctif
+ * par nombre de chambres.
  */
+
+import { resolveBenchmark, bedroomFactor, DLD_BENCHMARK_AS_OF } from './dldBenchmarks';
 
 /** 1 EUR ≈ 4,24 AED — aligné sur listingsCollector. */
 const EUR_TO_AED = 4.24;
 const SQM_TO_SQFT = 10.7639;
-
-/**
- * Prix de vente moyens AED/sqft par quartier (appartements, marché 2025).
- *
- * ⚠️ Ces valeurs pilotent directement le verdict prix affiché à l'investisseur.
- * Une grille trop haute fait passer un bien surévalué pour une aubaine — c'est
- * le pire mode de défaillance de tout le système. À recaler périodiquement, et
- * à remplacer par une agrégation DLD par quartier dès qu'elle est disponible.
- *
- * Contrôle de vraisemblance : un studio de 45 m² (484 sqft) à JVC doit ressortir
- * autour de 630 000 AED, soit environ 148 000 € — c'est l'ordre de grandeur réel.
- */
-const BENCHMARK_AED_SQFT: Record<string, number> = {
-  'palm jumeirah': 3300,
-  downtown: 2600,
-  jbr: 2300,
-  'dubai hills': 2100,
-  'dubai marina': 2050,
-  'creek harbour': 2050,
-  'business bay': 1900,
-  'mbr city': 1900,
-  jlt: 1500,
-  'al furjan': 1400,
-  jvc: 1300,
-  'silicon oasis': 1050,
-  'dubai south': 1000,
-  other: 1700,
-};
 
 export type PriceVerdictCode =
   | 'well_below'
@@ -57,19 +35,20 @@ export type PriceCheck = {
   label: string;
   /** D'où vient la référence : transactions DLD ou grille interne. */
   basis: 'dld' | 'benchmark' | 'none';
+  /** Date de recalage de la grille DLD (traçabilité dans le prompt et l'UI). */
+  asOf: string;
+  /** Zone DLD officielle derrière la référence, vide si repli `other`. */
+  zone?: string;
 };
 
-export function benchmarkFor(location: string): { value: number; key: string } {
-  const l = (location || '').toLowerCase();
-  for (const [key, value] of Object.entries(BENCHMARK_AED_SQFT)) {
-    if (key !== 'other' && l.includes(key)) return { value, key };
-  }
-  // Variantes de nommage fréquentes chez Property Finder
-  if (l.includes('jumeirah village')) return { value: BENCHMARK_AED_SQFT.jvc, key: 'jvc' };
-  if (l.includes('lake towers')) return { value: BENCHMARK_AED_SQFT.jlt, key: 'jlt' };
-  if (l.includes('mohammed bin rashid')) return { value: BENCHMARK_AED_SQFT['mbr city'], key: 'mbr city' };
-  if (l.includes('beach residence')) return { value: BENCHMARK_AED_SQFT.jbr, key: 'jbr' };
-  return { value: BENCHMARK_AED_SQFT.other, key: 'other' };
+/** Référence AED/sqft pour un libellé de quartier. `type` sélectionne la
+ *  grille villa quand le bien est une villa/townhouse. */
+export function benchmarkFor(
+  location: string,
+  type?: string | null
+): { value: number; key: string; zone: string; matched: boolean } {
+  const m = resolveBenchmark(location, type);
+  return { value: m.value, key: m.key, zone: m.zone, matched: m.matched };
 }
 
 const LABELS: Record<PriceVerdictCode, (d: number) => string> = {
@@ -98,12 +77,19 @@ function codeFor(deltaPct: number): PriceVerdictCode {
  *   moyenne globale comparée à un bien de quartier produit un verdict faux.
  *   La moyenne DLD toutes-zones sert uniquement de contexte marché au conseiller
  *   (voir `buildMarketBlock`), pas de référence pour un bien précis.
+ * @param opts.beds  nombre de chambres (0 = studio) — affine la référence :
+ *   un studio se paie ~14 % plus cher au sqft que la médiane de zone, un 3 ch.
+ *   ~13 % moins cher. Appliqué aux appartements seulement.
+ * @param opts.type  type de bien (« Villa », « Townhouse », « Appartement »…) —
+ *   sélectionne la grille villa, dont le psf n'a rien à voir avec celui des
+ *   appartements de la même zone (Palm : 7 061 vs 2 796).
  */
 export function checkPrice(
   priceEur: number,
   sqm: number,
   location: string,
-  districtAedSqft?: number | null
+  districtAedSqft?: number | null,
+  opts?: { beds?: number | null; type?: string | null }
 ): PriceCheck {
   if (!priceEur || !sqm || sqm < 5) {
     return {
@@ -113,16 +99,21 @@ export function checkPrice(
       benchmarkAedSqft: null,
       label: LABELS.unknown(0),
       basis: 'none',
+      asOf: DLD_BENCHMARK_AS_OF,
     };
   }
 
   const askingAedSqft = (priceEur * EUR_TO_AED) / (sqm * SQM_TO_SQFT);
-  const bench = benchmarkFor(location);
+  const bench = benchmarkFor(location, opts?.type);
 
   // Une vraie donnée DLD de quartier prime sur la grille interne. Le garde-fou
   // de vraisemblance évite qu'une valeur mal unitée (AED/m², AED total) passe.
   const useDld = !!districtAedSqft && districtAedSqft > 500 && districtAedSqft < 6000;
-  const benchmarkAedSqft = useDld ? districtAedSqft! : bench.value;
+  const base = useDld ? districtAedSqft! : bench.value;
+
+  // La médiane de zone (DLD ou grille) est toutes-chambres : on la corrige
+  // selon le nombre de chambres quand on le connaît.
+  const benchmarkAedSqft = Math.round(base * bedroomFactor(opts?.beds, opts?.type));
 
   const deltaPct = ((askingAedSqft - benchmarkAedSqft) / benchmarkAedSqft) * 100;
   const code = codeFor(deltaPct);
@@ -134,6 +125,8 @@ export function checkPrice(
     benchmarkAedSqft,
     label: LABELS[code](deltaPct),
     basis: useDld ? 'dld' : 'benchmark',
+    asOf: DLD_BENCHMARK_AS_OF,
+    zone: bench.matched ? bench.zone : undefined,
   };
 }
 

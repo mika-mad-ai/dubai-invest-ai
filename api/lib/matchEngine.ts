@@ -98,7 +98,10 @@ export function scoreListing(listing: Listing, profile: MatchProfile): ScoredLis
   // interne du collecteur, à une maille grossière et d'unité incertaine. La
   // grille quartier de priceCheck est la référence, jusqu'à disposer d'une
   // agrégation DLD par quartier.
-  const pc = checkPrice(listing.price, listing.sqm, listing.location);
+  const pc = checkPrice(listing.price, listing.sqm, listing.location, undefined, {
+    beds: listing.beds,
+    type: listing.type,
+  });
   const priceWeights: Record<string, number> = {
     well_below: 20, below: 17, fair: 12, above: 5, well_above: 0, unknown: 8,
   };
