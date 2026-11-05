@@ -12,6 +12,7 @@ j-- ═════════════════════════�
 --   · listings                 — annonces normalisées, lues par /api/live-listings
 --   · live_listings_snapshots  — snapshots bruts du collecteur Apify
 --   · usage_daily              — dépense Claude du jour (disjoncteur de budget)
+--   · usage_by_lead            — dépense Claude cumulée par prospect (coût par lead)
 -- ═══════════════════════════════════════════════════════════════════════════
 
 
@@ -162,6 +163,63 @@ end;
 $$;
 
 
+-- ── 4 bis. Coût IA par prospect ───────────────────────────────────────────
+-- Même clé que `leads.handle`. Alimentée à chaque appel Claude imputable
+-- (chat web avec téléphone/email, qualification WhatsApp, veille nocturne).
+-- Permet de comparer le coût d'acquisition IA au prix de revente du lead.
+
+create table if not exists public.usage_by_lead (
+  handle          text primary key,
+  requests        integer not null default 0,
+  input_tokens    bigint  not null default 0,
+  output_tokens   bigint  not null default 0,
+  cache_write     bigint  not null default 0,
+  cache_read      bigint  not null default 0,
+  cost_usd        numeric not null default 0,
+  by_endpoint     jsonb   not null default '{}'::jsonb,
+  first_at        timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+
+create or replace function public.bump_usage_lead(
+  p_handle text,
+  p_endpoint text,
+  p_input bigint,
+  p_output bigint,
+  p_cache_write bigint,
+  p_cache_read bigint,
+  p_cost numeric
+) returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.usage_by_lead as u
+    (handle, requests, input_tokens, output_tokens, cache_write, cache_read, cost_usd, by_endpoint)
+  values
+    (p_handle, 1, p_input, p_output, p_cache_write, p_cache_read, p_cost,
+     jsonb_build_object(p_endpoint, jsonb_build_object('requests', 1, 'cost_usd', p_cost)))
+  on conflict (handle) do update set
+    requests      = u.requests + 1,
+    input_tokens  = u.input_tokens + p_input,
+    output_tokens = u.output_tokens + p_output,
+    cache_write   = u.cache_write + p_cache_write,
+    cache_read    = u.cache_read + p_cache_read,
+    cost_usd      = u.cost_usd + p_cost,
+    by_endpoint   = jsonb_set(
+                      u.by_endpoint,
+                      array[p_endpoint],
+                      jsonb_build_object(
+                        'requests', coalesce((u.by_endpoint -> p_endpoint ->> 'requests')::int, 0) + 1,
+                        'cost_usd', coalesce((u.by_endpoint -> p_endpoint ->> 'cost_usd')::numeric, 0) + p_cost
+                      ),
+                      true
+                    ),
+    updated_at    = now();
+end;
+$$;
+
 -- ── 5. Sécurité ────────────────────────────────────────────────────────────
 -- RLS activé et AUCUNE policy : le service role l'ignore par conception, donc
 -- les fonctions serverless continuent d'écrire, mais la clé publique `anon` ne
@@ -173,9 +231,19 @@ $$;
 -- ne désactive pas RLS.
 
 alter table public.leads                   enable row level security;
+alter table public.usage_by_lead           enable row level security;
 alter table public.listings                enable row level security;
 alter table public.live_listings_snapshots enable row level security;
 alter table public.usage_daily             enable row level security;
+
+-- Les RPC de comptabilité sont `security definer` : par défaut Postgres les
+-- rend exécutables par PUBLIC, donc par la clé `anon` du navigateur. Un
+-- visiteur pourrait alors gonfler `usage_daily` et déclencher le disjoncteur
+-- de budget (coupure du conseiller). Seul le service role les appelle.
+revoke execute on function public.bump_usage_daily(date, text, bigint, bigint, bigint, bigint, numeric) from public, anon, authenticated;
+revoke execute on function public.bump_usage_lead(text, text, bigint, bigint, bigint, bigint, numeric)  from public, anon, authenticated;
+grant  execute on function public.bump_usage_daily(date, text, bigint, bigint, bigint, bigint, numeric) to service_role;
+grant  execute on function public.bump_usage_lead(text, text, bigint, bigint, bigint, bigint, numeric)  to service_role;
 
 
 -- ── 6. Migration d'une base existante ──────────────────────────────────────
@@ -185,6 +253,9 @@ alter table public.leads    add column if not exists status         text not nul
 alter table public.leads    add column if not exists sold_to        text;
 alter table public.leads    add column if not exists sold_at        timestamptz;
 alter table public.leads    add column if not exists sold_price_eur numeric;
+-- Consentements RGPD (lib/consent.ts) : { whatsapp: {granted, at, source,
+-- textVersion}, partners: {…} }. Preuve du consentement (art. 7.1).
+alter table public.leads    add column if not exists consent        jsonb not null default '{}'::jsonb;
 alter table public.listings add column if not exists scraped_at     timestamptz not null default now();
 alter table public.listings add column if not exists price_aed      integer;
 

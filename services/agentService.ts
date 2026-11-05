@@ -172,6 +172,8 @@ export async function captureLead(opts: {
   viewedListings?: string[];
   messageCount?: number;
   consentWhatsApp?: boolean;
+  consent?: { whatsapp?: boolean; partners?: boolean };
+  consentSource?: 'web_form' | 'lead_modal';
 }): Promise<LeadCaptureResult> {
   try {
     const res = await fetch('/api/lead', {

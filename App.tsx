@@ -357,6 +357,10 @@ function App() {
       profile: withAdvisor,
       advisorId: withAdvisor.advisorId,
       messageCount: 0,
+      // Seule la case « partenaires » est posée dans ce formulaire (pas de
+      // numéro) : WhatsApp reste non décidé, ni accordé ni retiré.
+      consent: { partners: !!withAdvisor.consent?.partners },
+      consentSource: 'web_form',
     }).then(result => setLeadResult(result));
 
     await runAdvisorTurn(withAdvisor);

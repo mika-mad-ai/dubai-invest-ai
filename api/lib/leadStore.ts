@@ -8,6 +8,7 @@
  */
 
 import type { BuyingSignal } from './leadScore';
+import type { LeadConsent } from './consent';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -34,6 +35,8 @@ export type StoredLead = {
   sold_to?: string;
   sold_at?: string;
   sold_price_eur?: number;
+  /** Consentements RGPD horodatés et versionnés (voir lib/consent). */
+  consent?: LeadConsent;
   created_at: string;
   updated_at: string;
 };
@@ -101,6 +104,8 @@ export async function upsertLead(lead: Partial<StoredLead> & { handle: string })
     sold_to: lead.sold_to ?? existing?.sold_to,
     sold_at: lead.sold_at ?? existing?.sold_at,
     sold_price_eur: lead.sold_price_eur ?? existing?.sold_price_eur,
+    // Remplacement complet : l'appelant fusionne via applyConsent/withdrawAll.
+    consent: lead.consent ?? existing?.consent ?? {},
     created_at: existing?.created_at ?? now,
     updated_at: now,
   };

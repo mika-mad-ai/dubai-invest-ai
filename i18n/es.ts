@@ -171,7 +171,7 @@ const es: Dict = {
     phonePlaceholder: "+34 6xx xxx xxx",
     submitting: "Enviando…",
     submit: "Quiero que me llamen",
-    smallprint: "Sin compromiso · Datos confidenciales · Respuesta en 24h",
+    smallprint: "Sin compromiso · Nada se comparte sin su consentimiento · Respuesta en 24 h",
     successTitle: "Solicitud registrada",
     successL1: "Un asesor DubaiInvest le contactará",
     successL2: "en 24h al {phone}",
@@ -231,6 +231,12 @@ const es: Dict = {
     rRentalMatch: "Coincide con su objetivo de alquiler",
     rGoldenVisa: "Elegible para Visa Dorada (≥ {price})",
     rCatalysts: "Catalizadores: {cats}",
+  },
+  consent: {
+    whatsapp: "Acepto que mi asesor de DubaiInvest me contacte por WhatsApp, incluidas alertas sobre nuevas ofertas o bajadas de precio. Puedo responder STOP en cualquier momento.",
+    partners: "Acepto que mi expediente (datos de contacto y proyecto) se transmita a agencias inmobiliarias y promotores asociados en Dubái, que podrán contactarme.",
+    note: "Sus datos sirven para preparar su análisis y no se transmiten a ningún socio sin la casilla anterior. Acceso, rectificación, supresión: responda STOP en WhatsApp",
+    noteContact: " o escriba a {email}",
   },
 };
 

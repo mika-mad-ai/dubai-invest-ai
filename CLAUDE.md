@@ -8,7 +8,6 @@
 - Data viz: `Recharts`
 - Cartographie: `Leaflet`
 - Backend API (serverless): fonctions `api/*.ts` (style Vercel Functions)
-- Backend secondaire (non branché au frontend): `Python` + `FastAPI` (`backend.py`, actuellement mock)
 - LLM d'analyse et de conseil: `@anthropic-ai/sdk` (Claude `claude-opus-5`)
 - LLM de génération de contenu/médias: `@google/genai` (SEO, blog, social, Veo/Imagen)
 
@@ -43,7 +42,6 @@
 - `components/`: composants UI, charts, carte, formulaires, chat
 - `api/`: endpoints serverless (scraping, agrégateur, DLD, collector, store)
 - `docs/`: documentation d’exploitation (Supabase setup)
-- `backend.py`: FastAPI mock indépendant (non utilisé dans le flux React actuel)
 
 ### Détail des dossiers/fichiers clés
 
@@ -113,8 +111,6 @@
   - Trigger manuel/cron du collecteur
   - Auth simple via `COLLECTOR_SECRET`
 
-- `api/propertyfinder-scrape.ts`
-  - Endpoint legacy PF-only (toujours présent)
 
 - `components/charts/GeopoliticalImpactChart.tsx`
   - Graphiques prix moyen + volume hebdo (DLD/fallback)
@@ -314,16 +310,26 @@ implémentées. Ce qui reste :
 
 1. **Brancher les credentials** — voir `docs/AGENCY_SETUP.md`, ordre de
    branchement et vérifications par étape
-2. **Instrumenter le coût réel par lead** — `usage` est retourné dans
-   l'événement `done` mais n'est ni agrégé ni stocké
+2. ~~Instrumenter le coût réel par lead~~ — fait : `usage_by_lead` (RPC
+   atomique `bump_usage_lead`), imputé par `recordUsage(…, { leadHandle,
+   model })` depuis le chat, WhatsApp et la veille ; affiché au bureau
+   (`/bureau`, jamais dans le CSV agences). Reste : exécuter le SQL sur la base
 3. ~~Recaler la grille de prix par quartier~~ — fait le 2026-11-05 via le
    connecteur MCP DXB interact (médianes DLD revente 12 mois). Reste à
    automatiser : la grille demeure statique entre deux recalages manuels
 4. **Débloquer Bayut** (proxy premium Apify) pour doubler le volume d'annonces
-5. **Jeu d'évaluation du conseiller** : aucune mesure systématique de la
-   qualité des réponses aujourd'hui
-6. **Consentement et RGPD** : la capture WhatsApp exige un opt-in explicite,
-   aujourd'hui porté par le seul champ `consentWhatsApp`
+5. ~~Jeu d'évaluation du conseiller~~ — banc hors-ligne `npm run eval`
+   (`scripts/eval-advisor.mjs` + correcteur `api/lib/advisorEval.ts`) :
+   matching par scénario, verdicts DLD, fidélité du prompt, détection
+   d'hallucinations chiffrées. Reste : brancher le correcteur sur les
+   transcripts réels (`--reply fichier.txt`) pour une mesure continue
+6. **Consentement et RGPD** — mécanique faite (`api/lib/consent.ts`) : deux
+   finalités distinctes (WhatsApp / transmission partenaires), cases non
+   pré-cochées, décision horodatée + version du texte (`leads.consent`),
+   STOP honoré avant tout (même budget épuisé), veille et export CSV filtrés
+   sur le consentement. **Reste BLOQUANT avant prod** : politique de
+   confidentialité avec l'identité du responsable de traitement, et
+   `VITE_PRIVACY_CONTACT` (adresse d'exercice des droits)
 
 ---
 

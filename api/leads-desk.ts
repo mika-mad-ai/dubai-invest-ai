@@ -16,6 +16,8 @@
  * bureau doit être ouvert à des tiers.
  */
 
+import { leadUsageMany, type LeadUsage } from './lib/guard';
+import { canSharePartners } from './lib/consent';
 import { listActiveLeads, upsertLead, LEAD_STATUSES, type LeadStatus, type StoredLead } from './lib/leadStore';
 import { SIGNAL_LABELS, type BuyingSignal } from './lib/leadScore';
 import { ADVISORS } from './lib/claude';
@@ -60,11 +62,38 @@ function lastMessageOf(lead: StoredLead): string {
   return '';
 }
 
-function toCsv(leads: StoredLead[]): string {
+/** Coût IA réel cumulé (usage_by_lead). Interne : jamais dans l'export CSV
+ *  livré aux agences. */
+/** Pastilles de consentement : on voit d'un coup d'œil qui peut être
+ *  recontacté sur WhatsApp et quel dossier peut être vendu. */
+function consentCell(l: StoredLead): string {
+  const c = l.consent ?? {};
+  const pill = (label: string, r?: { granted: boolean; at: string }) =>
+    r
+      ? `<span class="sig" style="${r.granted ? '' : 'opacity:.55;text-decoration:line-through'}" title="${esc(r.at)}">${label}</span>`
+      : `<span class="meta">${label} ?</span>`;
+  return `<div class="meta" style="margin-top:4px">${pill('WhatsApp', c.whatsapp)} ${pill('Partenaires', c.partners)}</div>`;
+}
+
+function aiCostCell(u?: LeadUsage): string {
+  if (!u) return '<div class="meta">coût IA —</div>';
+  const usd = u.cost_usd < 1 ? u.cost_usd.toFixed(3) : u.cost_usd.toFixed(2);
+  return `<div class="meta" title="${u.requests} appels Claude">coût IA ${usd} $</div>`;
+}
+
+/**
+ * Export destiné aux agences partenaires : SEULS les leads ayant consenti à la
+ * transmission de leur dossier en sortent (RGPD art. 6.1.a). La date et la
+ * version du texte accepté voyagent avec la ligne — l'acheteur doit pouvoir
+ * justifier la base légale de son propre traitement.
+ */
+function toCsv(all: StoredLead[]): string {
+  const leads = all.filter(l => canSharePartners(l.consent));
   const head = [
     'handle', 'nom', 'email', 'telephone', 'conseiller', 'score', 'palier', 'statut',
     'valeur_estimee_eur', 'budget_eur', 'objectif', 'signaux', 'biens_consultes',
     'dernier_message', 'cree_le', 'maj_le', 'vendu_a', 'prix_vente_eur',
+    'consentement_partenaires_le', 'consentement_version',
   ];
   const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
   const rows = leads.map(l => [
@@ -75,11 +104,17 @@ function toCsv(leads: StoredLead[]): string {
     (l.signals ?? []).map(s => SIGNAL_LABELS[s as BuyingSignal] ?? s).join(' | '),
     (l.viewed_listings ?? []).join(' | '),
     lastMessageOf(l), l.created_at, l.updated_at, l.sold_to, l.sold_price_eur,
+    l.consent?.partners?.at, l.consent?.partners?.textVersion,
   ].map(cell).join(','));
   return [head.join(','), ...rows].join('\n');
 }
 
-function page(leads: StoredLead[], filters: { tier?: string; status?: string }, key: string): string {
+function page(
+  leads: StoredLead[],
+  filters: { tier?: string; status?: string },
+  key: string,
+  usage: Map<string, LeadUsage> = new Map()
+): string {
   const pipelineValue = leads
     .filter(l => l.status !== 'sold' && l.status !== 'discarded')
     .reduce((sum, l) => sum + (TIER_VALUE[l.tier] ?? 0), 0);
@@ -95,11 +130,12 @@ function page(leads: StoredLead[], filters: { tier?: string; status?: string }, 
   <td>
     <div class="name">${esc(l.name || '—')}</div>
     <div class="meta">${esc(l.email || '')}${l.email && l.phone ? ' · ' : ''}${esc(l.phone || '')}</div>
+    ${consentCell(l)}
   </td>
   <td>${esc(ADVISORS[(l.advisor_id as keyof typeof ADVISORS)]?.name ?? l.advisor_id ?? '—')}</td>
   <td class="num"><span class="score" style="--c:${tierColor}">${l.score}</span>
     <div class="meta" style="color:${tierColor}">${esc(l.tier)}</div></td>
-  <td class="num">${eur(TIER_VALUE[l.tier])}</td>
+  <td class="num">${eur(TIER_VALUE[l.tier])}${aiCostCell(usage.get(l.handle))}</td>
   <td>${eur((l.profile as any)?.totalBudget)}<div class="meta">${esc((l.profile as any)?.objective || '')}</div></td>
   <td>${signals.length ? signals.map(s => `<span class="sig">${esc(s)}</span>`).join('') : '<span class="meta">aucun</span>'}</td>
   <td class="msg">${esc(lastMessageOf(l).slice(0, 160)) || '<span class="meta">—</span>'}</td>
@@ -167,6 +203,7 @@ a.dl{color:var(--gold);font-size:.75rem;text-decoration:none;margin-left:auto}
   ${chip('Tous', 'tier', '', !filters.tier && !filters.status)}
   ${['qualified', 'hot', 'warm', 'cold'].map(t => chip(t, 'tier', t, filters.tier === t)).join('')}
   ${LEAD_STATUSES.map(s => chip(STATUS_LABELS[s], 'status', s, filters.status === s)).join('')}
+  <span class="meta" title="RGPD : seuls les dossiers avec consentement « Partenaires » sont exportés">${leads.filter(l => canSharePartners(l.consent)).length} exportable(s)</span>
   <a class="dl" href="?key=${encodeURIComponent(key)}&format=csv${filters.tier ? `&tier=${filters.tier}` : ''}${filters.status ? `&status=${filters.status}` : ''}">↓ Export CSV</a>
 </div>
 
@@ -232,5 +269,6 @@ export default async function handler(req: any, res: any) {
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
-  res.status(200).send(page(leads, { tier, status }, key));
+  const usage = await leadUsageMany(leads.map(l => l.handle));
+  res.status(200).send(page(leads, { tier, status }, key, usage));
 }

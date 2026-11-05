@@ -17,6 +17,7 @@ writeFileSync(entry, `
 import handler from '${ROOT}/api/leads-desk';
 export { handler };
 export { upsertLead } from '${ROOT}/api/lib/leadStore';
+export { recordUsage } from '${ROOT}/api/lib/guard';
 `);
 const bundle = join(out, 'b.mjs');
 await build({ entryPoints: [entry], bundle: true, format: 'esm', platform: 'node', outfile: bundle, logLevel: 'error' });
@@ -30,6 +31,7 @@ await m.upsertLead({
   advisor_id: 'locatif', score: 82, tier: 'qualified', status: 'new',
   profile: { totalBudget: 800000, objective: 'rental_income' },
   signals: ['budget_confirmed', 'visit_requested'],
+  consent: { partners: { granted: true, at: '2026-11-05T10:00:00.000Z', source: 'web_form', textVersion: 'test-v1' } },
   transcript: [{ role: 'user', content: 'Je veux visiter la semaine prochaine <script>alert(1)</script>', at: new Date().toISOString(), channel: 'whatsapp' }],
 });
 await m.upsertLead({
@@ -87,7 +89,9 @@ check('filtre palier=warm exclut le qualified', res.body.includes('Jean Martin')
 res = mkRes();
 await m.handler({ method: 'GET', query: { key: 'test-secret', format: 'csv' } }, res);
 check('CSV servi en text/csv', res.headers['content-type'].includes('text/csv'));
-check('CSV a un en-tête + 2 lignes', res.body.trim().split('\n').length === 3, `${res.body.trim().split('\n').length} lignes`);
+check('CSV RGPD : seul le lead ayant consenti à la transmission est exporté (en-tête + 1 ligne)', res.body.trim().split('\n').length === 2, `${res.body.trim().split('\n').length} lignes`);
+check('CSV RGPD : Jean (sans consentement partenaires) absent', !res.body.includes('Jean Martin'));
+check('CSV RGPD : date et version du consentement exportées', res.body.includes('2026-11-05T10:00:00.000Z') && res.body.includes('test-v1'));
 check('CSV échappe les guillemets', res.body.includes('"Marie Dupont"'));
 
 // 6. POST : marquer vendu
@@ -104,6 +108,16 @@ check('statut passé à Vendu', /option value="sold" selected/.test(res.body));
 res = mkRes();
 await m.handler({ method: 'POST', query: { key: 'test-secret' }, body: { handle: 'x', status: 'bogus' } }, res);
 check('statut invalide rejeté (400)', res.code === 400);
+
+// Coût IA par lead : visible au bureau, jamais dans le CSV livré aux agences.
+await m.recordUsage('agent-chat', { input_tokens: 2, output_tokens: 600, cache_read_input_tokens: 4550 }, { leadHandle: '+33612345678', model: 'claude-opus-5' });
+res = mkRes();
+await m.handler({ method: 'GET', query: { key: 'test-secret' } }, res);
+check('bureau : coût IA réel affiché pour le lead imputé', /coût IA 0\.017 \$/.test(res.body), (res.body.match(/coût IA[^<]*/g) || []).join(' | '));
+check('bureau : lead sans consommation → « coût IA — »', /coût IA —/.test(res.body));
+res = mkRes();
+await m.handler({ method: 'GET', query: { key: 'test-secret', format: 'csv' } }, res);
+check('CSV agences : aucun coût interne exporté', !/coût IA|cost_usd/i.test(res.body));
 
 console.log(`\n${pass} vérifications passées, ${fail} échec(s)`);
 process.exit(fail ? 1 : 0);

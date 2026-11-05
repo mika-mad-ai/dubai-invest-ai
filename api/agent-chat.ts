@@ -16,7 +16,8 @@ import {
   type ChatMessage, type InvestorProfile,
 } from './lib/claude';
 import { loadDossierContext } from './lib/context';
-import { checkDailyBudget, checkInputSize, clientIp, rateLimit, recordUsage } from './lib/guard';
+import { checkDailyBudget, checkInputSize, clientIp, costUsd, rateLimit, recordUsage } from './lib/guard';
+import { normalizeHandle } from './lib/leadStore';
 
 type WireMessage = { role: 'user' | 'assistant'; content: string };
 
@@ -200,7 +201,11 @@ export default async function handler(req: any, res: any) {
       }
       // Comptabilité sans await bloquant : une erreur de compteur ne doit pas
       // dégrader la réponse déjà envoyée au prospect.
-      void recordUsage('agent-chat', final.usage);
+      // Imputé au lead dès que le dossier porte un téléphone ou un email.
+      const leadHandle = profile.phone || profile.email
+        ? normalizeHandle({ phone: (profile as any).phone, email: (profile as any).email })
+        : null;
+      void recordUsage('agent-chat', final.usage, { leadHandle, model: final.model });
 
       sse(res, {
         type: 'done',
@@ -209,6 +214,8 @@ export default async function handler(req: any, res: any) {
           input: final.usage.input_tokens,
           output: final.usage.output_tokens,
           cacheRead: final.usage.cache_read_input_tokens ?? 0,
+          cacheWrite: final.usage.cache_creation_input_tokens ?? 0,
+          costUsd: Math.round(costUsd(final.usage, final.model) * 1e5) / 1e5,
         },
       });
     }

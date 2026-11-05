@@ -11,6 +11,9 @@ export interface LeadPayload {
   name: string;
   email: string;
   phone: string;
+  // Consentements RGPD (cochés ou non — la décision est tracée)
+  consentWhatsApp?: boolean;
+  consentPartners?: boolean;
   // Étape 1 — Objectif
   objective?: string;
   // Étape 2 — Budget

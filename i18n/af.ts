@@ -171,7 +171,7 @@ const af: Dict = {
     phonePlaceholder: "+27 8x xxx xxxx",
     submitting: "Stuur tans…",
     submit: "Ek wil teruggebel word",
-    smallprint: "Geen verpligting · Vertroulike data · Antwoord binne 24u",
+    smallprint: "Geen verpligting · Niks gedeel sonder jou toestemming · Antwoord binne 24 uur",
     successTitle: "Versoek ontvang",
     successL1: "'n DubaiInvest-adviseur sal jou kontak",
     successL2: "binne 24u by {phone}",
@@ -231,6 +231,12 @@ const af: Dict = {
     rRentalMatch: "Pas by jou huurdoelwit",
     rGoldenVisa: "Kwalifiseer vir Goue Visum (≥ {price})",
     rCatalysts: "Katalisators: {cats}",
+  },
+  consent: {
+    whatsapp: "Ek stem in dat my DubaiInvest-adviseur my op WhatsApp kontak, insluitend waarskuwings oor nuwe aanbiedinge of prysdalings. Ek kan enige tyd STOP antwoord.",
+    partners: "Ek stem in dat my lêer (kontakbesonderhede en projek) met vennoot-eiendomsagentskappe en ontwikkelaars in Dubai gedeel word, wat my mag kontak.",
+    note: "Jou data word gebruik om jou ontleding voor te berei en word met geen vennoot gedeel sonder die blokkie hierbo nie. Toegang, regstelling, skrapping: antwoord STOP op WhatsApp",
+    noteContact: " of skryf aan {email}",
   },
 };
 
