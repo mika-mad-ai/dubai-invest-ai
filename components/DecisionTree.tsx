@@ -1277,7 +1277,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading, agentI
                     >
                       {isCompleted ? <CheckIcon className="w-2.5 h-2.5" /> : idx + 1}
                     </motion.div>
-                    <span style={{ color: 'rgba(20,184,166,0.5)', fontSize: '0.6rem', fontFamily: '"Manrope",sans-serif', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                    <span style={{ color: 'rgba(45,212,191,0.9)', fontSize: '0.6rem', fontFamily: '"Manrope",sans-serif', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
                       {fmt(t.tree.stepLabel, { n: idx + 1 })}
                     </span>
                   </div>
@@ -1292,7 +1292,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading, agentI
                     {loc?.question ?? step.question}
                   </h3>
                   {step.sub && (
-                    <p style={{ color: 'rgba(240,235,224,0.48)', fontSize: '0.7rem', fontFamily: '"Manrope",sans-serif', fontStyle: 'italic', lineHeight: 1.55 }}>
+                    <p style={{ color: 'rgba(240,235,224,0.62)', fontSize: '0.7rem', fontFamily: '"Manrope",sans-serif', fontStyle: 'italic', lineHeight: 1.55 }}>
                       {loc?.sub ?? step.sub}
                     </p>
                   )}
@@ -1380,7 +1380,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading, agentI
                   <h3 style={{ fontFamily: '"Sora",sans-serif', fontSize: '1.75rem', fontWeight: 700, color: '#f0ebe0', marginBottom: '0.35rem' }}>
                     {t.tree.finalTitle}
                   </h3>
-                  <p style={{ color: 'rgba(240,235,224,0.35)', fontSize: '0.73rem', fontFamily: '"Manrope",sans-serif', fontStyle: 'italic' }}>
+                  <p style={{ color: 'rgba(240,235,224,0.62)', fontSize: '0.73rem', fontFamily: '"Manrope",sans-serif', fontStyle: 'italic' }}>
                     {t.tree.finalSub}
                   </p>
                 </div>
@@ -1394,7 +1394,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading, agentI
                     ].map(f => (
                       <div key={f.key}>
                         <div className="flex justify-between items-center mb-2.5">
-                          <span style={{ color: 'rgba(240,235,224,0.4)', fontSize: '0.62rem', fontFamily: '"Manrope",sans-serif', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{f.label}</span>
+                          <span style={{ color: 'rgba(240,235,224,0.62)', fontSize: '0.62rem', fontFamily: '"Manrope",sans-serif', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{f.label}</span>
                           <motion.span
                             key={(profile as any)[f.key]}
                             initial={{ opacity: 0, y: -4 }}

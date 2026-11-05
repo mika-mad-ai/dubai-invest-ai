@@ -101,7 +101,7 @@ const ChartPanel = ({ title, subtitle, badge, children }: {
         <h3 style={{ fontFamily: '"Sora",sans-serif', fontSize: '1rem', fontWeight: 600, color: '#f0ebe0', marginBottom: '0.3rem' }}>
           {title}
         </h3>
-        <p style={{ fontSize: '0.68rem', color: 'rgba(240,235,224,0.4)', fontFamily: '"Manrope",sans-serif', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        <p style={{ fontSize: '0.68rem', color: 'rgba(240,235,224,0.62)', fontFamily: '"Manrope",sans-serif', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           {subtitle}
         </p>
       </div>
@@ -149,7 +149,7 @@ const InvestmentDecisionCharts: React.FC<InvestmentDecisionChartsProps> = ({ pro
               fontFamily: '"Manrope",sans-serif',
               background: activeTab === tab.id ? 'rgba(20,184,166,0.15)' : 'rgba(255,255,255,0.04)',
               border: activeTab === tab.id ? '1px solid rgba(20,184,166,0.45)' : '1px solid rgba(255,255,255,0.06)',
-              color: activeTab === tab.id ? '#14b8a6' : 'rgba(240,235,224,0.45)',
+              color: activeTab === tab.id ? '#14b8a6' : 'rgba(240,235,224,0.68)',
               boxShadow: activeTab === tab.id ? '0 0 14px rgba(20,184,166,0.12)' : 'none',
             }}
           >
@@ -344,7 +344,7 @@ const InvestmentDecisionCharts: React.FC<InvestmentDecisionChartsProps> = ({ pro
       )}
 
       {/* Footer note */}
-      <p style={{ fontSize: '0.65rem', color: 'rgba(240,235,224,0.25)', fontFamily: '"Manrope",sans-serif', fontStyle: 'italic' }}>
+      <p style={{ fontSize: '0.65rem', color: 'rgba(240,235,224,0.62)', fontFamily: '"Manrope",sans-serif', fontStyle: 'italic' }}>
         Données basées sur les transactions DLD 2024–2025 et estimations de marché. Les rendements passés ne préjugent pas des rendements futurs. Frais d'entrée DLD 4 % + agence 2 % non inclus dans les rendements bruts.
       </p>
     </div>

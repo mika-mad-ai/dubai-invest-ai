@@ -19,6 +19,10 @@
   --color-azure-600: #0077b6;
   --color-azure-700: #023e8a;
 
+  /* Gris secondaire relevé pour le WCAG AA : le slate-500 natif (#62748e)
+     tombe à 3,7–3,9:1 sur les cartes sombres ; #8a96ab tient ≥ 5,8:1. */
+  --color-slate-500: #8a96ab;
+
   --color-midnight-800: #1a1828;
   --color-midnight-900: #0d0c18;
   --color-midnight-950: #050508;

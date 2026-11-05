@@ -178,7 +178,7 @@ const SmartNavbar: React.FC<SmartNavbarProps> = ({ message, isStreaming, hasProf
             }`}
           >
           <div className="hidden lg:flex flex-col items-end" style={{ borderInlineEnd: '1px solid rgba(212,175,55,0.15)', paddingInlineEnd: '20px' }}>
-            <span className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(212,175,55,0.60)' }}>
+            <span className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: 'rgba(212,175,55,0.85)' }}>
               {t.nav.exchangeRate}
             </span>
             <span className="text-xs font-mono mt-0.5" style={{ color: '#D4AF37' }}>

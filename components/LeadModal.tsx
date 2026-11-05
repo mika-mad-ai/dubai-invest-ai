@@ -129,7 +129,7 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
                   <PhoneIcon className="w-6 h-6" style={{ color: '#D4AF37' }} />
                 </div>
                 <p className="text-white font-serif text-xl">{t.leadModal.title}</p>
-                <p className="text-xs mt-1" style={{ color: 'rgba(180,175,165,0.70)' }}>
+                <p className="text-xs mt-1" style={{ color: 'rgba(180,175,165,0.85)' }}>
                   {fmt(t.leadModal.sub, { h: t.leadModal.hours })}
                 </p>
               </div>
@@ -183,7 +183,7 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
                 )}
               </button>
 
-              <p className="text-[9px] text-center uppercase tracking-widest" style={{ color: 'rgba(180,175,165,0.35)' }}>
+              <p className="text-[9px] text-center uppercase tracking-widest" style={{ color: 'rgba(180,175,165,0.85)' }}>
                 {t.leadModal.smallprint}
               </p>
             </form>
@@ -209,7 +209,7 @@ const LeadModal: React.FC<LeadModalProps> = ({ isOpen, onClose, property, userPr
               </p>
               <div
                 className="mt-5 mx-auto rounded-xl p-4 text-xs text-left"
-                style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.18)', color: 'rgba(180,175,165,0.70)' }}
+                style={{ background: 'rgba(212,175,55,0.06)', border: '1px solid rgba(212,175,55,0.18)', color: 'rgba(180,175,165,0.85)' }}
               >
                 <p className="font-semibold text-white mb-1 text-xs">{property.title}</p>
                 <p>{t.leadModal.yieldEstimated} <span style={{ color: '#D4AF37' }}>{property.yield}%</span> · {property.location}</p>

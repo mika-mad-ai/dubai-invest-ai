@@ -63,8 +63,8 @@ const AITopPickSkeleton: React.FC = () => (
     <div className="text-center space-y-3 max-w-sm mx-auto">
       <div className="h-3 w-24 mx-auto rounded-sm" style={{ background: 'rgba(212,175,55,0.12)' }} />
       <div className="flex gap-1 items-center justify-center">
-        <span className="text-xs animate-pulse" style={{ color: 'rgba(212,175,55,0.55)' }}>{useI18n().t.app.skeletonCollecting}</span>
-        <span className="text-xs" style={{ color: 'rgba(212,175,55,0.55)' }}>…</span>
+        <span className="text-xs animate-pulse" style={{ color: 'rgba(212,175,55,0.85)' }}>{useI18n().t.app.skeletonCollecting}</span>
+        <span className="text-xs" style={{ color: 'rgba(212,175,55,0.85)' }}>…</span>
       </div>
       <p className="text-[10px]" style={{ color: 'rgba(180,175,165,0.35)' }}>{useI18n().t.app.skeletonSource}</p>
     </div>
@@ -252,7 +252,7 @@ function App() {
       costData: [
         { name: 'DLD Fee (4%)', value: propertyPrice * 0.04, fill: '#22d3ee' },
         { name: 'Frais Agence (2%)', value: propertyPrice * 0.02, fill: '#3b82f6' },
-        { name: 'Admin/Trustee', value: 1200, fill: '#64748b' },
+        { name: 'Admin/Trustee', value: 1200, fill: '#8a96ab' },
         { name: 'Apport', value: initialCash, fill: '#10b981' }
       ], 
       tax: { dubai: 0, france: (propertyPrice * 0.22) },
@@ -503,7 +503,7 @@ function App() {
                 {/* THEME 1: ANALYSE D'AIDE À LA DÉCISION */}
                 <section className={sectionClassName} style={sectionStyle}>
                     <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
-                        <span className="text-2xl md:text-4xl font-serif text-gold-500 opacity-20 font-bold shrink-0">01</span>
+                        <span className="text-2xl md:text-4xl font-serif text-gold-500/60 font-bold shrink-0">01</span>
                         <div>
                             <h2 className="text-xl md:text-3xl font-serif text-white">{t.app.s1Title}</h2>
                             <p className="text-xs text-slate-400 uppercase tracking-widest">{t.app.s1Sub}</p>
@@ -515,7 +515,7 @@ function App() {
                 {/* THEME 2: PRISE DE VALEUR & HORIZON */}
                 <section className={sectionClassName} style={sectionStyle}>
                     <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
-                        <span className="text-2xl md:text-4xl font-serif text-gold-500 opacity-20 font-bold shrink-0">02</span>
+                        <span className="text-2xl md:text-4xl font-serif text-gold-500/60 font-bold shrink-0">02</span>
                         <div>
                             <h2 className="text-xl md:text-3xl font-serif text-white">{fmt(t.app.s2Title, { n: simParams.duration })}</h2>
                             <p className="text-xs text-slate-400 uppercase tracking-widest">{t.app.s2Sub}</p>
@@ -550,7 +550,7 @@ function App() {
                 {/* THEME 3: ROI LOCATIF & TYPE DE LOCATION */}
                 <section className={sectionClassName} style={sectionStyle}>
                     <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
-                        <span className="text-2xl md:text-4xl font-serif text-gold-500 opacity-20 font-bold shrink-0">03</span>
+                        <span className="text-2xl md:text-4xl font-serif text-gold-500/60 font-bold shrink-0">03</span>
                         <div>
                             <h2 className="text-xl md:text-3xl font-serif text-white">{t.app.s3Title}</h2>
                             <p className="text-xs text-slate-400 uppercase tracking-widest">{t.app.s3Sub}</p>
@@ -607,7 +607,7 @@ function App() {
                 {/* THEME 4: FRAIS & TAXES (ACQUISITION) */}
                 <section className={sectionClassName} style={sectionStyle}>
                     <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
-                        <span className="text-2xl md:text-4xl font-serif text-gold-500 opacity-20 font-bold shrink-0">04</span>
+                        <span className="text-2xl md:text-4xl font-serif text-gold-500/60 font-bold shrink-0">04</span>
                         <div>
                             <h2 className="text-xl md:text-3xl font-serif text-white">{t.app.s4Title}</h2>
                             <p className="text-xs text-slate-400 uppercase tracking-widest">{t.app.s4Sub}</p>
@@ -639,7 +639,7 @@ function App() {
                 {/* THEME 5: FISCALITÉ & RÉSIDENCE */}
                 <section className={sectionClassName} style={sectionStyle}>
                     <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
-                        <span className="text-2xl md:text-4xl font-serif text-gold-500 opacity-20 font-bold shrink-0">05</span>
+                        <span className="text-2xl md:text-4xl font-serif text-gold-500/60 font-bold shrink-0">05</span>
                         <div>
                             <h2 className="text-xl md:text-3xl font-serif text-white">{t.app.s5Title}</h2>
                             <p className="text-xs text-slate-400 uppercase tracking-widest">{t.app.s5Sub}</p>
@@ -657,7 +657,7 @@ function App() {
                 {/* THEME 6: OPPORTUNITÉS & CARTE */}
                 <section className={sectionClassName} style={sectionStyle}>
                     <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
-                        <span className="text-2xl md:text-4xl font-serif text-gold-500 opacity-20 font-bold shrink-0">06</span>
+                        <span className="text-2xl md:text-4xl font-serif text-gold-500/60 font-bold shrink-0">06</span>
                         <div>
                             <h2 className="text-xl md:text-3xl font-serif text-white">{t.app.s6Title}</h2>
                             <p className="text-xs text-slate-400 uppercase tracking-widest">{t.app.s6Sub}</p>

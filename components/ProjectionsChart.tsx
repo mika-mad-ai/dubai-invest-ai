@@ -48,8 +48,8 @@ const ProjectionsChart: React.FC<ProjectionsChartProps> = ({ data, className }) 
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-            <XAxis dataKey="year" tick={{fontSize: 12, fill: '#64748b', fontFamily: 'Plus Jakarta Sans'}} stroke="transparent" dy={10} />
-            <YAxis tickFormatter={formatCurrency} tick={{fontSize: 12, fill: '#64748b', fontFamily: 'Plus Jakarta Sans'}} stroke="transparent" />
+            <XAxis dataKey="year" tick={{fontSize: 12, fill: '#8a96ab', fontFamily: 'Plus Jakarta Sans'}} stroke="transparent" dy={10} />
+            <YAxis tickFormatter={formatCurrency} tick={{fontSize: 12, fill: '#8a96ab', fontFamily: 'Plus Jakarta Sans'}} stroke="transparent" />
             
             <Tooltip 
               formatter={(value: any, name: string) => {

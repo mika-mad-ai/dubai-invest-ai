@@ -299,7 +299,7 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
         <h4 style={{ fontFamily: display, fontSize: '0.98rem', fontWeight: 700, color: IVORY, lineHeight: 1.3, margin: '4px 0 0' }}>
           {building?.name ?? subject.title}
         </h4>
-        <p style={{ fontFamily: sans, fontSize: '0.7rem', color: 'rgba(240,235,224,0.55)', margin: '2px 0 0' }}>
+        <p style={{ fontFamily: sans, fontSize: '0.7rem', color: 'rgba(240,235,224,0.66)', margin: '2px 0 0' }}>
           {subject.location}
         </p>
 
@@ -319,7 +319,7 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
 
         {views.length > 0 && (
           <>
-            <p style={{ fontFamily: sans, fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(240,235,224,0.45)', margin: '14px 0 6px' }}>
+            <p style={{ fontFamily: sans, fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(240,235,224,0.62)', margin: '14px 0 6px' }}>
               Vues selon étage et orientation
             </p>
             <div className="m3d-chips">
@@ -356,7 +356,7 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
           )}
         </div>
 
-        <p style={{ fontFamily: sans, fontSize: '0.6rem', color: 'rgba(240,235,224,0.38)', lineHeight: 1.6, margin: '12px 0 0' }}>
+        <p style={{ fontFamily: sans, fontSize: '0.6rem', color: 'rgba(240,235,224,0.62)', lineHeight: 1.6, margin: '12px 0 0' }}>
           {bench.matched ? `Zone DLD « ${bench.zone} » · ` : ''}médiane revente 12 mois au {DLD_BENCHMARK_AS_OF}.
           Bâti et hauteurs : OpenStreetMap.
         </p>
@@ -383,7 +383,7 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
         .m3d-note { font-family: ${sans}; font-size: 0.66rem; color: rgba(251,191,36,0.85); background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.22); border-radius: 8px; padding: 6px 9px; line-height: 1.5; margin: 10px 0 0; }
         .m3d-row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.055); }
         .m3d-row:last-child { border-bottom: none; }
-        .m3d-k { font-family: ${sans}; font-size: 0.68rem; color: rgba(240,235,224,0.5); }
+        .m3d-k { font-family: ${sans}; font-size: 0.68rem; color: rgba(240,235,224,0.66); }
         .m3d-v { font-family: ${sans}; font-size: 0.7rem; font-weight: 700; color: ${IVORY}; text-align: right; }
 
         .m3d-chips { display: flex; flex-wrap: wrap; gap: 6px; }
