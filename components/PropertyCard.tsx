@@ -16,6 +16,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSel
   const { t, money } = useI18n();
   const photos = property.images && property.images.length > 0 ? property.images : (property.image ? [property.image] : []);
   const [photoIdx, setPhotoIdx] = useState(0);
+  // Photo indisponible (lien PF expiré, réseau) : fond dégradé plutôt que le
+  // texte alternatif étalé sur la carte.
+  const [photoFailed, setPhotoFailed] = useState(false);
 
   const prevPhoto = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -72,11 +75,18 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, isSelected, onSel
       {/* Image Section */}
       <div className="h-[220px] overflow-hidden relative shrink-0">
         <div className="absolute inset-0 bg-linear-to-t from-midnight-950 via-midnight-950/20 to-transparent z-10" />
-        <img
-          src={photos[photoIdx] || property.image}
-          alt={property.title}
-          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-        />
+        {photoFailed ? (
+          <div aria-hidden className="w-full h-full" style={{ background: 'radial-gradient(120% 90% at 30% 20%, rgba(212,175,55,0.16), transparent 60%), linear-gradient(160deg, #141a2b 0%, #0a0d16 100%)' }} />
+        ) : (
+          <img
+            src={photos[photoIdx] || property.image}
+            alt={property.title}
+            loading="lazy"
+            decoding="async"
+            onError={() => setPhotoFailed(true)}
+            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+          />
+        )}
 
         {/* Carousel arrows — only if multiple photos */}
         {photos.length > 1 && (

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import ConsentFields from './ConsentFields';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useI18n, fmt } from '../i18n';
@@ -937,13 +938,14 @@ const OptionCard: React.FC<{
         transition={{ duration: 0.45, delay: optIdx * 0.07, ease: 'easeOut' }}
         className="relative flex flex-col items-center text-center rounded-2xl outline-hidden select-none overflow-hidden"
         style={{
-          width: '100%', minHeight: 165, padding: '1rem 0.75rem',
+          width: '100%', height: '100%', minHeight: 180, padding: '1.25rem 1rem 1.15rem',
+          // Fond opaque : le tracé décoratif de l'arbre passait à travers le texte.
           background: isSelected
-            ? 'linear-gradient(145deg, rgba(20,184,166,0.15) 0%, rgba(99,102,241,0.08) 100%)'
-            : 'rgba(255,255,255,0.025)',
+            ? 'linear-gradient(145deg, rgba(20,184,166,0.15) 0%, rgba(99,102,241,0.08) 100%), #0b0f17'
+            : 'linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.015)), #0b0f17',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
-          border: isSelected ? '1px solid rgba(20,184,166,0.0)' : isActive ? '1px solid rgba(255,255,255,0.07)' : '1px solid transparent',
+          border: isSelected ? '1px solid rgba(20,184,166,0.0)' : isActive ? '1px solid rgba(255,255,255,0.09)' : '1px solid rgba(255,255,255,0.04)',
           boxShadow: isSelected ? '0 0 40px rgba(20,184,166,0.18), inset 0 0 20px rgba(20,184,166,0.05)' : 'none',
           cursor: isIgnored ? 'pointer' : 'pointer',
         }}
@@ -1010,17 +1012,17 @@ const OptionCard: React.FC<{
         {/* ── Label ── */}
         <motion.span
           animate={{ color: isSelected ? '#67e8f9' : isActive ? 'rgba(240,235,224,0.92)' : 'rgba(240,235,224,0.40)' }}
-          className="font-semibold uppercase tracking-widest relative z-10"
-          style={{ fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem', marginBottom: '0.4rem' }}
+          className="font-bold relative z-10"
+          style={{ fontFamily: '"Sora",sans-serif', fontSize: '0.86rem', letterSpacing: '-0.005em', lineHeight: 1.3, marginBottom: '0.45rem', textWrap: 'balance' as any }}
         >
           {label}
         </motion.span>
 
         {/* ── Desc ── */}
         <motion.span
-          animate={{ color: isSelected ? 'rgba(103,232,249,0.70)' : isActive ? 'rgba(240,235,224,0.58)' : 'rgba(240,235,224,0.30)' }}
-          className="leading-relaxed relative z-10"
-          style={{ fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem' }}
+          animate={{ color: isSelected ? 'rgba(165,243,252,0.85)' : isActive ? 'rgba(240,235,224,0.7)' : 'rgba(240,235,224,0.38)' }}
+          className="relative z-10"
+          style={{ fontFamily: '"Manrope",sans-serif', fontSize: '0.78rem', lineHeight: 1.55 }}
         >
           {desc}
         </motion.span>
@@ -1137,14 +1139,17 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading, agentI
   const totalSteps = steps.length + 1;
 
   return (
-    <div className="w-full max-w-5xl mx-auto pb-24 px-4 relative" ref={containerRef}>
+    <div className="w-full max-w-5xl mx-auto pb-8 md:pb-12 px-4 relative" ref={containerRef}>
 
-      {/* ── ROI Badge ── */}
+      {/* ── ROI Badge ── rendu dans <body> : un parent animé (transform) transforme
+          `position: fixed` en positionnement relatif, et le badge était rogné. */}
+      {typeof document !== 'undefined' && createPortal(
+        <>
       <motion.div
         initial={{ opacity: 0, x: 30, scale: 0.8 }}
         animate={badgeVisible ? { opacity: 1, x: 0, scale: 1 } : { opacity: 0, x: 30, scale: 0.8 }}
         transition={{ duration: 0.45, type: 'spring', stiffness: 200, damping: 24 }}
-        className="fixed top-24 right-4 md:right-8 z-50"
+        className="fixed bottom-4 right-3 md:bottom-auto md:top-24 md:right-8 z-50 scale-90 md:scale-100 origin-bottom-right md:origin-top-right"
         style={{ pointerEvents: badgeVisible ? 'auto' : 'none' }}
       >
         <div className="relative overflow-hidden rounded-2xl" style={{
@@ -1195,6 +1200,10 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading, agentI
           </div>
         </div>
       </motion.div>
+
+        </>,
+        document.body
+      )}
 
       {/* ── SVG connector paths ── */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible" style={{ zIndex: 1 }}>
@@ -1293,21 +1302,22 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading, agentI
                     {loc?.question ?? step.question}
                   </h3>
                   {step.sub && (
-                    <p style={{ color: 'rgba(240,235,224,0.62)', fontSize: '0.7rem', fontFamily: '"Manrope",sans-serif', fontStyle: 'italic', lineHeight: 1.55 }}>
+                    <p style={{ color: 'rgba(240,235,224,0.66)', fontSize: '0.84rem', fontFamily: '"Manrope",sans-serif', lineHeight: 1.6, maxWidth: 320 }}>
                       {loc?.sub ?? step.sub}
                     </p>
                   )}
                 </motion.div>
 
                 {/* RIGHT — cards */}
-                <div className="grid grid-cols-2 gap-3 w-full" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))' }}>
+                {/* Flex centré : 5 choix → 3 + 2 équilibrés (la grille laissait une carte orpheline). */}
+                <div className="flex flex-wrap justify-center gap-3 w-full">
                   {step.options.map((option, optIdx) => {
                     const isSelected = isCompleted && optIdx === selectedOptionIndex;
                     const isIgnored  = isCompleted && optIdx !== selectedOptionIndex;
                     const isActive   = idx === stepIndex;
                     return (
+                      <div key={optIdx} style={{ flex: '1 1 190px', maxWidth: 250 }}>
                       <OptionCard
-                        key={optIdx}
                         option={option}
                         label={loc?.options[optIdx]?.label ?? option.label}
                         desc={loc?.options[optIdx]?.desc ?? option.desc}
@@ -1318,6 +1328,7 @@ const DecisionTree: React.FC<DecisionTreeProps> = ({ onSubmit, isLoading, agentI
                         onClick={() => handleOptionClick(idx, optIdx, option)}
                         refCallback={el => { itemsRef.current[idx][optIdx] = el; }}
                       />
+                      </div>
                     );
                   })}
                 </div>
