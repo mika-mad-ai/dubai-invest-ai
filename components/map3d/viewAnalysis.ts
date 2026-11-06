@@ -139,14 +139,26 @@ export function pickBuilding<F extends { geometry: Geom; properties?: Record<str
   features: F[],
   lat: number,
   lng: number,
-  maxKm = 0.035
+  maxKm = 0.035,
+  opts: { preferTower?: boolean } = {}
 ): F | null {
+  const heightOf = (f: F) => Number(f.properties?.render_height) || 0;
   const containing = features.filter(f => geometryContains(f.geometry, lng, lat));
   if (containing.length) {
     // Plusieurs parties (socle + tour) : la plus haute porte le nom et la hauteur.
-    return containing.sort(
-      (a, b) => (Number(b.properties?.render_height) || 0) - (Number(a.properties?.render_height) || 0)
-    )[0];
+    const top = containing.sort((a, b) => heightOf(b) - heightOf(a))[0];
+    // Le géocodage tombe parfois sur un auvent ou un podium au pied de la
+    // tour (constaté : 5 m à Jumeirah Gate). Une annonce d'appartement vise
+    // la tour voisine : on la préfère si elle est tout près.
+    if (opts.preferTower && heightOf(top) < 12) {
+      const tower = features
+        .filter(f => heightOf(f) >= 30)
+        .map(f => ({ f, km: distanceToFeatureKm(f, lat, lng) }))
+        .filter(x => x.km <= 0.04)
+        .sort((a, b) => a.km - b.km)[0];
+      if (tower) return tower.f;
+    }
+    return top;
   }
   let best: F | null = null;
   let bestKm = maxKm;
@@ -282,11 +294,11 @@ export function circlePolygon(lat: number, lng: number, km: number, steps = 64):
 }
 
 /**
- * Agrandit légèrement une empreinte autour de son centre (facteur 1,015 ≈
- * +30 cm sur une tour de 40 m) : l'extrusion dorée passe devant les murs de
+ * Agrandit légèrement une empreinte autour de son centre (facteur 1,04 ≈
+ * +80 cm sur une tour de 40 m ; 1,015 laissait des rayures sur les tours de 300 m vues de loin) : l'extrusion dorée passe devant les murs de
  * la tour d'origine même quand les tuiles ne portent pas d'identifiant.
  */
-export function inflateGeometry<G extends { type: string; coordinates: unknown }>(geom: G, factor = 1.015): G {
+export function inflateGeometry<G extends { type: string; coordinates: unknown }>(geom: G, factor = 1.04): G {
   const scaleRing = (ring: number[][]) => {
     const cx = ring.reduce((s, p) => s + p[0], 0) / ring.length;
     const cy = ring.reduce((s, p) => s + p[1], 0) / ring.length;
@@ -299,6 +311,26 @@ export function inflateGeometry<G extends { type: string; coordinates: unknown }
     return { ...geom, coordinates: (geom.coordinates as number[][][][]).map(p => p.map(scaleRing)) };
   }
   return geom;
+}
+
+/** Distance du point au centre de l'empreinte la plus proche d'un élément. */
+function distanceToFeatureKm(f: { geometry: Geom }, lat: number, lng: number): number {
+  // Distance au BORD de l'empreinte (0 si le point est dedans) : pour une
+  // grande tour, le centre peut être à 60 m alors que la façade est à 10 m.
+  if (geometryContains(f.geometry, lng, lat)) return 0;
+  const polys: Ring[][] =
+    f.geometry.type === 'Polygon'
+      ? [(f.geometry as { coordinates: Ring[] }).coordinates]
+      : f.geometry.type === 'MultiPolygon'
+        ? (f.geometry as { coordinates: Ring[][] }).coordinates
+        : [];
+  let best = Infinity;
+  for (const [outer] of polys) {
+    if (!outer || outer.length < 2) continue;
+    const line = outer.map(p => [Number(p[1]), Number(p[0])] as [number, number]);
+    best = Math.min(best, nearestOnPolyline(lat, lng, line).km);
+  }
+  return best;
 }
 
 /** Centre approximatif (moyenne des sommets de l'anneau extérieur). */
@@ -342,4 +374,39 @@ export function buildingParts<F extends { id?: string | number; geometry: Geom }
 export function idIsUniqueTo<F extends { id?: string | number }>(features: F[], parts: F[]): boolean {
   if (!parts.length || parts[0].id == null) return false;
   return features.filter(o => o.id === parts[0].id).length === parts.length;
+}
+
+/**
+ * OSM décrit parfois tout un complexe (ex. « The Fairmont Palm Residences »)
+ * comme UN multipolygone regroupant des bâtiments distants de centaines de
+ * mètres. On ne garde que le polygone qui contient l'adresse (ou, à défaut,
+ * le plus proche) : c'est l'immeuble de l'annonce, pas toute la résidence.
+ */
+export function focusPolygon<G extends Geom>(geom: G, lng: number, lat: number, maxKm = 0.06): G {
+  if (geom.type !== 'MultiPolygon') return geom;
+  const polys = (geom as { coordinates: Ring[][] }).coordinates;
+  if (polys.length <= 1) return geom;
+  const containing = polys.find(([outer, ...holes]) =>
+    outer && pointInRing(lng, lat, outer) && !holes.some(h => pointInRing(lng, lat, h)));
+  let best = containing;
+  if (!best) {
+    let bestKm = Infinity;
+    for (const p of polys) {
+      const c = centroidOf({ type: 'Polygon', coordinates: p } as Geom);
+      if (!c) continue;
+      const km = haversineKm(lat, lng, c[1], c[0]);
+      if (km < bestKm) { bestKm = km; best = p; }
+    }
+  }
+  if (!best) return geom;
+  // Garder aussi les morceaux collés (immeuble coupé par une limite de tuile).
+  const c0 = centroidOf({ type: 'Polygon', coordinates: best } as Geom);
+  const kept = polys.filter(p => {
+    if (p === best) return true;
+    const c = centroidOf({ type: 'Polygon', coordinates: p } as Geom);
+    return !!c0 && !!c && haversineKm(c0[1], c0[0], c[1], c[0]) <= maxKm;
+  });
+  return (kept.length > 1
+    ? { type: 'MultiPolygon', coordinates: kept }
+    : { type: 'Polygon', coordinates: best }) as unknown as G;
 }
