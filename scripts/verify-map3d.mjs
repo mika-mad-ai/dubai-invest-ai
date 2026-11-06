@@ -101,6 +101,18 @@ const parts = m.buildingParts([target, far, split], target);
 check('buildingParts : un id partagé ne dore pas un immeuble à 1 km', parts.length === 2 && !parts.includes(far), String(parts.length));
 check('idIsUniqueTo : id partagé → pas de filtre de la couche de base', !m.idIsUniqueTo([target, far, split], parts));
 check('idIsUniqueTo : id propre à l’immeuble → filtre autorisé', m.idIsUniqueTo([target, split], [target, split]));
+// Complexe OSM en un seul multipolygone (constaté en prod : Fairmont Palm Residences)
+const ring = (lng, lat, d) => [[lng - d, lat - d], [lng + d, lat - d], [lng + d, lat + d], [lng - d, lat + d], [lng - d, lat - d]];
+const complex = { type: 'MultiPolygon', coordinates: [[ring(55.2087, 25.0612, 0.00015)], [ring(55.2120, 25.0640, 0.00015)], [ring(55.2050, 25.0590, 0.00015)]] };
+const focused = m.focusPolygon(complex, 55.2087, 25.0612);
+check('focusPolygon : seul le bâtiment de l’adresse reste doré dans un complexe', focused.type === 'Polygon' && focused.coordinates[0][0][0] === 55.2087 - 0.00015, JSON.stringify(focused).slice(0, 80));
+const halves = { type: 'MultiPolygon', coordinates: [[ring(55.2087, 25.0612, 0.0001)], [ring(55.2089, 25.0612, 0.0001)], [ring(55.2150, 25.0612, 0.0001)]] };
+check('focusPolygon : garde les morceaux collés (coupure de tuile), écarte le lointain', m.focusPolygon(halves, 55.2087, 25.0612).coordinates.length === 2);
+check('focusPolygon : un Polygon simple est rendu tel quel', m.focusPolygon(target.geometry, 55.2087, 25.0612) === target.geometry);
+const canopy = sq(55.2087, 25.0612, 0.00008, { render_height: 5 }, 7);
+const tower = sq(55.20895, 25.0614, 0.00012, { render_height: 180, name: 'Tower' }, 8); // ~30 m
+check('pickBuilding : appartement → la tour voisine plutôt que l’auvent de 5 m', m.pickBuilding([canopy, tower], 25.0612, 55.2087, 0.035, { preferTower: true })?.properties.name === 'Tower');
+check('pickBuilding : villa → le bâtiment bas qui contient le point reste choisi', m.pickBuilding([canopy, tower], 25.0612, 55.2087, 0.035, { preferTower: false })?.properties.render_height === 5);
 check('floorsFromHeight : 190 m ≈ 61 étages', m.floorsFromHeight(190) === 61);
 
 console.log(`\n${pass} vérifications passées, ${fail} échec(s)`);

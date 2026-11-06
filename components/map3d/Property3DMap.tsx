@@ -15,6 +15,7 @@ import {
   circlePolygon,
   haversineKm,
   buildingParts,
+  focusPolygon,
   idIsUniqueTo,
   inflateGeometry,
   pickBuilding,
@@ -152,7 +153,9 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
         // Test géométrique sur les empreintes (pas le pixel écran : en vue
         // inclinée, une tour au premier plan masquerait la cible).
         const feats = map.querySourceFeatures('openmaptiles', { sourceLayer: 'building' });
-        const f = pickBuilding(feats, lat, lng);
+        // Une annonce d'appartement vise une tour, pas l'auvent à son pied.
+        const isApartment = !/villa|townhouse|maison/i.test(subject.type ?? '');
+        const f = pickBuilding(feats, lat, lng, 0.035, { preferTower: isApartment });
         setBuildingChecked(true);
         if (f && (f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon')) {
           // Un immeuble à cheval sur deux tuiles arrive en morceaux : on les
@@ -165,8 +168,11 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
                 ? o.geometry.coordinates
                 : []
           );
-          const geometry: GeoJSON.Geometry =
-            polys.length > 1 ? { type: 'MultiPolygon', coordinates: polys } : f.geometry;
+          const geometry = focusPolygon(
+            (polys.length > 1 ? { type: 'MultiPolygon', coordinates: polys } : f.geometry) as GeoJSON.Geometry,
+            lng,
+            lat
+          );
           const h = Number(f.properties?.render_height) || 24;
           setBuilding({
             heightM: Math.round(h),
@@ -175,7 +181,13 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
           });
           // Retire la tour d'origine de la couche de base : deux extrusions
           // identiques se disputent la profondeur (rayures « z-fighting »).
-          if (idIsUniqueTo(feats, parts)) map.setFilter('buildings-3d', ['!=', ['id'], f.id as number]);
+          // …mais seulement si l'or redessine TOUT l'élément OSM : pour un
+          // complexe recentré sur un bâtiment, filtrer effacerait les autres.
+          const polyCount = (g: GeoJSON.Geometry) =>
+            g.type === 'MultiPolygon' ? g.coordinates.length : g.type === 'Polygon' ? 1 : 0;
+          if (idIsUniqueTo(feats, parts) && polyCount(geometry as GeoJSON.Geometry) === polys.length) {
+            map.setFilter('buildings-3d', ['!=', ['id'], f.id as number]);
+          }
           // « Rayon X » : le bâti voisin s'efface à moitié pour que la tour
           // dorée reste visible même derrière plus haut qu'elle.
           map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity-transition', { duration: reduced ? 0 : 900 });
@@ -183,7 +195,7 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
           if (!map.getSource('unit-building')) {
             map.addSource('unit-building', {
               type: 'geojson',
-              data: { type: 'Feature', properties: { h }, geometry: inflateGeometry(geometry) },
+              data: { type: 'Feature', properties: { h }, geometry: inflateGeometry(geometry as GeoJSON.Polygon | GeoJSON.MultiPolygon) as GeoJSON.Geometry },
             });
             map.addLayer({
               id: 'unit-building-3d',
