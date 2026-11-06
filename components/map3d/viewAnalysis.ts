@@ -300,3 +300,46 @@ export function inflateGeometry<G extends { type: string; coordinates: unknown }
   }
   return geom;
 }
+
+/** Centre approximatif (moyenne des sommets de l'anneau extérieur). */
+function centroidOf(geom: Geom): [number, number] | null {
+  const ring =
+    geom.type === 'Polygon'
+      ? (geom as { coordinates: Ring[] }).coordinates[0]
+      : geom.type === 'MultiPolygon'
+        ? (geom as { coordinates: Ring[][] }).coordinates[0]?.[0]
+        : null;
+  if (!ring?.length) return null;
+  const x = ring.reduce((s, p) => s + Number(p[0]), 0) / ring.length;
+  const y = ring.reduce((s, p) => s + Number(p[1]), 0) / ring.length;
+  return [x, y];
+}
+
+/**
+ * Morceaux du MÊME immeuble (découpé par les tuiles) : même identifiant ET à
+ * moins de `maxKm` du morceau retenu. Dans OpenFreeMap, un identifiant peut
+ * être porté par plusieurs bâtiments distincts du quartier : sans ce garde-fou
+ * de distance, toute la rue passe en or.
+ */
+export function buildingParts<F extends { id?: string | number; geometry: Geom }>(
+  features: F[],
+  picked: F,
+  maxKm = 0.08
+): F[] {
+  if (picked.id == null) return [picked];
+  const c0 = centroidOf(picked.geometry);
+  if (!c0) return [picked];
+  const parts = features.filter(o => {
+    if (o.id !== picked.id) return false;
+    const c = centroidOf(o.geometry);
+    return !!c && haversineKm(c0[1], c0[0], c[1], c[0]) <= maxKm;
+  });
+  return parts.length ? parts : [picked];
+}
+
+/** L'identifiant ne désigne-t-il que ces morceaux-là ? (sinon, ne pas filtrer
+ *  la couche de base par id : on effacerait d'autres immeubles). */
+export function idIsUniqueTo<F extends { id?: string | number }>(features: F[], parts: F[]): boolean {
+  if (!parts.length || parts[0].id == null) return false;
+  return features.filter(o => o.id === parts[0].id).length === parts.length;
+}

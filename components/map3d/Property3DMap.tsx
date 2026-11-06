@@ -14,6 +14,8 @@ import {
   floorsFromHeight,
   circlePolygon,
   haversineKm,
+  buildingParts,
+  idIsUniqueTo,
   inflateGeometry,
   pickBuilding,
   viewCone,
@@ -58,6 +60,8 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
 
   const [point, setPoint] = useState<ResolvedPoint | null | 'pending'>('pending');
   const [building, setBuilding] = useState<BuildingInfo | null>(null);
+  /** Vrai une fois la recherche de l'immeuble dans les tuiles terminée. */
+  const [buildingChecked, setBuildingChecked] = useState(false);
 
   const reduced = useMemo(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -149,10 +153,11 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
         // inclinée, une tour au premier plan masquerait la cible).
         const feats = map.querySourceFeatures('openmaptiles', { sourceLayer: 'building' });
         const f = pickBuilding(feats, lat, lng);
+        setBuildingChecked(true);
         if (f && (f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon')) {
           // Un immeuble à cheval sur deux tuiles arrive en morceaux : on les
           // regroupe par identifiant pour dorer l'empreinte entière.
-          const parts = f.id != null ? feats.filter(o => o.id === f.id) : [f];
+          const parts = buildingParts(feats, f);
           const polys = parts.flatMap(o =>
             o.geometry.type === 'Polygon'
               ? [o.geometry.coordinates]
@@ -170,7 +175,7 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
           });
           // Retire la tour d'origine de la couche de base : deux extrusions
           // identiques se disputent la profondeur (rayures « z-fighting »).
-          if (f.id != null) map.setFilter('buildings-3d', ['!=', ['id'], f.id]);
+          if (idIsUniqueTo(feats, parts)) map.setFilter('buildings-3d', ['!=', ['id'], f.id as number]);
           // « Rayon X » : le bâti voisin s'efface à moitié pour que la tour
           // dorée reste visible même derrière plus haut qu'elle.
           map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity-transition', { duration: reduced ? 0 : 900 });
@@ -310,6 +315,14 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
           <p className="m3d-note">
             Immeuble non identifié dans OpenStreetMap — position au centre du
             quartier, à affiner avec l’annonce source.
+          </p>
+        )}
+
+        {point.precision === 'exact' && buildingChecked && !building && (
+          <p className="m3d-note">
+            Adresse localisée, mais la tour n’est pas encore dessinée dans
+            OpenStreetMap (souvent un immeuble récent) : hauteur et étages
+            indisponibles.
           </p>
         )}
 

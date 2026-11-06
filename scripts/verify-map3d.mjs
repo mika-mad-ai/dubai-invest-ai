@@ -94,6 +94,13 @@ check('circlePolygon : anneau fermé', c[0][0] === c[c.length - 1][0] && Math.ab
 check('circlePolygon : rayon ≈ 450 m', Math.abs(m.haversineKm(25.06, 55.24, c[16][1], c[16][0]) - 0.45) < 0.005);
 const inf = m.inflateGeometry({ type: 'Polygon', coordinates: [[[0, 0], [2, 0], [2, 2], [0, 2]]] }, 1.5);
 check('inflateGeometry : agrandit autour du centre', inf.coordinates[0][0][0] === -0.5 && inf.coordinates[0][2][1] === 2.5, JSON.stringify(inf.coordinates));
+// Identifiant partagé par plusieurs immeubles (constaté en prod sur OpenFreeMap)
+const far = sq(55.2200, 25.0700, 0.00015, { render_height: 30 }, 1);          // même id, ~1,3 km
+const split = sq(55.20885, 25.0612, 0.00015, { render_height: 62 }, 1);       // même id, collé (autre tuile)
+const parts = m.buildingParts([target, far, split], target);
+check('buildingParts : un id partagé ne dore pas un immeuble à 1 km', parts.length === 2 && !parts.includes(far), String(parts.length));
+check('idIsUniqueTo : id partagé → pas de filtre de la couche de base', !m.idIsUniqueTo([target, far, split], parts));
+check('idIsUniqueTo : id propre à l’immeuble → filtre autorisé', m.idIsUniqueTo([target, split], [target, split]));
 check('floorsFromHeight : 190 m ≈ 61 étages', m.floorsFromHeight(190) === 61);
 
 console.log(`\n${pass} vérifications passées, ${fail} échec(s)`);
