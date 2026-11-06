@@ -201,7 +201,7 @@ const Avatar: React.FC<{ agent: Agent }> = ({ agent }) => {
           style={{ width: '26%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent)', filter: 'blur(7px)', transform: 'skewX(-12deg)', mixBlendMode: 'screen' }}
           initial={{ left: '-40%', opacity: 0 }}
           whileInView={{ left: ['-40%', '120%'], opacity: [0, 1, 1, 0] }}
-          viewport={{ once: true, amount: 0.4 }}
+          viewport={{ once: true, margin: '0px 0px -10% 0px' }}
           transition={{ duration: 1.15, ease: 'easeInOut', delay: 0.25 }}
         />
       )}
@@ -218,7 +218,7 @@ const AgentCard: React.FC<{ agent: Agent; delay: number; onConsult: (id: string)
   <motion.div
     initial={{ opacity: 0, y: 30 }}
     whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, amount: 0.3 }}
+    viewport={{ once: true, margin: '0px 0px -10% 0px' }}
     transition={{ duration: 0.6, delay, ease: 'easeOut' }}
     whileHover={{ y: -6 }}
     className="group relative flex flex-col rounded-[18px] overflow-hidden"

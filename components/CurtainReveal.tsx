@@ -9,7 +9,11 @@ import { motion, useInView } from 'framer-motion';
  */
 export const CurtainReveal: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.25 });
+  // Déclenché dès que le haut de la section passe sous les 85 % de l'écran.
+  // Avant : `amount: 0.25` exigeait 25 % de la section visible À LA FOIS —
+  // impossible sur mobile pour une section haute de 4 écrans (conseillers,
+  // questionnaire) : le rideau restait fermé et la section invisible.
+  const inView = useInView(ref, { once: true, margin: '0px 0px -15% 0px' });
   const reduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
   return (

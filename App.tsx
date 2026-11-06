@@ -1,31 +1,34 @@
 
-import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, lazy, Suspense } from 'react';
+// Les composants qui ne servent qu'APRÈS le questionnaire (graphiques Recharts,
+// carte Leaflet, simulateurs, chat) sont chargés à la demande : la page
+// d'accueil ne télécharge et n'exécute plus leur code.
 import { UserProfile, Message, Role, ChartDataPoint, SimulationParams, CashflowDataPoint, CostDataPoint, ExchangeRateDataPoint, Property, DistrictData } from './types';
 import { streamAdvisor, captureLead, type AgentMeta, type MatchedListing, type WireMessage } from './services/agentService';
 import DecisionTree from './components/DecisionTree';
-import ChatInterface from './components/ChatInterface';
-import ProjectionsChart from './components/ProjectionsChart';
+const ChatInterface = lazy(() => import('./components/ChatInterface'));
+const ProjectionsChart = lazy(() => import('./components/ProjectionsChart'));
 import StatCard from './components/kpi/StatCard';
-import CashflowChart from './components/charts/CashflowChart';
-import StrategyComparison from './components/StrategyComparison';
-import ExchangeRateChart from './components/charts/ExchangeRateChart';
-import TaxComparisonChart from './components/charts/TaxComparisonChart';
-import LoanComparisonChart from './components/charts/LoanComparisonChart';
-import PropertyCard from './components/PropertyCard';
+const CashflowChart = lazy(() => import('./components/charts/CashflowChart'));
+const StrategyComparison = lazy(() => import('./components/StrategyComparison'));
+const ExchangeRateChart = lazy(() => import('./components/charts/ExchangeRateChart'));
+const TaxComparisonChart = lazy(() => import('./components/charts/TaxComparisonChart'));
+const LoanComparisonChart = lazy(() => import('./components/charts/LoanComparisonChart'));
+const PropertyCard = lazy(() => import('./components/PropertyCard'));
 import LeadModal from './components/LeadModal';
 import ScrollReveal from './components/ScrollReveal';
-import GrowthVisualizer from './components/GrowthVisualizer';
+const GrowthVisualizer = lazy(() => import('./components/GrowthVisualizer'));
 import SmartNavbar from './components/SmartNavbar';
-import DubaiMap from './components/DubaiMap'; // New
-import FiscalitySimulator from './components/FiscalitySimulator'; // New
-import CostBreakdownChart from './components/charts/CostBreakdownChart'; // Used now
-import InvestmentDecisionCharts from './components/charts/InvestmentDecisionCharts';
+const DubaiMap = lazy(() => import('./components/DubaiMap'));
+const FiscalitySimulator = lazy(() => import('./components/FiscalitySimulator'));
+const CostBreakdownChart = lazy(() => import('./components/charts/CostBreakdownChart'));
+const InvestmentDecisionCharts = lazy(() => import('./components/charts/InvestmentDecisionCharts'));
 import { fetchDldWeeklyImpact, DldWeeklyResponse } from './services/dldService';
 import { ChartIcon, TrendingUpIcon, RobotAvatarIcon, PercentIcon, EuroIcon, BuildingIcon } from './components/Icons';
 import HeroSection from './components/HeroSection';
 import AgentsSection from './components/AgentsSection';
 import AgentCompanion from './components/AgentCompanion';
-import MatchedListings from './components/MatchedListings';
+const MatchedListings = lazy(() => import('./components/MatchedListings'));
 import CurtainReveal from './components/CurtainReveal';
 import AITopPick, { scoreProperty } from './components/AITopPick';
 import Footer from './components/Footer';
@@ -34,6 +37,17 @@ import { useI18n, fmt } from './i18n';
 
 // Données enrichies
 // ── Skeleton loaders ──────────────────────────────────────────────────────────
+
+/** Pendant le chargement des modules de résultats (quelques centaines de ms). */
+const ResultsSkeleton: React.FC = () => (
+  <div className="pt-24 pb-20 px-4 md:px-8 max-w-[1700px] mx-auto" aria-busy="true" aria-label="Chargement de votre analyse">
+    <div className="flex flex-col gap-6 xl:max-w-[calc(100%-432px)]">
+      {[260, 420, 320].map((h, i) => (
+        <div key={i} className="rounded-2xl animate-pulse" style={{ height: h, background: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.015))', border: '1px solid rgba(212,175,55,0.08)' }} />
+      ))}
+    </div>
+  </div>
+);
 
 const PropertyCardSkeleton: React.FC = () => (
   <div className="rounded-2xl overflow-hidden animate-pulse" style={{ border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.03)' }}>
@@ -471,7 +485,7 @@ function App() {
           </div>
           {/* Questionnaire — révélé en rideau ; remonté quand on change de conseiller */}
           <CurtainReveal>
-            <div id="decision-tree" className="relative w-full flex flex-col items-center justify-start py-16 px-4" style={{ background: '#050505' }}>
+            <div id="decision-tree" className="relative w-full flex flex-col items-center justify-start pt-16 pb-6 md:pb-10 px-4" style={{ background: '#050505' }}>
               <DecisionTree
                 key={selectedAgentId ?? 'generic'}
                 agentId={selectedAgentId}
@@ -485,6 +499,7 @@ function App() {
       )}
 
       {hasProfile && (
+        <Suspense fallback={<ResultsSkeleton />}>
         <div className="pt-20 md:pt-24 pb-20 px-4 md:px-8 max-w-[1700px] mx-auto animate-fade-in flex flex-col xl:flex-row gap-8">
             
             {/* LEFT COLUMN: 5 THEMATIC SECTIONS */}
@@ -756,6 +771,7 @@ function App() {
                 </div>
             </div>
         </div>
+        </Suspense>
       )}
 
       <LeadModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} property={selectedLeadProperty} userProfile={userProfile} />
