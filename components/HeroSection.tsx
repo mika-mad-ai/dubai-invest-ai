@@ -218,9 +218,11 @@ const HeroAIChat: React.FC<{ onCTAClick?: () => void }> = ({ onCTAClick }) => {
 
 // ── Titre cinématographique ──────────────────────────────────────────────────
 const HeroTitle: React.FC<{ t: any }> = ({ t }) => (
-  <h1 className="flex flex-col items-center gap-2 md:gap-3 select-none" style={{ margin: 0 }}>
-    <span style={{ display: 'block', fontFamily: '"Sora",sans-serif', fontSize: 'clamp(2rem,5.5vw,4.5rem)', fontWeight: 700, lineHeight: 1.08, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #D4AF37 0%, #f0c060 45%, #00F2FF 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', filter: 'drop-shadow(0 2px 6px rgba(5,5,5,0.9)) drop-shadow(0 6px 24px rgba(5,5,5,0.7))' }}>{t.hero.title1}</span>
-    <span style={{ display: 'block', fontFamily: '"Sora",sans-serif', fontStyle: 'italic', fontSize: 'clamp(2rem,5.5vw,4.5rem)', fontWeight: 700, lineHeight: 1.08, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #00F2FF 0%, #D4AF37 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', filter: 'drop-shadow(0 2px 6px rgba(5,5,5,0.9)) drop-shadow(0 6px 24px rgba(5,5,5,0.7))' }}>{t.hero.title2}</span>
+  // Ivoire + or champagne : un seul accent précieux, lisible sur la vidéo.
+  // (L'ancien dégradé or → cyan sur chaque ligne brouillait la hiérarchie.)
+  <h1 className="flex flex-col items-center select-none" style={{ margin: 0, gap: 'clamp(0.15rem, 0.6vw, 0.5rem)', textWrap: 'balance' as any }}>
+    <span style={{ display: 'block', fontFamily: '"Sora",sans-serif', fontSize: 'clamp(2.1rem,5.6vw,4.75rem)', fontWeight: 600, lineHeight: 1.04, letterSpacing: '-0.035em', color: '#f5efe2', textShadow: '0 2px 10px rgba(5,5,5,0.75), 0 10px 40px rgba(5,5,5,0.55)' }}>{t.hero.title1}</span>
+    <span style={{ display: 'block', fontFamily: '"Sora",sans-serif', fontSize: 'clamp(2.1rem,5.6vw,4.75rem)', fontWeight: 700, lineHeight: 1.04, letterSpacing: '-0.035em', background: 'linear-gradient(100deg, #f7e3a1 0%, #e6c35a 38%, #d4af37 62%, #b8891e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', filter: 'drop-shadow(0 2px 8px rgba(5,5,5,0.85)) drop-shadow(0 10px 32px rgba(5,5,5,0.6))' }}>{t.hero.title2}</span>
   </h1>
 );
 
@@ -273,7 +275,11 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
   const { t, locale } = useI18n();
   const sectionRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [progress, setProgress] = useState(0);
+  // Progression du scrub écrite directement dans le DOM (refs) : un setState
+  // par événement de scroll re-rendait tout le hero ~60 fois par seconde.
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const hintRef = useRef<HTMLButtonElement>(null);
   const [showContent, setShowContent] = useState(false);
   const [metricsReady, setMetricsReady] = useState(false);
   const [reduced, setReduced] = useState(false);
@@ -296,8 +302,10 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
   }, []);
 
   useEffect(() => {
-    if (showContent) { const id = setTimeout(() => setMetricsReady(true), 400); return () => clearTimeout(id); }
-  }, [showContent]);
+    // Mobile / reduced-motion : pas de scrub, le contenu est visible d'emblée —
+    // les compteurs doivent démarrer quand même (ils restaient bloqués à 0).
+    if (showContent || reduced) { const id = setTimeout(() => setMetricsReady(true), 400); return () => clearTimeout(id); }
+  }, [showContent, reduced]);
 
   // Scroll-scrubbing : mappe la progression du scroll sur video.currentTime,
   // lissé (lerp) dans une boucle rAF pour éviter les à-coups de seek.
@@ -317,7 +325,18 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
     const readScroll = () => {
       const dist = section.offsetHeight - window.innerHeight;
       const p = dist > 0 ? Math.min(Math.max((window.scrollY - section.offsetTop) / dist, 0), 1) : 0;
-      setProgress(p);
+      if (overlayRef.current) overlayRef.current.style.background =
+        `linear-gradient(to bottom, rgba(5,5,5,${0.30 + p * 0.2}) 0%, rgba(5,5,5,0.15) 40%, rgba(5,5,5,${0.55 + p * 0.35}) 100%)`;
+      if (titleRef.current) {
+        titleRef.current.style.opacity = String(Math.max(0, 1 - p * 2.2));
+        titleRef.current.style.transform = `translate3d(0, ${p * -80}px, 0)`;
+      }
+      if (hintRef.current) {
+        hintRef.current.style.opacity = String(Math.max(0, 1 - p * 4));
+        hintRef.current.style.pointerEvents = p > 0.25 ? 'none' : 'auto';
+      }
+      // setState seulement au franchissement du seuil (React ignore les
+      // valeurs identiques, sans re-rendu).
       setShowContent(p >= 0.9);
       targetTime = p * (duration - 0.05);
     };
@@ -371,19 +390,16 @@ export default function HeroSection({ avgYield, avgPrice, totalTransactions, onC
     );
   }
 
-  const titleOpacity = Math.max(0, 1 - progress * 2.2);
-  const titleY = progress * -80;
-
   return (
     <div style={{ backgroundColor: '#050505' }}>
-      <section ref={sectionRef} className="relative" style={{ height: '360vh' }}>
+      <section ref={sectionRef} className="relative" style={{ height: '280vh' }}>
         <div className="sticky top-0 w-full h-[100dvh] overflow-hidden">
           <video ref={videoRef} src={SCRUB_VIDEO} muted playsInline preload="auto" poster={BG_IMAGE} aria-hidden="true" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0 pointer-events-none" style={{ background: `linear-gradient(to bottom, rgba(5,5,5,${0.30 + progress * 0.2}) 0%, rgba(5,5,5,0.15) 40%, rgba(5,5,5,${0.55 + progress * 0.35}) 100%)` }} />
-          <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center pointer-events-none" style={{ opacity: titleOpacity, transform: `translateY(${titleY}px)` }}>
+          <div ref={overlayRef} className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to bottom, rgba(5,5,5,0.30) 0%, rgba(5,5,5,0.15) 40%, rgba(5,5,5,0.55) 100%)' }} />
+          <div ref={titleRef} className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center pointer-events-none" style={{ willChange: 'opacity, transform' }}>
             <HeroTitle t={t} />
           </div>
-          <button type="button" onClick={skipToContent} aria-label={t.hero.skipAria} className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2" style={{ opacity: Math.max(0, 1 - progress * 4), background: 'transparent', border: 'none', cursor: 'pointer', pointerEvents: progress > 0.25 ? 'none' : 'auto' }}>
+          <button ref={hintRef} type="button" onClick={skipToContent} aria-label={t.hero.skipAria} className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2" style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
             <span style={{ color: 'rgba(0,242,255,0.75)', fontFamily: '"Manrope",sans-serif', fontSize: '0.68rem', letterSpacing: '0.14em', textTransform: 'uppercase', textShadow: '0 2px 8px rgba(5,5,5,0.9)' }}>{t.hero.scrollHint}</span>
             <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }} style={{ width: 1, height: 28, background: 'linear-gradient(to bottom, rgba(0,242,255,0.7), transparent)' }} />
           </button>

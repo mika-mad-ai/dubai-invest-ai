@@ -140,14 +140,17 @@ export const Map3DButton: React.FC<{ subject: MapSubject; compact?: boolean }> =
         onClick={e => { e.stopPropagation(); setOpen(true); }}
         className="inline-flex items-center gap-1.5 transition-colors"
         style={{
-          fontFamily: sans, fontSize: compact ? '0.62rem' : '0.68rem', fontWeight: 700,
-          color: '#D4AF37', background: 'rgba(212,175,55,0.08)',
-          border: '1px solid rgba(212,175,55,0.28)', borderRadius: 999,
-          padding: compact ? '3px 9px' : '5px 11px', cursor: 'pointer',
+          // Bouton plein, lisible sur photo : c'est l'entrée de la carte 3D,
+          // il doit se voir (l'ancien contour doré se perdait sur les images).
+          fontFamily: sans, fontSize: compact ? '0.7rem' : '0.74rem', fontWeight: 800,
+          color: '#0a0d16', background: 'linear-gradient(135deg, #f0d27a 0%, #D4AF37 60%, #b8891e 100%)',
+          border: '1px solid rgba(255,236,170,0.55)', borderRadius: 999,
+          boxShadow: '0 4px 18px rgba(212,175,55,0.35), 0 1px 0 rgba(255,255,255,0.35) inset',
+          padding: compact ? '6px 12px' : '7px 14px', cursor: 'pointer', letterSpacing: '0.01em',
         }}
         aria-haspopup="dialog"
       >
-        <Box size={compact ? 11 : 13} />
+        <Box size={compact ? 13 : 14} strokeWidth={2.4} />
         Carte 3D
       </button>
       <AnimatePresence>{open && <Map3DDialog subject={subject} onClose={close} />}</AnimatePresence>
