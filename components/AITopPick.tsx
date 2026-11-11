@@ -84,11 +84,11 @@ export function scoreProperty(p: Property, profile: UserProfile): number {
   return Math.round(totalScore / totalWeight);
 }
 
-function matchPercent(score: number): number {
+export function matchPercent(score: number): number {
   return Math.max(35, Math.min(score, 95));
 }
 
-function buildRationale(p: Property, profile: UserProfile, money: (n: number) => string, tp: Dict['topPick']): string[] {
+export function buildRationale(p: Property, profile: UserProfile, money: (n: number) => string, tp: Dict['topPick']): string[] {
   const reasons: string[] = [];
   const budget = parseFloat(profile.totalBudget) || 400_000;
   if (p.price <= budget) reasons.push(fmt(tp.rInBudget, { price: money(p.price) }));

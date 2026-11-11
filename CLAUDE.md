@@ -118,6 +118,24 @@
 - `components/PropertyCard.tsx`
   - Carte annonce + lien source
 
+- `components/hub/` — **interface de résultats** (remplace les 6 sections empilées)
+  - `ResultsHub.tsx` : scène plein écran. La carte 3D est le décor ; panneau
+    d'analyses à gauche, conseiller à droite, un seul bien listé en bas (le
+    mieux classé, `scoreProperty`), qui « sort » de la carte à la fin du vol
+  - `HubMap.tsx` : carte MapLibre persistante (jamais recréée). Signale le
+    niveau courant, la scène du bien (position, immeuble, vues) et l'arrivée
+  - `zoomLevels.ts` : logique pure — seuils de zoom → niveau (ville 0, quartier
+    11,8, immeuble 14,8, appartement 16,9), poses de caméra, quartiers DLD
+    affichés, anti-chevauchement. Testé par `scripts/verify-hub.mjs`
+  - Répartition des analyses : Ville = marché / projection / fiscalité ;
+    Quartier = prix DLD / location ; Immeuble = tour et vues ; Appartement =
+    le bien / trésorerie / frais
+  - Pièges : MapLibre écrit une opacité en ligne sur ses marqueurs (`!important`
+    pour les masquer) ; `setBearing` de l'orbite coupe un `flyTo` en cours
+    (`flyingRef`) ; l'immeuble doré ne se cherche qu'au repos, zoom ≥ 14,6
+  - Banc visuel : `node scripts/visual/hub-harness.cjs <sortie> [desktop|wide|mobile|reduced]`
+    (tuiles synthétiques, API simulées, aucun appel payant)
+
 - `components/MatchedListings.tsx`
   - Sélection du conseiller avec verdict prix DLD et score d'adéquation
 

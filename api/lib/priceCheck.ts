@@ -14,7 +14,7 @@
 import { resolveBenchmark, bedroomFactor, DLD_BENCHMARK_AS_OF } from './dldBenchmarks';
 
 /** 1 EUR ≈ 4,24 AED — aligné sur listingsCollector. */
-const EUR_TO_AED = 4.24;
+export const EUR_TO_AED = 4.24;
 const SQM_TO_SQFT = 10.7639;
 
 export type PriceVerdictCode =
