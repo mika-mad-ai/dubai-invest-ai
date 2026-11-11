@@ -7,7 +7,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 // se charge (« Worker failed to load »). `?url` fait émettre le worker comme
 // asset, chargé seulement à l'ouverture de la carte.
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
-import { dubaiMidnightStyle } from './dubaiMidnightStyle';
+import { buildingsFilterWithout, dubaiMidnightStyle } from './dubaiMidnightStyle';
 import { resolveCoords, type ResolvedPoint } from './geocode';
 import {
   estimateViews,
@@ -186,7 +186,7 @@ const Property3DMap: React.FC<{ subject: MapSubject }> = ({ subject }) => {
           const polyCount = (g: GeoJSON.Geometry) =>
             g.type === 'MultiPolygon' ? g.coordinates.length : g.type === 'Polygon' ? 1 : 0;
           if (idIsUniqueTo(feats, parts) && polyCount(geometry as GeoJSON.Geometry) === polys.length) {
-            map.setFilter('buildings-3d', ['!=', ['id'], f.id as number]);
+            map.setFilter('buildings-3d', buildingsFilterWithout(f.id as number));
           }
           // « Rayon X » : le bâti voisin s'efface à moitié pour que la tour
           // dorée reste visible même derrière plus haut qu'elle.

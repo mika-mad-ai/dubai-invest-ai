@@ -959,6 +959,13 @@ const HUB_CSS = `
 .hub-sheet .hub-photo { flex-basis: 92px; height: 92px; }
 .hub-sheet .hub-card-main h3 { font-size: 0.9rem; }
 
+/* La fenêtre de chat devient la carte : la scène est d'abord découpée à la
+   forme du chat, puis s'ouvre jusqu'aux bords de l'écran pendant que le voile
+   (la couleur du chat) se dissipe. */
+.hub-morph { position: relative; animation: hub-morph 1.3s cubic-bezier(0.7,0,0.2,1) both; }
+.hub-morph::after { content: ''; position: absolute; inset: 0; z-index: 30; pointer-events: none; background: #090e1c; animation: hub-veil 1s ease 0.15s both; }
+@keyframes hub-morph { from { clip-path: inset(var(--mt) var(--mr) var(--mb) var(--ml) round 28px); } to { clip-path: inset(0 0 0 0 round 0px); } }
+@keyframes hub-veil { from { opacity: 1; } to { opacity: 0; } }
 @keyframes hub-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes hub-fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes hub-shine { to { background-position: -200% 0; } }
@@ -967,6 +974,8 @@ const HUB_CSS = `
 @media (prefers-reduced-motion: reduce) {
   .hub-card, .hub-stem, .hub-free { transition: none; }
   .hub-panel, .hub-dock, .hub-body, .hub-core span, .hub-radar::after, .hub-skel { animation: none; }
+  .hub-morph { animation: none; }
+  .hub-morph::after { display: none; }
 }
 `;
 
