@@ -26,10 +26,26 @@ const ResultsSkeleton: React.FC = () => (
   <div className="animate-pulse" style={{ height: '100dvh', minHeight: 640, background: '#0a1020' }} aria-busy="true" aria-label="Chargement de votre analyse" />
 );
 
+/**
+ * Mode démonstration (`?demo=carte`) : ouvre directement l'interface carte
+ * avec un profil et trois biens fictifs, sans questionnaire. Aucun appel au
+ * conseiller ni au CRM — sert à vérifier le rendu réel de la carte sans coût.
+ */
+const DEMO_MAP = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === 'carte';
+const DEMO_PROFILE: UserProfile = {
+  name: 'Démonstration', email: '', totalBudget: '900000', initialInvestment: '300000', monthlyContribution: '1500',
+  duration: '10', propertyStatus: 'ready', riskLevel: 3, roiDelay: '0', objective: 'rental_income',
+};
+const DEMO_LISTINGS: Property[] = [
+  { id: 'demo-1', title: 'Démo · 2 ch. au pied du Burj Khalifa', location: 'Downtown Dubai, Dubai', price: 820000, yield: 6.2, type: 'Apartment', image: '/hero-poster.jpg', beds: 2, baths: 2, sqm: 118, completion: 'Ready', lat: 25.1972, lng: 55.2744, liquidity: 'High', source: 'internal' },
+  { id: 'demo-2', title: 'Démo · 1 ch. Cayan Tower, Dubai Marina', location: 'Dubai Marina, Dubai', price: 430000, yield: 6.9, type: 'Apartment', image: '/hero-poster.jpg', beds: 1, baths: 1, sqm: 82, completion: 'Ready', lat: 25.0868, lng: 55.1451, liquidity: 'High', source: 'internal' },
+  { id: 'demo-3', title: 'Démo · Studio, Arjan', location: 'Arjan, Dubai', price: 150000, yield: 7.8, type: 'Apartment', image: '/hero-poster.jpg', beds: 0, baths: 1, sqm: 39, completion: 'Ready', liquidity: 'Medium', source: 'internal' },
+];
+
 function App() {
   const { t, locale, money } = useI18n();
-  const [hasProfile, setHasProfile] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [hasProfile, setHasProfile] = useState(DEMO_MAP);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(DEMO_MAP ? DEMO_PROFILE : null);
   // Conseiller IA choisi (AgentsSection) — spécialise le questionnaire et
   // fait apparaître l'avatar compagnon sur le bord de l'écran
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
@@ -46,7 +62,7 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLeadProperty, setSelectedLeadProperty] = useState<Property | null>(null);
 
-  const [properties, setProperties] = useState<Property[]>([]);
+  const [properties, setProperties] = useState<Property[]>(DEMO_MAP ? DEMO_LISTINGS : []);
   const [propertiesLoading, setPropertiesLoading] = useState(false);
   const [propertiesStatus, setPropertiesStatus] = useState<string>('');
 
@@ -317,7 +333,7 @@ function App() {
   };
 
   useEffect(() => {
-    if (!hasProfile || !userProfile) return;
+    if (!hasProfile || !userProfile || DEMO_MAP) return;
     let cancelled = false;
 
     const budget = parseFloat(userProfile.totalBudget) || 0;
