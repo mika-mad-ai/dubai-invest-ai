@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { DistrictData } from '../types';
 import { MapPinIcon, TrendingUpIcon, CheckIcon } from './Icons';
 
