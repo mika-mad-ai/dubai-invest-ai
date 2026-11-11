@@ -74,39 +74,35 @@ const shot = async (page, name) => {
   await page.goto(BASE, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(2500);
 
-  // Parcours questionnaire : on clique la 1re option jusqu'au formulaire final.
-  await page.evaluate(() => document.getElementById('decision-tree')?.scrollIntoView());
-  for (let i = 0; i < 30; i++) {
-    const form = page.locator('#decision-tree form');
-    if (await form.count() && await form.first().isVisible()) break;
-    // option de l'étape la plus basse dans la page = étape courante
-    const target = await page.evaluate(() => {
-      const bs = [...document.querySelectorAll('#decision-tree button:not([disabled])')]
-        .filter(b => b.offsetParent && (b.innerText || '').trim().length > 2 && !/retour|back|précédent|modifier/i.test(b.innerText));
-      if (!bs.length) return null;
-      const withY = bs.map(b => { const r = b.getBoundingClientRect(); return { b, y: r.top + window.scrollY, x: r.left }; });
-      const maxY = Math.max(...withY.map(o => o.y));
-      const row = withY.filter(o => o.y > maxY - 60).sort((a, c) => a.x - c.x);
-      document.querySelectorAll('[data-h]').forEach(e => e.removeAttribute('data-h'));
-      row[0].b.setAttribute('data-h', '1');
-      return true;
-    });
-    if (!target) break;
-    await page.locator('[data-h="1"]').scrollIntoViewIfNeeded();
-    await page.locator('[data-h="1"]').click({ timeout: 4000 }).catch(() => {});
-    await page.waitForTimeout(900);
+  // Parcours d'accueil : le chat de qualification, puis sa transformation en carte.
+  await page.evaluate(() => document.getElementById('concierge')?.scrollIntoView());
+  await page.waitForTimeout(700);
+  await shot(page, 'a1-chat-accueil');
+  // 1re question au clavier (rapprochement local), les suivantes au clic.
+  await page.locator('.cc-input input').fill('je veux investir pour louer');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(900);
+  await shot(page, 'a2-chat-conseiller');
+  // une réponse incomprise, puis un budget tapé en chiffres
+  await page.locator('.cc-opt').first().click(); await page.waitForTimeout(800);
+  await page.locator('.cc-input input').fill('blabla'); await page.keyboard.press('Enter'); await page.waitForTimeout(500);
+  await page.locator('.cc-input input').fill('environ 650k'); await page.keyboard.press('Enter'); await page.waitForTimeout(900);
+  await shot(page, 'a3-chat-budget');
+  for (let i = 0; i < 12; i++) {
+    if (await page.locator('.cc-contact').count()) break;
+    await page.locator('.cc-opt').first().click();
+    await page.waitForTimeout(160);
+    if (i === 0) await shot(page, 'a4-chat-glissement');
+    await page.waitForTimeout(700);
   }
-  const inputs = page.locator('#decision-tree form input:not([type=range]):not([type=checkbox])');
-  for (let k = 0; k < await inputs.count(); k++) {
-    const el = inputs.nth(k);
-    const type = await el.getAttribute('type');
-    await el.fill(type === 'email' ? 'test@example.invalid' : type === 'tel' ? '+33600000000' : 'Test Fixture');
-  }
-  const boxes = page.locator('#decision-tree form input[type=checkbox]');
-  for (let k = 0; k < await boxes.count(); k++) await boxes.nth(k).check().catch(() => {});
-  await page.locator('#decision-tree form [type=submit]').click({ timeout: 8000 });
-  await page.waitForTimeout(3000);
-
+  log.push('fil: ' + (await page.locator('.cc-log').innerText()).replace(/\s+/g, ' ').slice(0, 700));
+  await page.locator('.cc-fields input[type=text]').fill('Test Fixture');
+  await page.locator('.cc-fields input[type=email]').fill('test@example.invalid');
+  await shot(page, 'a5-chat-coordonnees');
+  await page.locator('.cc-go').click();
+  await page.waitForTimeout(250); await shot(page, 'a6-morph-1');
+  await page.waitForTimeout(350); await shot(page, 'a7-morph-2');
+  await page.waitForTimeout(450); await shot(page, 'a8-morph-3');
 
   await page.locator('.hub-stage').waitFor({ timeout: 20000 });
   const state = async label => {

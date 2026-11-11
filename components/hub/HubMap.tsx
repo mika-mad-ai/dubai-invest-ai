@@ -3,7 +3,7 @@ import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 // Voir Property3DMap : le worker doit être émis comme asset, sinon aucune tuile.
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
-import { dubaiMidnightStyle } from '../map3d/dubaiMidnightStyle';
+import { BUILDINGS_3D_FILTER, buildingsFilterWithout, dubaiMidnightStyle } from '../map3d/dubaiMidnightStyle';
 import { resolveCoords, type ResolvedPoint } from '../map3d/geocode';
 import {
   estimateViews,
@@ -444,7 +444,7 @@ const HubMap = forwardRef<HubMapHandle, Props>(function HubMap(props, ref) {
         const h = Number(f.properties?.render_height) || 24;
         const polyCount = (g: GeoJSON.Geometry) => (g.type === 'MultiPolygon' ? g.coordinates.length : g.type === 'Polygon' ? 1 : 0);
         if (idIsUniqueTo(feats, parts) && polyCount(geometry as GeoJSON.Geometry) === polys.length) {
-          map.setFilter('buildings-3d', ['!=', ['id'], f.id as number]);
+          map.setFilter('buildings-3d', buildingsFilterWithout(f.id as number));
         }
         map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity-transition', { duration: reduced ? 0 : 900 });
         map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.55);
@@ -514,7 +514,7 @@ const HubMap = forwardRef<HubMapHandle, Props>(function HubMap(props, ref) {
           if (map.getSource(id)) map.removeSource(id);
         }
         if (map.getLayer('buildings-3d')) {
-          map.setFilter('buildings-3d', null);
+          map.setFilter('buildings-3d', BUILDINGS_3D_FILTER);
           map.setPaintProperty('buildings-3d', 'fill-extrusion-opacity', 0.88);
         }
       } catch {

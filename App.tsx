@@ -5,13 +5,10 @@ import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, lazy, Sus
 // d'accueil ne télécharge et n'exécute plus leur code.
 import { UserProfile, Message, Role, ChartDataPoint, SimulationParams, CashflowDataPoint, Property } from './types';
 import { streamAdvisor, captureLead, type AgentMeta, type MatchedListing, type WireMessage } from './services/agentService';
-import DecisionTree from './components/DecisionTree';
+import ConciergeChat, { type MorphRect } from './components/qualification/ConciergeChat';
 import LeadModal from './components/LeadModal';
 import SmartNavbar from './components/SmartNavbar';
 import HeroSection from './components/HeroSection';
-import AgentsSection from './components/AgentsSection';
-import AgentCompanion from './components/AgentCompanion';
-import CurtainReveal from './components/CurtainReveal';
 import { scoreProperty } from './components/AITopPick';
 const ResultsHub = lazy(() => import('./components/hub/ResultsHub'));
 import Footer from './components/Footer';
@@ -49,7 +46,9 @@ function App() {
   // Conseiller IA choisi (AgentsSection) — spécialise le questionnaire et
   // fait apparaître l'avatar compagnon sur le bord de l'écran
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
-  const [treeStep, setTreeStep] = useState(0);
+  // Rectangle (en px, repère fenêtre) de la fenêtre de chat au moment où le
+  // dossier est validé : la carte se déploie à partir de lui.
+  const [morphFrom, setMorphFrom] = useState<MorphRect | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [groundingSources, setGroundingSources] = useState<any[]>([]);
@@ -110,10 +109,11 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    if (hasProfile) {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+  useLayoutEffect(() => {
+    // L'accueil disparaît quand la carte prend le relais : on recale la page
+    // en haut sans défilement, pour que la carte se déploie exactement là où
+    // était la fenêtre de chat.
+    if (hasProfile) window.scrollTo(0, 0);
   }, [hasProfile]);
 
   // ── SEO/GEO : inject fresh meta + FAQ schema from daily AI optimizer ────────
@@ -304,7 +304,8 @@ function App() {
     setIsChatLoading(false);
   };
 
-  const handleProfileSubmit = async (profile: UserProfile) => {
+  const handleProfileSubmit = async (profile: UserProfile, from: MorphRect | null = null) => {
+    setMorphFrom(from);
     gtm.funnelComplete(profile);
     const withAdvisor: UserProfile = { ...profile, advisorId: selectedAgentId ?? profile.advisorId };
     setUserProfile(withAdvisor);
@@ -375,7 +376,7 @@ function App() {
         message={isChatLoading ? t.nav.aiAnalyzing : fmt(t.nav.aiReady, { name: userProfile?.name?.split(' ')[0] || '' })}
         isStreaming={isChatLoading}
         hasProfile={hasProfile}
-        onReset={() => { setHasProfile(false); setUserProfile(null); setMessages([]); setSelectedAgentId(null); setTreeStep(0); }}
+        onReset={() => { setHasProfile(false); setUserProfile(null); setMessages([]); setSelectedAgentId(null); setMorphFrom(null); }}
         exchangeRate={simParams.exchangeRate}
       />
 
@@ -386,33 +387,20 @@ function App() {
             avgYield={7.4}
             avgPrice={1_850_000}
             totalTransactions={14320}
-            onCTAClick={() => document.getElementById('agents')?.scrollIntoView({ behavior: 'smooth' })}
+            onCTAClick={() => document.getElementById('concierge')?.scrollIntoView({ behavior: 'smooth' })}
           />
-          {/* Partie centrale : 3 conseillers IA — révélée en rideau */}
-          <div id="agents">
-            <CurtainReveal>
-              <AgentsSection
-                onConsult={(id) => {
-                  setSelectedAgentId(id);
-                  setTreeStep(0);
-                  // léger délai : laisse l'avatar compagnon démarrer sa glissade avant le scroll
-                  setTimeout(() => document.getElementById('decision-tree')?.scrollIntoView({ behavior: 'smooth' }), 120);
-                }}
-              />
-            </CurtainReveal>
-          </div>
-          {/* Questionnaire — révélé en rideau ; remonté quand on change de conseiller */}
-          <CurtainReveal>
-            <div id="decision-tree" className="relative w-full flex flex-col items-center justify-start pt-16 pb-6 md:pb-10 px-4" style={{ background: '#050505' }}>
-              <DecisionTree
-                key={selectedAgentId ?? 'generic'}
-                agentId={selectedAgentId}
-                onStepChange={setTreeStep}
-                onSubmit={handleProfileSubmit}
-                isLoading={isChatLoading}
-              />
-            </div>
-          </CurtainReveal>
+          {/* Après l'introduction : la qualification en conversation. Une
+              fois le dossier complet, cette fenêtre devient la carte. */}
+          <ConciergeChat
+            onSubmit={handleProfileSubmit}
+            onAgent={id => {
+              setSelectedAgentId(id);
+              // Le visiteur a commencé : on précharge la carte pour que la
+              // transformation du chat soit immédiate au moment venu.
+              void import('./components/hub/ResultsHub');
+              void import('./components/hub/HubMap');
+            }}
+          />
         </>
       )}
 
@@ -420,6 +408,15 @@ function App() {
         <Suspense fallback={<ResultsSkeleton />}>
           {/* Une seule interface : la carte 3D porte les analyses par niveau
               de zoom, le bien le mieux classé sort de la carte. */}
+          <div
+            className={morphFrom ? 'hub-morph' : undefined}
+            style={morphFrom ? ({
+              '--mt': `${Math.max(0, morphFrom.top)}px`,
+              '--ml': `${Math.max(0, morphFrom.left)}px`,
+              '--mr': `${Math.max(0, window.innerWidth - morphFrom.left - morphFrom.width)}px`,
+              '--mb': `${Math.max(0, window.innerHeight - morphFrom.top - morphFrom.height)}px`,
+            } as React.CSSProperties) : undefined}
+          >
           <ResultsHub
             profile={userProfile}
             ranked={rankedProperties}
@@ -439,6 +436,7 @@ function App() {
             matchedListings={matchedListings}
             advisorMeta={advisorMeta}
           />
+          </div>
         </Suspense>
       )}
 
@@ -446,13 +444,6 @@ function App() {
 
       {/* Avatar compagnon — glisse sur le bord de l'écran dès qu'un conseiller
           est choisi et reste présent pendant tout le parcours */}
-      {selectedAgentId && !hasProfile && (
-        <AgentCompanion
-          agentId={selectedAgentId}
-          phase="tree"
-          step={treeStep}
-        />
-      )}
       </div>
       <Footer />
     </div>

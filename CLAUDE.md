@@ -118,6 +118,23 @@
 - `components/PropertyCard.tsx`
   - Carte annonce + lien source
 
+- `components/qualification/` — **chat d'accueil** (remplace AgentsSection + DecisionTree dans le parcours)
+  - `ConciergeChat.tsx` : la qualification en conversation. 1re question = le
+    projet, qui désigne le conseiller (locatif / résidence / location) ; puis
+    son parcours ; puis nom + e-mail + consentement. Réponses en un clic (elles
+    glissent de côté à chaque question) ou au clavier
+  - `answerMatch.ts` : rapproche une réponse tapée d'une option **sans appel à
+    un modèle** (numéro, montant dans une tranche, mots en commun) ; si rien de
+    fiable, le chat redemande. Testé par `scripts/verify-concierge.mjs`
+  - `steps.ts` : les questions (parcours générique + un par conseiller),
+    partagées avec `DecisionTree` (conservé mais plus affiché)
+  - Transformation chat → carte : `App` mémorise le rectangle de la fenêtre de
+    chat (`morphFrom`) ; la scène `ResultsHub` démarre découpée à cette forme
+    (`.hub-morph`, clip-path) et s'ouvre en plein écran. `ResultsHub` et
+    `HubMap` sont préchargés dès la première réponse
+  - `?demo=carte` ouvre la carte directement avec un profil et trois biens
+    fictifs, sans aucun appel payant (vérification du rendu réel)
+
 - `components/hub/` — **interface de résultats** (remplace les 6 sections empilées)
   - `ResultsHub.tsx` : scène plein écran. La carte 3D est le décor ; panneau
     d'analyses à gauche, conseiller à droite, un seul bien listé en bas (le
