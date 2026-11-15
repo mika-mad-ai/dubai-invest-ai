@@ -64,6 +64,24 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent }) => {
   const [sending, setSending] = useState(false);
   const started = useRef(false);
 
+  // Introduction : le titre plein écran sur la vidéo de Dubaï, puis il monte
+  // et le chat prend sa place. Automatique ; un clic ou une touche l'abrège.
+  const [intro, setIntro] = useState(
+    () => typeof window !== 'undefined' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+  useEffect(() => {
+    if (!intro) return;
+    const end = () => setIntro(false);
+    const timer = window.setTimeout(end, 2300);
+    window.addEventListener('pointerdown', end, { once: true });
+    window.addEventListener('keydown', end, { once: true });
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('pointerdown', end);
+      window.removeEventListener('keydown', end);
+    };
+  }, [intro]);
+
   const agent = AGENTS.find(a => a.id === agentId) ?? null;
   const steps: TreeStep[] = agentId ? AGENT_TREES[agentId] ?? [] : [];
   const stepIndex = answers.length; // nombre de questions du conseiller déjà répondues
@@ -182,9 +200,25 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent }) => {
   const railKey = !agentId ? 'project' : step ? step.id : 'contact';
 
   return (
-    <section id="concierge" className="cc-stage" aria-label="Votre conseiller IA">
+    <section id="concierge" className={`cc-stage ${intro ? 'intro' : 'ready'}`} aria-label="Votre conseiller IA">
+      <video className="cc-video" src="/hero-video.mp4" poster="/hero-poster.jpg" autoPlay muted loop playsInline preload="metadata" aria-hidden="true" />
+      <div className="cc-shade" aria-hidden />
       <div className="cc-glow" aria-hidden />
-      <p className="cc-eyebrow">Votre conseiller IA · {total} questions, puis votre carte de Dubaï</p>
+
+      <div className="cc-hero">
+        <p className="cc-eyebrow">{t.hero.badge}</p>
+        <h1>
+          <span>{t.hero.title1}</span> <em>{t.hero.title2}</em>
+        </h1>
+        <ul className="cc-proof" aria-label="En bref">
+          {t.hero.subtitle
+            .split(' · ')
+            .slice(0, 3)
+            .map(x => (
+              <li key={x}>{x}</li>
+            ))}
+        </ul>
+      </div>
 
       <div ref={cardRef} className={`cc-card ${sending ? 'sending' : ''}`}>
         <header className="cc-head">
@@ -309,18 +343,32 @@ const display = '"Sora",sans-serif';
 const IVORY = '#f0ebe0';
 
 const CSS = `
-.cc-stage { position: relative; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 92px 16px 28px; background: #050810; color: ${IVORY}; font-family: ${sans}; overflow: hidden; isolation: isolate; }
-.cc-glow { position: absolute; inset: 0; z-index: -1; pointer-events: none;
+.cc-stage { position: relative; height: 100dvh; min-height: 620px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 84px 16px 18px; background: #050810; color: ${IVORY}; font-family: ${sans}; overflow: hidden; isolation: isolate; }
+.cc-video { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; animation: cc-drift 28s ease-in-out infinite alternate; }
+/* Voile : léger pendant l'introduction (on regarde Dubaï), dense ensuite (on lit le chat). */
+.cc-shade { position: absolute; inset: 0; z-index: -2; pointer-events: none; transition: opacity 1.1s ease;
+  background: linear-gradient(to bottom, rgba(5,8,16,0.82) 0, rgba(5,8,16,0.5) 22%, rgba(5,8,16,0.72) 60%, rgba(5,8,16,0.96) 100%); opacity: 1; }
+.cc-stage.intro .cc-shade { opacity: 0.55; }
+.cc-glow { position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0.6;
   background:
-    radial-gradient(ellipse 60% 45% at 50% 42%, rgba(26,43,85,0.75), transparent 70%),
-    radial-gradient(ellipse 40% 30% at 50% 100%, rgba(212,175,55,0.12), transparent 70%),
-    linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px) 0 0 / 100% 56px,
-    linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px) 0 0 / 56px 100%; }
-.cc-eyebrow { margin: 0; font: 800 0.64rem ${sans}; letter-spacing: 0.16em; text-transform: uppercase; color: ${GOLD}; text-align: center; }
+    radial-gradient(ellipse 40% 30% at 50% 100%, rgba(212,175,55,0.14), transparent 70%),
+    linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px) 0 0 / 100% 56px,
+    linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px) 0 0 / 56px 100%; }
 
-.cc-card { position: relative; display: flex; flex-direction: column; width: min(940px, 100%); height: min(760px, calc(100dvh - 150px)); min-height: 520px; border-radius: 28px; background: rgba(9,14,28,0.9); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 40px 120px rgba(0,0,0,0.65), 0 0 0 1px rgba(212,175,55,0.07); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); overflow: hidden; transition: opacity 0.35s ease; }
+/* Titre : plein écran pendant l'introduction, puis en bandeau au-dessus du chat. */
+.cc-hero { --s: 1.55; flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: min(940px, 100%); text-align: center; transform-origin: 50% 0; transition: transform 1.05s cubic-bezier(0.7,0,0.2,1); }
+.cc-stage.intro .cc-hero { transform: translateY(26dvh) scale(var(--s)); }
+.cc-eyebrow { margin: 0; font: 800 0.6rem ${sans}; letter-spacing: 0.16em; text-transform: uppercase; color: ${GOLD}; text-shadow: 0 1px 10px rgba(5,8,16,0.9); }
+.cc-hero h1 { margin: 0; font: 600 clamp(1.3rem, 2.5vw, 2.05rem)/1.15 ${display}; letter-spacing: -0.025em; color: #f5efe0; text-wrap: balance; text-shadow: 0 2px 24px rgba(5,8,16,0.85); }
+.cc-hero h1 em { font-style: normal; font-weight: 700; background: linear-gradient(120deg, #f6e7b0, ${GOLD} 55%, #b8902a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cc-proof { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 2px 0 0; padding: 0; list-style: none; transition: opacity 0.6s ease 0.5s; }
+.cc-proof li { padding: 4px 11px; border-radius: 999px; font-size: 0.68rem; font-weight: 700; color: rgba(240,235,224,0.86); background: rgba(9,14,28,0.6); border: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.cc-stage.intro .cc-proof { opacity: 0; transition-delay: 0s; }
+
+.cc-card { position: relative; display: flex; flex-direction: column; flex: 0 1 720px; min-height: 0; width: min(940px, 100%); border-radius: 28px; background: rgba(9,14,28,0.9); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 40px 120px rgba(0,0,0,0.65), 0 0 0 1px rgba(212,175,55,0.07); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); overflow: hidden; transition: opacity 0.8s ease 0.35s, transform 1s cubic-bezier(0.16,1,0.3,1) 0.3s; }
+.cc-stage.intro .cc-card { opacity: 0; transform: translateY(70px) scale(0.96); pointer-events: none; transition-delay: 0s; }
 .cc-card::before { content: ''; position: absolute; top: 0; left: 32px; width: 84px; height: 2px; background: ${GOLD}; border-radius: 2px; }
-.cc-card.sending { opacity: 0.85; pointer-events: none; }
+.cc-card.sending { opacity: 0.85; pointer-events: none; transition: opacity 0.3s ease; }
 
 .cc-head { display: flex; align-items: center; gap: 12px; padding: 18px 24px 14px; border-bottom: 1px solid rgba(255,255,255,0.07); }
 .cc-avatar { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; overflow: hidden; border: 2px solid ${GOLD}; background: linear-gradient(135deg, #1a2b55, #0d1527); display: flex; align-items: center; justify-content: center; }
@@ -374,8 +422,12 @@ const CSS = `
 .cc-go:disabled { opacity: 0.7; cursor: default; }
 
 @media (max-width: 720px) {
-  .cc-stage { padding: 72px 8px 12px; gap: 8px; justify-content: flex-start; }
-  .cc-card { height: calc(100dvh - 112px); border-radius: 22px; }
+  .cc-stage { padding: 66px 8px 10px; gap: 8px; }
+  .cc-hero { --s: 1.2; gap: 5px; max-width: 80%; }
+  .cc-hero h1 { font-size: 1.12rem; }
+  .cc-eyebrow { font-size: 0.5rem; letter-spacing: 0.12em; }
+  .cc-proof { display: none; }
+  .cc-card { flex-basis: 100%; border-radius: 22px; }
   .cc-head { padding: 14px 16px 12px; }
   .cc-progress i { width: 10px; }
   .cc-log { padding: 16px 16px 6px; }
@@ -389,9 +441,11 @@ const CSS = `
 @keyframes cc-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes cc-slide-in { from { opacity: 0; transform: translateX(72px); } to { opacity: 1; transform: none; } }
 @keyframes cc-slide-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(-72px); } }
+@keyframes cc-drift { from { transform: scale(1.02); } to { transform: scale(1.1) translateY(-1.5%); } }
 @keyframes cc-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.35); } }
 @media (prefers-reduced-motion: reduce) {
-  .cc-msg, .cc-rail, .cc-rail.out, .cc-contact, .cc-avatar i { animation: none; }
+  .cc-msg, .cc-rail, .cc-rail.out, .cc-contact, .cc-avatar i, .cc-video { animation: none; }
+  .cc-hero, .cc-card, .cc-shade, .cc-proof { transition: none; }
   .cc-opt { transition: none; }
 }
 `;

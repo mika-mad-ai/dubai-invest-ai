@@ -72,11 +72,12 @@ const shot = async (page, name) => {
   });
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(2500);
+  await page.locator('.cc-stage').waitFor({ timeout: 20000 });
 
   // Parcours d'accueil : le chat de qualification, puis sa transformation en carte.
-  await page.evaluate(() => document.getElementById('concierge')?.scrollIntoView());
-  await page.waitForTimeout(700);
+  await page.waitForTimeout(MODE === 'reduced' ? 300 : 900);
+  await shot(page, 'a0-intro');
+  await page.waitForTimeout(MODE === 'reduced' ? 400 : 2900);
   await shot(page, 'a1-chat-accueil');
   // 1re question au clavier (rapprochement local), les suivantes au clic.
   await page.locator('.cc-input input').fill('je veux investir pour louer');

@@ -119,6 +119,11 @@
   - Carte annonce + lien source
 
 - `components/qualification/` — **chat d'accueil** (remplace AgentsSection + DecisionTree dans le parcours)
+  - L'accueil tient sur **un seul écran** (plus de défilement) : `ConciergeChat`
+    porte la vidéo de fond (`/hero-video.mp4`), le titre `<h1>` et une
+    introduction automatique de ~2 s (titre plein écran, puis il monte et le
+    chat apparaît ; un clic ou une touche l'abrège). `HeroSection` est conservé
+    mais n'est plus affiché
   - `ConciergeChat.tsx` : la qualification en conversation. 1re question = le
     projet, qui désigne le conseiller (locatif / résidence / location) ; puis
     son parcours ; puis nom + e-mail + consentement. Réponses en un clic (elles

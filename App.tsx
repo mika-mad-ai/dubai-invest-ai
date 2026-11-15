@@ -8,7 +8,6 @@ import { streamAdvisor, captureLead, type AgentMeta, type MatchedListing, type W
 import ConciergeChat, { type MorphRect } from './components/qualification/ConciergeChat';
 import LeadModal from './components/LeadModal';
 import SmartNavbar from './components/SmartNavbar';
-import HeroSection from './components/HeroSection';
 import { scoreProperty } from './components/AITopPick';
 const ResultsHub = lazy(() => import('./components/hub/ResultsHub'));
 import Footer from './components/Footer';
@@ -383,14 +382,9 @@ function App() {
       <div className="relative">
       {!hasProfile && (
         <>
-          <HeroSection
-            avgYield={7.4}
-            avgPrice={1_850_000}
-            totalTransactions={14320}
-            onCTAClick={() => document.getElementById('concierge')?.scrollIntoView({ behavior: 'smooth' })}
-          />
-          {/* Après l'introduction : la qualification en conversation. Une
-              fois le dossier complet, cette fenêtre devient la carte. */}
+          {/* Un seul écran : courte introduction sur la vidéo de Dubaï, puis
+              la qualification en conversation. Une fois le dossier complet,
+              la fenêtre de chat devient la carte. */}
           <ConciergeChat
             onSubmit={handleProfileSubmit}
             onAgent={id => {
