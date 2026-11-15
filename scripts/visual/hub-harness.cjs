@@ -77,7 +77,19 @@ const shot = async (page, name) => {
   // Parcours d'accueil : le chat de qualification, puis sa transformation en carte.
   await page.waitForTimeout(MODE === 'reduced' ? 300 : 900);
   await shot(page, 'a0-intro');
-  await page.waitForTimeout(MODE === 'reduced' ? 400 : 2900);
+  // Ordinateur : l'introduction est pilotée par le défilement.
+  const scrub = await page.locator('.cc-track.scrub').count();
+  log.push('mode intro: ' + (await page.locator('.cc-track').getAttribute('class')));
+  if (scrub) {
+    const end = await page.evaluate(() => { const t = document.querySelector('.cc-track'); return t.offsetTop + t.offsetHeight - innerHeight; });
+    await page.evaluate(y => window.scrollTo(0, y), Math.round(end * 0.5)); await page.waitForTimeout(1200);
+    await shot(page, 'a0b-intro-mi-course');
+    log.push('mi-course: ' + JSON.stringify(await page.evaluate(() => ({ t: +document.querySelector('.cc-video').currentTime.toFixed(2), intro: document.querySelector('.cc-stage').className }))));
+    await page.evaluate(y => window.scrollTo(0, y), end); await page.waitForTimeout(1800);
+    log.push('fin: ' + JSON.stringify(await page.evaluate(() => ({ t: +document.querySelector('.cc-video').currentTime.toFixed(2), intro: document.querySelector('.cc-stage').className, top: Math.round(document.querySelector('.cc-stage').getBoundingClientRect().top) }))));
+  } else {
+    await page.waitForTimeout(MODE === 'reduced' ? 400 : 2900);
+  }
   await shot(page, 'a1-chat-accueil');
   // 1re question au clavier (rapprochement local), les suivantes au clic.
   await page.locator('.cc-input input').fill('je veux investir pour louer');
