@@ -20,6 +20,8 @@ type Props = {
   onSubmit: (profile: UserProfile, from: MorphRect | null) => void;
   /** Le conseiller choisi (pour le suivi de la conversation côté serveur). */
   onAgent?: (agentId: string) => void;
+  /** Ouvre les guides et mentions légales (le pied de page n'est plus sous l'écran). */
+  onMore?: () => void;
 };
 
 const BASE_PROFILE: UserProfile = {
@@ -48,7 +50,7 @@ type Answer = { stepId: string; label: string; updates: Partial<UserProfile> };
 
 const GOLD = '#D4AF37';
 
-const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent }) => {
+const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
   const { t } = useI18n();
   const cardRef = useRef<HTMLDivElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
@@ -74,6 +76,7 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hintRef = useRef<HTMLButtonElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
+  const loopRef = useRef<HTMLVideoElement>(null);
   const [mode] = useState<'scrub' | 'auto' | 'none'>(() => {
     if (typeof window === 'undefined') return 'none';
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 'none';
@@ -147,6 +150,15 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent }) => {
       window.removeEventListener('resize', read);
     };
   }, [mode]);
+
+  // Une fois l'animation au défilement terminée, la vidéo d'ambiance prend le
+  // relais en boucle, en fondu, derrière le chat.
+  useEffect(() => {
+    const v = loopRef.current;
+    if (!v) return;
+    if (!intro) void v.play().catch(() => undefined);
+    else v.pause();
+  }, [intro]);
 
   const skipIntro = () => {
     const track = trackRef.current;
@@ -274,7 +286,10 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent }) => {
     <div ref={trackRef} className={`cc-track ${mode}`}>
     <section id="concierge" className={`cc-stage ${intro ? 'intro' : 'ready'}`} aria-label="Votre conseiller IA">
       {mode === 'scrub' ? (
-        <video ref={videoRef} className="cc-video" src="/hero-scrub.mp4" poster="/hero-poster.jpg" muted playsInline preload="auto" aria-hidden="true" />
+        <>
+          <video ref={videoRef} className="cc-video" src="/hero-scrub.mp4" poster="/hero-poster.jpg" muted playsInline preload="auto" aria-hidden="true" />
+          <video ref={loopRef} className="cc-video loop drift" src="/hero-video.mp4" muted loop playsInline preload="none" aria-hidden="true" />
+        </>
       ) : (
         <video className="cc-video drift" src="/hero-video.mp4" poster="/hero-poster.jpg" autoPlay muted loop playsInline preload="metadata" aria-hidden="true" />
       )}
@@ -416,6 +431,12 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent }) => {
         )}
       </div>
 
+      {onMore && (
+        <button type="button" className="cc-more" onClick={onMore}>
+          Guides & mentions légales
+        </button>
+      )}
+
       <style>{CSS}</style>
     </section>
     </div>
@@ -432,6 +453,11 @@ const CSS = `
 .cc-track.scrub .cc-stage { position: sticky; top: 0; }
 .cc-stage { position: relative; height: 100dvh; min-height: 620px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 84px 16px 18px; background: #050810; color: ${IVORY}; font-family: ${sans}; overflow: hidden; isolation: isolate; }
 .cc-video { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; }
+.cc-video.loop { opacity: 0; transition: opacity 1.4s ease; }
+.cc-stage.ready .cc-video.loop { opacity: 1; }
+.cc-more { position: absolute; left: 14px; bottom: 6px; z-index: 2; padding: 2px 4px; border: 0; background: transparent; color: rgba(240,235,224,0.5); font: 600 0.58rem ${sans}; letter-spacing: 0.04em; cursor: pointer; transition: opacity 0.5s ease; }
+.cc-more:hover { color: ${GOLD}; }
+.cc-stage.intro .cc-more { opacity: 0; pointer-events: none; }
 .cc-video.drift { animation: cc-drift 28s ease-in-out infinite alternate; }
 .cc-hint { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 6px 10px; border: 0; background: transparent; color: rgba(125,211,232,0.9); font: 700 0.66rem ${sans}; letter-spacing: 0.14em; text-transform: uppercase; text-shadow: 0 2px 8px rgba(5,8,16,0.9); cursor: pointer; }
 .cc-hint i { width: 1px; height: 28px; background: linear-gradient(to bottom, rgba(125,211,232,0.8), transparent); animation: cc-nudge 1.5s ease-in-out infinite; }
@@ -517,6 +543,7 @@ const CSS = `
   .cc-hero h1 { font-size: 1.12rem; }
   .cc-eyebrow { font-size: 0.5rem; letter-spacing: 0.12em; }
   .cc-proof { display: none; }
+  .cc-more { left: 50%; transform: translateX(-50%); bottom: 0; font-size: 0.5rem; }
   .cc-card { flex-basis: 100%; border-radius: 22px; }
   .cc-head { padding: 14px 16px 12px; }
   .cc-progress i { width: 10px; }
@@ -536,7 +563,7 @@ const CSS = `
 @keyframes cc-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.35); } }
 @media (prefers-reduced-motion: reduce) {
   .cc-msg, .cc-rail, .cc-rail.out, .cc-contact, .cc-avatar i, .cc-video.drift, .cc-hint i { animation: none; }
-  .cc-hero, .cc-card, .cc-shade, .cc-proof { transition: none; }
+  .cc-hero, .cc-card, .cc-shade, .cc-proof, .cc-video.loop { transition: none; }
   .cc-opt { transition: none; }
 }
 `;

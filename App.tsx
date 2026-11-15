@@ -48,6 +48,9 @@ function App() {
   // Rectangle (en px, repère fenêtre) de la fenêtre de chat au moment où le
   // dossier est validé : la carte se déploie à partir de lui.
   const [morphFrom, setMorphFrom] = useState<MorphRect | null>(null);
+  // Sur l'accueil, le pied de page n'est plus sous l'écran (la fin du
+  // défilement doit être l'écran du chat) : il s'ouvre dans un volet.
+  const [showFooter, setShowFooter] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [groundingSources, setGroundingSources] = useState<any[]>([]);
@@ -386,6 +389,7 @@ function App() {
               la qualification en conversation. Une fois le dossier complet,
               la fenêtre de chat devient la carte. */}
           <ConciergeChat
+            onMore={() => setShowFooter(true)}
             onSubmit={handleProfileSubmit}
             onAgent={id => {
               setSelectedAgentId(id);
@@ -439,7 +443,29 @@ function App() {
       {/* Avatar compagnon — glisse sur le bord de l'écran dès qu'un conseiller
           est choisi et reste présent pendant tout le parcours */}
       </div>
-      <Footer />
+      {hasProfile ? (
+        <Footer />
+      ) : showFooter ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Guides et mentions légales"
+          onClick={() => setShowFooter(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(5,8,16,0.72)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end' }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ position: 'relative', width: '100%', maxHeight: '86dvh', overflowY: 'auto', borderTop: '1px solid rgba(212,175,55,0.35)', background: '#050505' }}>
+            <button
+              type="button"
+              onClick={() => setShowFooter(false)}
+              aria-label="Fermer"
+              style={{ position: 'sticky', top: 10, float: 'right', margin: '10px 14px 0 0', width: 36, height: 36, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.16)', background: 'rgba(10,16,32,0.9)', color: '#f0ebe0', fontSize: '1rem', cursor: 'pointer', zIndex: 1 }}
+            >
+              ×
+            </button>
+            <Footer />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
