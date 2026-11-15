@@ -64,13 +64,26 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent }) => {
   const [sending, setSending] = useState(false);
   const started = useRef(false);
 
-  // Introduction : le titre plein écran sur la vidéo de Dubaï, puis il monte
-  // et le chat prend sa place. Automatique ; un clic ou une touche l'abrège.
-  const [intro, setIntro] = useState(
-    () => typeof window !== 'undefined' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  );
+  // Introduction. Sur ordinateur, elle est pilotée par le défilement : la
+  // page est une piste de trois hauteurs d'écran dont la scène reste collée en
+  // haut ; faire défiler avance la vidéo image par image, et en fin de course
+  // le titre monte en bandeau pendant que le chat prend sa place. Sur mobile,
+  // écran tactile ou mouvement réduit (le défilement image par image y est
+  // saccadé), elle se joue seule en deux secondes.
+  const trackRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const hintRef = useRef<HTMLButtonElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const [mode] = useState<'scrub' | 'auto' | 'none'>(() => {
+    if (typeof window === 'undefined') return 'none';
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 'none';
+    if (window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768) return 'auto';
+    return 'scrub';
+  });
+  const [intro, setIntro] = useState(mode !== 'none');
+
   useEffect(() => {
-    if (!intro) return;
+    if (mode !== 'auto') return;
     const end = () => setIntro(false);
     const timer = window.setTimeout(end, 2300);
     window.addEventListener('pointerdown', end, { once: true });
@@ -80,7 +93,65 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent }) => {
       window.removeEventListener('pointerdown', end);
       window.removeEventListener('keydown', end);
     };
-  }, [intro]);
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode !== 'scrub') return;
+    const track = trackRef.current;
+    const video = videoRef.current;
+    if (!track || !video) return;
+    let raf = 0;
+    let target = 0;
+    let smooth = 0;
+    let duration = video.duration || 8;
+    const onMeta = () => {
+      duration = video.duration || 8;
+    };
+    video.addEventListener('loadedmetadata', onMeta);
+
+    const read = () => {
+      const dist = track.offsetHeight - window.innerHeight;
+      const p = dist > 0 ? Math.min(Math.max((window.scrollY - track.offsetTop) / dist, 0), 1) : 1;
+      target = p * (duration - 0.05);
+      if (hintRef.current) {
+        hintRef.current.style.opacity = String(Math.max(0, 1 - p * 5));
+        hintRef.current.style.pointerEvents = p > 0.18 ? 'none' : 'auto';
+      }
+      // Une conversation commencée ne se referme pas si l'on remonte la page.
+      const inIntro = p < 0.84 && !started.current;
+      // Le titre s'efface pour laisser voir la vidéo, puis revient en bandeau.
+      if (heroRef.current) heroRef.current.style.opacity = inIntro ? String(Math.max(0, 1 - p * 2.4)) : '1';
+      setIntro(inIntro);
+    };
+    // Lissage : la vidéo rattrape la position visée au lieu d'y sauter.
+    const tick = () => {
+      smooth += (target - smooth) * 0.12;
+      if (Math.abs(target - smooth) < 0.004) smooth = target;
+      if (video.readyState >= 2 && Math.abs(video.currentTime - smooth) > 0.01) {
+        try {
+          video.currentTime = smooth;
+        } catch {
+          /* position pas encore disponible */
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    read();
+    raf = requestAnimationFrame(tick);
+    window.addEventListener('scroll', read, { passive: true });
+    window.addEventListener('resize', read);
+    return () => {
+      cancelAnimationFrame(raf);
+      video.removeEventListener('loadedmetadata', onMeta);
+      window.removeEventListener('scroll', read);
+      window.removeEventListener('resize', read);
+    };
+  }, [mode]);
+
+  const skipIntro = () => {
+    const track = trackRef.current;
+    if (track) window.scrollTo({ top: track.offsetTop + track.offsetHeight - window.innerHeight, behavior: 'smooth' });
+  };
 
   const agent = AGENTS.find(a => a.id === agentId) ?? null;
   const steps: TreeStep[] = agentId ? AGENT_TREES[agentId] ?? [] : [];
@@ -200,12 +271,17 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent }) => {
   const railKey = !agentId ? 'project' : step ? step.id : 'contact';
 
   return (
+    <div ref={trackRef} className={`cc-track ${mode}`}>
     <section id="concierge" className={`cc-stage ${intro ? 'intro' : 'ready'}`} aria-label="Votre conseiller IA">
-      <video className="cc-video" src="/hero-video.mp4" poster="/hero-poster.jpg" autoPlay muted loop playsInline preload="metadata" aria-hidden="true" />
+      {mode === 'scrub' ? (
+        <video ref={videoRef} className="cc-video" src="/hero-scrub.mp4" poster="/hero-poster.jpg" muted playsInline preload="auto" aria-hidden="true" />
+      ) : (
+        <video className="cc-video drift" src="/hero-video.mp4" poster="/hero-poster.jpg" autoPlay muted loop playsInline preload="metadata" aria-hidden="true" />
+      )}
       <div className="cc-shade" aria-hidden />
       <div className="cc-glow" aria-hidden />
 
-      <div className="cc-hero">
+      <div ref={heroRef} className="cc-hero">
         <p className="cc-eyebrow">{t.hero.badge}</p>
         <h1>
           <span>{t.hero.title1}</span> <em>{t.hero.title2}</em>
@@ -220,7 +296,14 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent }) => {
         </ul>
       </div>
 
-      <div ref={cardRef} className={`cc-card ${sending ? 'sending' : ''}`}>
+      {mode === 'scrub' && (
+        <button ref={hintRef} type="button" className="cc-hint" onClick={skipIntro} aria-label={t.hero.skipAria}>
+          <span>{t.hero.scrollHint}</span>
+          <i aria-hidden />
+        </button>
+      )}
+
+      <div ref={cardRef} className={`cc-card ${sending ? 'sending' : ''}`} inert={intro}>
         <header className="cc-head">
           <span className="cc-avatar" style={agent ? { borderColor: agent.accent } : undefined}>
             {agent ? <img src={agent.photo} alt="" /> : <i aria-hidden />}
@@ -335,6 +418,7 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent }) => {
 
       <style>{CSS}</style>
     </section>
+    </div>
   );
 };
 
@@ -343,8 +427,14 @@ const display = '"Sora",sans-serif';
 const IVORY = '#f0ebe0';
 
 const CSS = `
+/* Piste de défilement : la scène y reste collée en haut de l'écran. */
+.cc-track.scrub { height: 300vh; }
+.cc-track.scrub .cc-stage { position: sticky; top: 0; }
 .cc-stage { position: relative; height: 100dvh; min-height: 620px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 84px 16px 18px; background: #050810; color: ${IVORY}; font-family: ${sans}; overflow: hidden; isolation: isolate; }
-.cc-video { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; animation: cc-drift 28s ease-in-out infinite alternate; }
+.cc-video { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; }
+.cc-video.drift { animation: cc-drift 28s ease-in-out infinite alternate; }
+.cc-hint { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 6px 10px; border: 0; background: transparent; color: rgba(125,211,232,0.9); font: 700 0.66rem ${sans}; letter-spacing: 0.14em; text-transform: uppercase; text-shadow: 0 2px 8px rgba(5,8,16,0.9); cursor: pointer; }
+.cc-hint i { width: 1px; height: 28px; background: linear-gradient(to bottom, rgba(125,211,232,0.8), transparent); animation: cc-nudge 1.5s ease-in-out infinite; }
 /* Voile : léger pendant l'introduction (on regarde Dubaï), dense ensuite (on lit le chat). */
 .cc-shade { position: absolute; inset: 0; z-index: -2; pointer-events: none; transition: opacity 1.1s ease;
   background: linear-gradient(to bottom, rgba(5,8,16,0.82) 0, rgba(5,8,16,0.5) 22%, rgba(5,8,16,0.72) 60%, rgba(5,8,16,0.96) 100%); opacity: 1; }
@@ -356,7 +446,7 @@ const CSS = `
     linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px) 0 0 / 56px 100%; }
 
 /* Titre : plein écran pendant l'introduction, puis en bandeau au-dessus du chat. */
-.cc-hero { --s: 1.55; flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: min(940px, 100%); text-align: center; transform-origin: 50% 0; transition: transform 1.05s cubic-bezier(0.7,0,0.2,1); }
+.cc-hero { --s: 1.55; flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: min(940px, 100%); text-align: center; transform-origin: 50% 0; transition: transform 1.05s cubic-bezier(0.7,0,0.2,1), opacity 0.45s ease; }
 .cc-stage.intro .cc-hero { transform: translateY(26dvh) scale(var(--s)); }
 .cc-eyebrow { margin: 0; font: 800 0.6rem ${sans}; letter-spacing: 0.16em; text-transform: uppercase; color: ${GOLD}; text-shadow: 0 1px 10px rgba(5,8,16,0.9); }
 .cc-hero h1 { margin: 0; font: 600 clamp(1.3rem, 2.5vw, 2.05rem)/1.15 ${display}; letter-spacing: -0.025em; color: #f5efe0; text-wrap: balance; text-shadow: 0 2px 24px rgba(5,8,16,0.85); }
@@ -441,10 +531,11 @@ const CSS = `
 @keyframes cc-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes cc-slide-in { from { opacity: 0; transform: translateX(72px); } to { opacity: 1; transform: none; } }
 @keyframes cc-slide-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(-72px); } }
+@keyframes cc-nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
 @keyframes cc-drift { from { transform: scale(1.02); } to { transform: scale(1.1) translateY(-1.5%); } }
 @keyframes cc-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.35); } }
 @media (prefers-reduced-motion: reduce) {
-  .cc-msg, .cc-rail, .cc-rail.out, .cc-contact, .cc-avatar i, .cc-video { animation: none; }
+  .cc-msg, .cc-rail, .cc-rail.out, .cc-contact, .cc-avatar i, .cc-video.drift, .cc-hint i { animation: none; }
   .cc-hero, .cc-card, .cc-shade, .cc-proof { transition: none; }
   .cc-opt { transition: none; }
 }
