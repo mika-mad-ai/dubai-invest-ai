@@ -127,6 +127,10 @@
     boucle et introduction de ~2 s ; `none` (mouvement réduit). Une
     conversation commencée ne se referme pas si l'on remonte. `HeroSection`
     est conservé mais n'est plus affiché
+  - En fin d'animation `scrub`, `/hero-video.mp4` prend le relais en boucle
+    (fondu). Sur l'accueil, **rien ne suit la scène** : le bas de page est
+    l'écran du chat ; le `Footer` s'ouvre dans un volet (« Guides & mentions
+    légales », `showFooter` dans `App`)
   - `ConciergeChat.tsx` : la qualification en conversation. 1re question = le
     projet, qui désigne le conseiller (locatif / résidence / location) ; puis
     son parcours ; puis nom + e-mail + consentement. Réponses en un clic (elles

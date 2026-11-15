@@ -90,7 +90,12 @@ const shot = async (page, name) => {
   } else {
     await page.waitForTimeout(MODE === 'reduced' ? 400 : 2900);
   }
+  // Tout en bas de la page, l'écran du chat doit rester cadré (rien dessous).
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await page.waitForTimeout(1700);
+  log.push('bas de page: ' + JSON.stringify(await page.evaluate(() => { const r = document.querySelector('.cc-stage').getBoundingClientRect(); const l = document.querySelector('.cc-video.loop'); return { top: Math.round(r.top), bottom: Math.round(r.bottom), vh: innerHeight, boucle: l ? { opacity: getComputedStyle(l).opacity, paused: l.paused, t: +l.currentTime.toFixed(2) } : null }; })));
   await shot(page, 'a1-chat-accueil');
+  await page.locator('.cc-more').click(); await page.waitForTimeout(500); await shot(page, 'a1b-guides');
+  await page.locator('[role=dialog] button[aria-label=Fermer]').click(); await page.waitForTimeout(300);
   // 1re question au clavier (rapprochement local), les suivantes au clic.
   await page.locator('.cc-input input').fill('je veux investir pour louer');
   await page.keyboard.press('Enter');
