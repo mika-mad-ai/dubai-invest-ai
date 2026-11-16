@@ -103,3 +103,106 @@ export function matchAnswer(options: MatchableOption[], text: string): AnswerMat
   if (best < 2 && scores.some((s, i) => s > 0 && i !== scores.indexOf(best))) return null;
   return { index: scores.indexOf(best) };
 }
+
+// ── Message libre : comprendre plusieurs informations d'un coup ────────────
+
+export type ProjectId = 'locatif' | 'residence' | 'location';
+
+const PROJECT_CUES: Record<ProjectId, RegExp[]> = {
+  locatif: [
+    /invest/, /rendement/, /rentab/, /placer|placement/, /airbnb/, /cash ?flow/, /plus[- ]value/, /revenus? (locatif|passif|complementaire)/,
+    /(toucher|percevoir|encaisser|generer|recevoir)\b.{0,25}\bloyers?/, /loyers? (mensuel|chaque mois|tous les mois)/, /mettre en location/, /pour (le |la )?louer/,
+  ],
+  residence: [
+    /y vivre|vivre a|vivre la[- ]bas/, /habiter/, /m ?installer|nous installer|s ?installer/, /residence (principale|secondaire)/, /pied[- ]a[- ]terre/,
+    /expatri/, /demenag/, /(ma|notre) famille/, /pour (moi|nous)\b/,
+  ],
+  location: [
+    /louer un|louer une/, /(cherche|trouver|besoin d ?une?) .{0,20}location/, /a louer/, /locataire/, /en location\b/, /loyer (max|maximum)/,
+    /budget .{0,15}(par mois|mensuel)/, /\d\s*(€|euros?|aed)?\s*(par mois|\/ ?mois|mensuel)\b.{0,20}(max|loyer)/,
+  ],
+};
+
+/** Projet décrit par un message libre (investir pour louer, y vivre, louer), ou null si ce n'est pas clair. */
+export function detectProject(text: string): ProjectId | null {
+  const t = norm(text);
+  const score = (id: ProjectId) => PROJECT_CUES[id].filter(re => re.test(t)).length;
+  const scores: Array<[ProjectId, number]> = [
+    ['locatif', score('locatif')],
+    ['residence', score('residence')],
+    ['location', score('location')],
+  ];
+  scores.sort((a, b) => b[1] - a[1]);
+  if (scores[0][1] === 0 || scores[0][1] === scores[1][1]) return null;
+  return scores[0][0];
+}
+
+export type MatchableStep = { id: string; options: MatchableOption[] };
+export type ExtractedAnswer = { stepId: string; index: number; amount?: number };
+
+/**
+ * Tout ce qu'un message libre renseigne parmi les questions restantes.
+ * La question en cours bénéficie du rapprochement complet (numéro, mots de la
+ * description) ; les autres ne sont remplies que sur un indice fort — un
+ * montant plausible pour leurs tranches, ou un mot de leur libellé.
+ */
+export function extractAnswers(steps: MatchableStep[], text: string, currentStepId?: string): ExtractedAnswer[] {
+  const out: ExtractedAnswer[] = [];
+  const taken = new Set<string>();
+  const add = (a: ExtractedAnswer) => {
+    if (taken.has(a.stepId)) return;
+    taken.add(a.stepId);
+    out.push(a);
+  };
+
+  // 1. Montants → la question à tranches pour laquelle ils sont plausibles.
+  const rangeSteps = steps
+    .map(s => ({ s, ranges: s.options.map(o => optionRange(o.label)) }))
+    .filter(x => x.ranges.filter(Boolean).length >= 2);
+  for (const amount of parseAmounts(text)) {
+    let best: { stepId: string; index: number; gap: number } | null = null;
+    for (const { s, ranges } of rangeSteps) {
+      if (taken.has(s.id)) continue;
+      const bounds = ranges.flatMap(r => (r ? [r[0], r[1]] : [])).filter(v => v > 0 && Number.isFinite(v));
+      if (!bounds.length) continue;
+      const lo = Math.min(...bounds);
+      const hi = Math.max(...bounds);
+      if (amount < lo * 0.15 || amount > hi * 20) continue;
+      let index = ranges.findIndex(r => r && amount >= r[0] && amount < r[1]);
+      if (index < 0) index = amount < lo ? ranges.findIndex(Boolean) : ranges.length - 1;
+      // Distance (en ordres de grandeur) au cœur des tranches : départage deux
+      // questions à tranches, par exemple budget d'achat et loyer mensuel.
+      const gap = Math.abs(Math.log10(amount) - Math.log10(Math.sqrt(lo * hi)));
+      if (!best || gap < best.gap) best = { stepId: s.id, index, gap };
+    }
+    if (best) add({ stepId: best.stepId, index: best.index, amount });
+  }
+
+  // 2. La question en cours : rapprochement complet.
+  const current = steps.find(s => s.id === currentStepId);
+  if (current && !taken.has(current.id)) {
+    const hit = matchAnswer(current.options, text);
+    if (hit) add({ stepId: current.id, ...hit });
+  }
+
+  // 3. Les autres questions : un mot du libellé, sans ambiguïté.
+  const words = new Set(tokens(text));
+  for (const s of steps) {
+    if (taken.has(s.id) || s.id === currentStepId) continue;
+    const scores = s.options.map(o => {
+      let n = 0;
+      new Set(tokens(o.label)).forEach(w => {
+        if (words.has(w)) n += 1;
+      });
+      return n;
+    });
+    const top = Math.max(...scores);
+    if (top >= 1 && scores.filter(v => v === top).length === 1 && words.size >= 1) {
+      // Un seul mot commun ne suffit que s'il est distinctif (long).
+      const label = s.options[scores.indexOf(top)].label;
+      const shared = tokens(label).filter(w => words.has(w));
+      if (top >= 2 || shared.some(w => w.length >= 5)) add({ stepId: s.id, index: scores.indexOf(top) });
+    }
+  }
+  return out;
+}

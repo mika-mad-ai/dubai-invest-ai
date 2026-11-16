@@ -5,7 +5,7 @@ import ConsentFields from '../ConsentFields';
 import { gtm } from '../../services/gtm';
 import { useI18n } from '../../i18n';
 import { AGENT_TREES, type StepOption, type TreeStep } from './steps';
-import { matchAnswer } from './answerMatch';
+import { detectProject, extractAnswers, matchAnswer } from './answerMatch';
 
 /**
  * Chat d'accueil : la qualification du visiteur se fait en conversation. Chaque
@@ -17,7 +17,8 @@ import { matchAnswer } from './answerMatch';
 export type MorphRect = { top: number; left: number; width: number; height: number };
 
 type Props = {
-  onSubmit: (profile: UserProfile, from: MorphRect | null) => void;
+  /** `notes` : ce que le visiteur a écrit librement, à transmettre au conseiller. */
+  onSubmit: (profile: UserProfile, from: MorphRect | null, notes: string[]) => void;
   /** Le conseiller choisi (pour le suivi de la conversation côté serveur). */
   onAgent?: (agentId: string) => void;
   /** Ouvre les guides et mentions légales (le pied de page n'est plus sous l'écran). */
@@ -47,6 +48,12 @@ const PROJECT_OPTIONS: Array<{ agentId: string; label: string; desc: string }> =
 ];
 
 type Answer = { stepId: string; label: string; updates: Partial<UserProfile> };
+type Msg = { who: 'ai' | 'me'; text: string };
+/** État de la conversation ; chaque réponse en empile une copie pour « revenir ». */
+type Convo = { agentId: string | null; answers: Answer[]; log: Msg[]; pending: string[]; notes: string[] };
+
+const GREETING = 'Bonjour. Dites-moi votre projet à Dubaï en une phrase, ou choisissez une réponse : je prépare votre analyse.';
+const PROJECT_QUESTION = 'Quel est votre projet ?';
 
 const GOLD = '#D4AF37';
 
@@ -56,12 +63,11 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [agentId, setAgentId] = useState<string | null>(null);
-  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [convo, setConvo] = useState<Convo>({ agentId: null, answers: [], log: [], pending: [], notes: [] });
+  const history = useRef<Convo[]>([]);
+  const { agentId, answers, log } = convo;
   const [leaving, setLeaving] = useState(false);
   const [typed, setTyped] = useState('');
-  /** Réponses libres non reconnues, à afficher dans le fil avec la relance. */
-  const [missed, setMissed] = useState<string[]>([]);
   const [contact, setContact] = useState({ name: '', email: '', partners: false });
   const [sending, setSending] = useState(false);
   const started = useRef(false);
@@ -167,11 +173,12 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
 
   const agent = AGENTS.find(a => a.id === agentId) ?? null;
   const steps: TreeStep[] = agentId ? AGENT_TREES[agentId] ?? [] : [];
-  const stepIndex = answers.length; // nombre de questions du conseiller déjà répondues
-  const step: TreeStep | null = agentId && stepIndex < steps.length ? steps[stepIndex] : null;
-  const atContact = !!agentId && stepIndex >= steps.length;
+  // La question en cours est la première sans réponse : un message libre peut
+  // en avoir renseigné plusieurs d'un coup, dans n'importe quel ordre.
+  const step: TreeStep | null = agentId ? steps.find(s => !answers.some(a => a.stepId === s.id)) ?? null : null;
+  const atContact = !!agentId && !step;
   const total = (steps.length || 5) + 2; // projet + questions + coordonnées
-  const position = agentId ? Math.min(stepIndex + 2, total) : 1;
+  const position = agentId ? Math.min(answers.length + 2, total) : 1;
 
   const options: Array<{ label: string; desc: string; icon?: StepOption['icon'] }> = !agentId
     ? PROJECT_OPTIONS
@@ -179,11 +186,17 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
       ? step.options
       : [];
 
+  const question = !agentId
+    ? { text: log.length ? PROJECT_QUESTION : GREETING, sub: undefined as string | undefined }
+    : step
+      ? { text: step.question, sub: step.sub }
+      : { text: 'Votre dossier est complet. À quel nom et à quelle adresse e-mail dois-je l’ouvrir ? La carte s’affiche juste après.', sub: undefined };
+
   // Le fil reste calé en bas à chaque nouveau message.
   useEffect(() => {
     const el = logRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-  }, [answers.length, agentId, missed.length, atContact]);
+  }, [log.length, agentId, atContact]);
 
   const begin = () => {
     if (started.current) return;
@@ -191,94 +204,122 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
     gtm.funnelStart();
   };
 
-  /** Valide une réponse (clic ou clavier) et fait glisser les options suivantes. */
-  const choose = (index: number, amount?: number) => {
-    if (leaving) return;
-    begin();
+  const introOf = (id: string) => {
+    const a = AGENTS.find(x => x.id === id);
+    return a ? `Je suis ${a.name}, votre conseiller ${a.role.toLowerCase()}. ${a.desc}` : '';
+  };
+
+  const toAnswer = (s: TreeStep, index: number, amount?: number): Answer => {
+    const o = s.options[index];
+    const updates: Partial<UserProfile> = { ...o.updates };
+    // Un montant tapé précisément remplace le milieu de tranche.
+    const exact = amount && s.id === 'budget';
+    if (exact) {
+      updates.totalBudget = String(amount);
+      updates.initialInvestment = String(Math.round(amount * 0.25));
+    }
+    return { stepId: s.id, label: exact ? `${amount.toLocaleString('fr-FR')} €` : o.label, updates };
+  };
+
+  /** Applique un nouvel état en faisant glisser les options (sortie à gauche, entrée à droite). */
+  const commit = (next: Convo) => {
+    history.current.push(convo);
     setLeaving(true);
-    setMissed([]);
     window.setTimeout(() => {
-      if (!agentId) {
-        const p = PROJECT_OPTIONS[index];
-        setAgentId(p.agentId);
-        onAgent?.(p.agentId);
-        gtm.funnelStepComplete('project', 0, p.agentId);
-      } else if (step) {
-        const o = step.options[index];
-        const updates: Partial<UserProfile> = { ...o.updates };
-        // Un montant tapé précisément remplace le milieu de tranche.
-        if (amount && step.id === 'budget') {
-          updates.totalBudget = String(amount);
-          updates.initialInvestment = String(Math.round(amount * 0.25));
-        }
-        setAnswers(prev => [...prev, { stepId: step.id, label: amount && step.id === 'budget' ? `${amount.toLocaleString('fr-FR')} €` : o.label, updates }]);
-        gtm.funnelStepComplete(step.id, stepIndex + 1, o.value);
-      }
+      setConvo(next);
       setLeaving(false);
     }, 260);
   };
 
-  const back = () => {
-    if (leaving || sending) return;
-    setMissed([]);
-    if (answers.length) setAnswers(prev => prev.slice(0, -1));
-    else setAgentId(null);
+  /** Réponse en un clic. */
+  const choose = (index: number) => {
+    if (leaving) return;
+    begin();
+    const base: Msg[] = [...log, { who: 'ai', text: question.text }];
+    if (!agentId) {
+      const p = PROJECT_OPTIONS[index];
+      onAgent?.(p.agentId);
+      gtm.funnelStepComplete('project', 0, p.agentId);
+      // Ce que le visiteur avait écrit avant de choisir son projet est relu
+      // avec les questions de ce conseiller.
+      const tree = AGENT_TREES[p.agentId] ?? [];
+      const found = convo.pending.flatMap(t => extractAnswers(tree, t)).filter((a, i, all) => all.findIndex(x => x.stepId === a.stepId) === i);
+      const filled = found.map(a => toAnswer(tree.find(s => s.id === a.stepId)!, a.index, a.amount));
+      const next: Msg[] = [...base, { who: 'me', text: p.label }, { who: 'ai', text: introOf(p.agentId) }];
+      if (filled.length) next.push({ who: 'ai', text: `J’ai bien noté : ${filled.map(a => a.label).join(' · ')}.` });
+      commit({ ...convo, agentId: p.agentId, answers: filled, log: next, pending: [] });
+    } else if (step) {
+      const a = toAnswer(step, index);
+      gtm.funnelStepComplete(step.id, answers.length + 1, step.options[index].value);
+      commit({ ...convo, answers: [...answers, a], log: [...base, { who: 'me', text: a.label }] });
+    }
   };
 
+  const back = () => {
+    if (leaving || sending) return;
+    const prev = history.current.pop();
+    if (prev) setConvo(prev);
+  };
+
+  /**
+   * Message libre. On y lit tout ce qu'il renseigne (projet, budget, type de
+   * bien…), on saute les questions devenues inutiles, et on garde le texte :
+   * le conseiller le reçoit avec le dossier. Rien n'est jamais refusé.
+   */
   const sendTyped = (e: React.FormEvent) => {
     e.preventDefault();
     const text = typed.trim();
-    if (!text || atContact) return;
+    if (!text || atContact || leaving) return;
     begin();
     setTyped('');
-    const hit = matchAnswer(options, text);
-    if (hit) choose(hit.index, hit.amount);
-    else setMissed(prev => [...prev, text]);
+    const notes = [...convo.notes, text];
+    const base: Msg[] = [...log, { who: 'ai', text: question.text }, { who: 'me', text }];
+
+    let id = agentId;
+    let intro: Msg[] = [];
+    if (!id) {
+      const byOption = matchAnswer(PROJECT_OPTIONS, text);
+      id = byOption ? PROJECT_OPTIONS[byOption.index].agentId : detectProject(text);
+      if (!id) {
+        commit({ ...convo, notes, pending: [...convo.pending, text], log: [...base, { who: 'ai', text: 'C’est noté. Pour vous confier au bon conseiller, il me manque une chose.' }] });
+        return;
+      }
+      onAgent?.(id);
+      gtm.funnelStepComplete('project', 0, id);
+      intro = [{ who: 'ai', text: introOf(id) }];
+    }
+
+    const tree = AGENT_TREES[id] ?? [];
+    const open = tree.filter(s => !answers.some(a => a.stepId === s.id));
+    const sources = agentId ? [text] : [...convo.pending, text];
+    const found = sources
+      .flatMap(t => extractAnswers(open, t, agentId ? step?.id : undefined))
+      .filter((a, i, all) => all.findIndex(x => x.stepId === a.stepId) === i);
+    const filled = found.map(a => toAnswer(tree.find(s => s.id === a.stepId)!, a.index, a.amount));
+    filled.forEach(a => gtm.funnelStepComplete(a.stepId, answers.length + 1, a.label));
+
+    const first = AGENTS.find(a => a.id === id)?.name.split(' ')[0] ?? 'votre conseiller';
+    const ack: Msg = filled.length
+      ? { who: 'ai', text: `J’ai bien noté : ${filled.map(a => a.label).join(' · ')}.` }
+      : { who: 'ai', text: `C’est noté : ${first} lira votre message avec le dossier.` };
+    commit({ agentId: id, answers: [...answers, ...filled], log: [...base, ...intro, ack], pending: [], notes });
   };
 
   const finish = (e: React.FormEvent) => {
     e.preventDefault();
     if (sending) return;
     setSending(true);
-    const profile: UserProfile = answers.reduce<UserProfile>((acc, a) => ({ ...acc, ...a.updates }), { ...BASE_PROFILE });
+    // Dans l'ordre des questions, pour un profil identique quel que soit
+    // l'ordre dans lequel les réponses sont arrivées.
+    const ordered = steps.map(s => answers.find(a => a.stepId === s.id)).filter((a): a is Answer => !!a);
+    const profile: UserProfile = ordered.reduce<UserProfile>((acc, a) => ({ ...acc, ...a.updates }), { ...BASE_PROFILE });
     profile.name = contact.name.trim();
     profile.email = contact.email.trim();
     profile.advisorId = agentId ?? undefined;
     profile.consent = { whatsapp: false, partners: contact.partners };
     const r = cardRef.current?.getBoundingClientRect();
-    onSubmit(profile, r ? { top: r.top, left: r.left, width: r.width, height: r.height } : null);
+    onSubmit(profile, r ? { top: r.top, left: r.left, width: r.width, height: r.height } : null, convo.notes);
   };
-
-  // ── Fil de conversation ──────────────────────────────────────────────────
-  const first = agent ? agent.name.split(' ')[0] : '';
-  const thread = useMemo(() => {
-    const out: Array<{ who: 'ai' | 'me'; text: string; sub?: string; key: string }> = [];
-    out.push({
-      who: 'ai',
-      key: 'q-project',
-      text: 'Bonjour. Je prépare votre analyse de l’immobilier à Dubaï en quelques questions. Quel est votre projet ?',
-    });
-    if (agentId) {
-      const p = PROJECT_OPTIONS.find(o => o.agentId === agentId)!;
-      out.push({ who: 'me', key: 'a-project', text: p.label });
-      const a = AGENTS.find(x => x.id === agentId);
-      if (a) out.push({ who: 'ai', key: 'intro', text: `Je suis ${a.name}, votre conseiller ${a.role.toLowerCase()}. ${a.desc}` });
-    }
-    steps.forEach((s, i) => {
-      if (i > answers.length) return;
-      out.push({ who: 'ai', key: `q-${s.id}`, text: s.question, sub: i === answers.length ? s.sub : undefined });
-      if (i < answers.length) out.push({ who: 'me', key: `a-${s.id}`, text: answers[i].label });
-    });
-    if (atContact) {
-      out.push({
-        who: 'ai',
-        key: 'q-contact',
-        text: 'Votre dossier est complet. À quel nom et à quelle adresse e-mail dois-je l’ouvrir ? La carte s’affiche juste après.',
-      });
-    }
-    return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [agentId, answers, atContact]);
 
   const railKey = !agentId ? 'project' : step ? step.id : 'contact';
 
@@ -335,25 +376,15 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
         </header>
 
         <div ref={logRef} className="cc-log" aria-live="polite">
-          {thread.map(m => (
-            <div key={m.key} className={`cc-msg ${m.who}`}>
+          {log.map((m, i) => (
+            <div key={i} className={`cc-msg ${m.who}`}>
               <p>{m.text}</p>
-              {m.sub && <small>{m.sub}</small>}
             </div>
           ))}
-          {missed.map((text, i) => (
-            <React.Fragment key={`miss-${i}`}>
-              <div className="cc-msg me">
-                <p>{text}</p>
-              </div>
-              <div className="cc-msg ai">
-                <p>
-                  Je préfère ne pas deviner{first ? `, c’est ${first} qui vous lit` : ''} : choisissez l’une des réponses
-                  ci-dessous, ou reformulez avec un chiffre ou un mot de la réponse.
-                </p>
-              </div>
-            </React.Fragment>
-          ))}
+          <div key={`q-${log.length}`} className="cc-msg ai now">
+            <p>{question.text}</p>
+            {question.sub && <small>{question.sub}</small>}
+          </div>
         </div>
 
         {!atContact ? (
@@ -373,7 +404,7 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
               </div>
             </div>
             <form className="cc-input" onSubmit={sendTyped}>
-              {agentId && (
+              {log.length > 0 && (
                 <button type="button" className="cc-back" onClick={back} aria-label="Revenir à la question précédente">
                   ‹
                 </button>
@@ -382,7 +413,7 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
                 ref={inputRef}
                 value={typed}
                 onChange={e => setTyped(e.target.value)}
-                placeholder="Cliquez une réponse, ou écrivez la vôtre…"
+                placeholder={agentId ? 'Cliquez une réponse, ou écrivez la vôtre…' : 'Ex. : 300 000 €, je veux un loyer chaque mois'}
                 aria-label="Votre réponse"
                 autoComplete="off"
               />
@@ -504,7 +535,8 @@ const CSS = `
 .cc-msg { max-width: 82%; animation: cc-rise 0.45s cubic-bezier(0.16,1,0.3,1) both; }
 .cc-msg p { margin: 0; }
 .cc-msg.ai { align-self: flex-start; }
-.cc-msg.ai p { font: 600 clamp(1.02rem, 1.7vw, 1.3rem)/1.4 ${display}; color: ${IVORY}; }
+.cc-msg.ai p { font: 500 0.92rem/1.5 ${sans}; color: rgba(240,235,224,0.8); }
+.cc-msg.ai.now p { font: 600 clamp(1.02rem, 1.7vw, 1.3rem)/1.4 ${display}; color: ${IVORY}; }
 .cc-msg.ai small { display: block; margin-top: 6px; font-size: 0.78rem; line-height: 1.55; color: rgba(240,235,224,0.66); }
 .cc-msg.me { align-self: flex-end; padding: 9px 15px; border-radius: 18px 18px 4px 18px; background: rgba(212,175,55,0.14); border: 1px solid rgba(212,175,55,0.35); color: ${GOLD}; font-weight: 700; font-size: 0.9rem; }
 

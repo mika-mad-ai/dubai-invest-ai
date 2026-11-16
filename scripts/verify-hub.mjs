@@ -66,5 +66,23 @@ check('celle qui la recouvre est masquée', !kept.has(1));
 check('une boîte absente est ignorée', !kept.has(2));
 check('une boîte libre est gardée', kept.has(3));
 
+console.log('\nINTERFACE CARTE — l\'appartement dans la tour');
+check('« 23rd floor » → étage 23, source annonce', JSON.stringify(m.floorFromListing('2 BR, 23rd floor, Marina Gate', 60)) === JSON.stringify({ floor: 23, source: 'listing' }));
+check('« Floor 12 » → étage 12', m.floorFromListing('Floor 12 | Sea view', 40).floor === 12);
+check('étage annoncé au-dessus de la tour → plafonné', m.floorFromListing('45th floor', 30).floor === 30);
+check('« High floor » → indice, dans le haut de la tour', (() => { const g = m.floorFromListing('High Floor | Vacant', 50); return g.source === 'hint' && g.floor === 40; })());
+check('« penthouse » → dernier étage', m.floorFromListing('Penthouse with pool', 50).floor === 50);
+check('aucune indication → milieu de tour, source inconnue', (() => { const g = m.floorFromListing('2 BR in Marina Gate 1', 61); return g.source === 'unknown' && g.floor === 31; })());
+check('« 2 BR » n\'est pas pris pour un étage', m.floorFromListing('2 BR in Marina Gate 1', 61).source === 'unknown');
+{
+  const sp = m.floorSpan(31, 61, 190, 0);
+  check('étage 31/61 d\'une tour de 190 m ≈ 93–97 m', Math.round(sp.bottom) === 93 && Math.round(sp.top) === 97, JSON.stringify(sp));
+  check('le dernier étage finit au sommet', Math.round(m.floorSpan(61, 61, 190, 0).top) === 190);
+  check('une tour sur podium démarre au-dessus du podium', m.floorSpan(1, 40, 140, 20).bottom === 20);
+  check('étage hors bornes → ramené dans la tour', m.floorSpan(99, 40, 140, 0).top === 140);
+}
+check('dominance : 3 voisins sur 5 plus bas → 60 %', m.dominance(50, [10, 20, 30, 80, 90]) === 60);
+check('dominance : trop peu de voisins → non calculée', m.dominance(50, [10, 20]) === null);
+
 console.log(`\n${pass} vérifications passées, ${fail} échec(s)`);
 process.exit(fail ? 1 : 0);

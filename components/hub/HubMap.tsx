@@ -20,6 +20,7 @@ import {
 import {
   CITY_POSE,
   cameraFor,
+  floorSpan,
   levelForZoom,
   placeWithoutOverlap,
   type Box,
@@ -49,7 +50,15 @@ export type HubSubject = {
   priceLabel: string;
 };
 
-export type BuildingInfo = { heightM: number; floors: number; name?: string };
+export type BuildingInfo = {
+  heightM: number;
+  /** Altitude du bas de la tour (au-dessus d'un podium), 0 le plus souvent. */
+  baseM: number;
+  floors: number;
+  name?: string;
+  /** Hauteurs (m) des immeubles dans un rayon de 300 m. */
+  neighbours: number[];
+};
 
 export type SceneInfo = {
   /** 'pending' tant que la position du bien n'est pas résolue ; null = introuvable. */
@@ -75,6 +84,8 @@ type Props = {
   subject: HubSubject | null;
   districts: DistrictPoint[];
   activeDistrictKey?: string | null;
+  /** Étage de l'appartement à montrer dans la tour (1 = premier niveau). */
+  floor: number | null;
   /** Autres annonces localisées exactement : points cliquables sur la carte. */
   others: Array<{ id: string; lat: number; lng: number; label: string }>;
   padding: MapPadding;
@@ -90,7 +101,7 @@ type Props = {
 const EMPTY_SCENE: SceneInfo = { point: 'pending', views: [], building: null, buildingChecked: false };
 
 const HubMap = forwardRef<HubMapHandle, Props>(function HubMap(props, ref) {
-  const { subject, districts, activeDistrictKey, others, padding } = props;
+  const { subject, districts, activeDistrictKey, others, padding, floor } = props;
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [ready, setReady] = useState(false);
@@ -113,6 +124,43 @@ const HubMap = forwardRef<HubMapHandle, Props>(function HubMap(props, ref) {
   const viewBearingRef = useRef(24);
   const pillsRef = useRef<Array<{ d: DistrictPoint; el: HTMLButtonElement; w: number; h: number }>>([]);
   const activeKeyRef = useRef<string | null | undefined>(activeDistrictKey);
+  const levelRef = useRef<HubLevel>('city');
+  const buildingRef = useRef<BuildingInfo | null>(null);
+  const floorRef = useRef<number | null>(floor);
+  floorRef.current = floor;
+
+  /** Altitude du milieu de l'étage montré, ou 0 si la tour n'est pas connue. */
+  const floorAltitude = () => {
+    const b = buildingRef.current;
+    const f = floorRef.current;
+    if (!b || !f) return 0;
+    const span = floorSpan(f, b.floors, b.heightM, b.baseM);
+    return (span.bottom + span.top) / 2;
+  };
+
+  /**
+   * Au niveau « appartement », la tour dorée devient translucide pour laisser
+   * voir l'étage de l'appartement, et la caméra vise cet étage (plus le sol).
+   */
+  const applyLevelLook = (level: HubLevel) => {
+    const map = mapRef.current;
+    if (!map) return;
+    try {
+      if (map.getLayer('unit-building-3d')) map.setPaintProperty('unit-building-3d', 'fill-extrusion-opacity', level === 'unit' ? 0.3 : 0.92);
+    } catch {
+      /* style en cours de chargement */
+    }
+  };
+
+  const paintFloor = () => {
+    const map = mapRef.current;
+    const b = buildingRef.current;
+    const f = floorRef.current;
+    if (!map || !b || !f || !map.getLayer('unit-floor-3d')) return;
+    const span = floorSpan(f, b.floors, b.heightM, b.baseM);
+    map.setPaintProperty('unit-floor-3d', 'fill-extrusion-base', span.bottom);
+    map.setPaintProperty('unit-floor-3d', 'fill-extrusion-height', span.top);
+  };
 
   const reduced = useMemo(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -126,14 +174,51 @@ const HubMap = forwardRef<HubMapHandle, Props>(function HubMap(props, ref) {
     orbitRef.current = null;
   };
 
-  const travel = (pose: { center: [number, number]; zoom: number; pitch: number; bearing: number }, duration: number) => {
+  const elevRef = useRef<number | null>(null);
+  /**
+   * Fait monter ou descendre le point visé par la caméra (`flyTo` ne sait pas
+   * animer l'altitude : on l'interpole image par image).
+   */
+  const aimAt = (altitude: number, ms: number, then?: () => void) => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (elevRef.current != null) cancelAnimationFrame(elevRef.current);
+    const from = map.getCenterElevation() || 0;
+    if (reduced || ms <= 0 || Math.abs(from - altitude) < 0.5) {
+      map.setCenterElevation(altitude);
+      elevRef.current = null;
+      then?.();
+      return;
+    }
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const k = Math.min(1, (now - t0) / ms);
+      const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      map.setCenterElevation(from + (altitude - from) * e);
+      if (k < 1) elevRef.current = requestAnimationFrame(step);
+      else {
+        elevRef.current = null;
+        then?.();
+      }
+    };
+    elevRef.current = requestAnimationFrame(step);
+  };
+
+  const travel = (pose: { center: [number, number]; zoom: number; pitch: number; bearing: number }, duration: number, altitude = 0) => {
     const map = mapRef.current;
     if (!map) return;
     stopOrbit();
     if (reduced) {
       map.jumpTo({ ...pose, padding: paddingRef.current });
+      map.setCenterElevation(altitude);
       return;
     }
+    // La caméra revient d'abord viser le sol, vole, puis monte à l'étage.
+    if ((map.getCenterElevation() || 0) > 0.5) {
+      aimAt(0, 320, () => travel(pose, duration, altitude));
+      return;
+    }
+    if (altitude > 0) map.once('moveend', () => { if (levelRef.current === 'unit') aimAt(altitude, 900); });
     // `setBearing` de l'orbite coupe net une animation en cours : on la tient
     // à l'écart jusqu'à la fin du vol (ou son interruption par le visiteur).
     flyingRef.current = true;
@@ -153,7 +238,7 @@ const HubMap = forwardRef<HubMapHandle, Props>(function HubMap(props, ref) {
       // Durée proportionnelle au chemin : un saut ville → appartement est un
       // vrai travelling, un cran voisin reste vif.
       const dz = Math.abs(map.getZoom() - pose.zoom);
-      travel(pose, Math.round(1400 + dz * 520));
+      travel(pose, Math.round(1400 + dz * 520), level === 'unit' ? floorAltitude() : 0);
     },
     flyToDistrict(d) {
       travel({ center: [d.lng, d.lat], zoom: 13.4, pitch: 50, bearing: -12 }, 3000);
@@ -198,6 +283,8 @@ const HubMap = forwardRef<HubMapHandle, Props>(function HubMap(props, ref) {
     });
     mapRef.current = map;
     map.setPadding(paddingRef.current);
+    // La caméra peut viser un point en hauteur (l'étage de l'appartement).
+    map.setCenterClampedToGround(false);
 
     const container = map.getCanvasContainer();
     const onUserInput = () => {
@@ -214,6 +301,13 @@ const HubMap = forwardRef<HubMapHandle, Props>(function HubMap(props, ref) {
       const next = levelForZoom(z);
       if (next !== level) {
         level = next;
+        levelRef.current = next;
+        applyLevelLook(next);
+        // Le visiteur a quitté le niveau « appartement » à la molette : la
+        // caméra ne doit pas rester pointée en l'air.
+        if (next !== 'unit' && !flyingRef.current && (map.getCenterElevation() || 0) > 0.5) {
+          requestAnimationFrame(() => aimAt(0, 300));
+        }
         cb.current.onLevel(next);
       }
       if (camTimer == null) {
@@ -463,10 +557,44 @@ const HubMap = forwardRef<HubMapHandle, Props>(function HubMap(props, ref) {
             'fill-extrusion-opacity': 0.92,
           },
         });
-        scene = {
-          ...scene,
-          building: { heightM: Math.round(h), floors: floorsFromHeight(h), name: typeof f.properties?.name === 'string' ? f.properties.name : undefined },
+        // L'étage de l'appartement : une tranche claire, un peu plus large que
+        // la tour pour rester lisible à travers elle.
+        map.addSource('unit-floor', {
+          type: 'geojson',
+          data: { type: 'Feature', properties: {}, geometry: inflateGeometry(geometry as GeoJSON.Polygon | GeoJSON.MultiPolygon, 1.1) as GeoJSON.Geometry },
+        });
+        map.addLayer({
+          id: 'unit-floor-3d',
+          type: 'fill-extrusion',
+          source: 'unit-floor',
+          paint: { 'fill-extrusion-color': '#fff6cf', 'fill-extrusion-height': 0, 'fill-extrusion-base': 0, 'fill-extrusion-opacity': 1, 'fill-extrusion-vertical-gradient': false },
+        });
+        // Hauteurs des immeubles voisins (300 m) : situe l'étage dans son environnement.
+        const seen = new Set<unknown>();
+        const neighbours: number[] = [];
+        for (const o of feats) {
+          if (o.properties?.hide_3d === true || o.id === f.id || seen.has(o.id)) continue;
+          const g = o.geometry;
+          const c = g.type === 'Polygon' ? g.coordinates[0]?.[0] : g.type === 'MultiPolygon' ? g.coordinates[0]?.[0]?.[0] : null;
+          const oh = Number(o.properties?.render_height);
+          if (!c || !(oh > 0)) continue;
+          const dx = (c[0] - lng) * 111.32 * Math.cos((lat * Math.PI) / 180);
+          const dy = (c[1] - lat) * 110.57;
+          if (dx * dx + dy * dy > 0.09) continue;
+          seen.add(o.id);
+          neighbours.push(oh);
+        }
+        const info: BuildingInfo = {
+          heightM: Math.round(h),
+          baseM: Number(f.properties?.render_min_height) || 0,
+          floors: floorsFromHeight(h - (Number(f.properties?.render_min_height) || 0)),
+          name: typeof f.properties?.name === 'string' ? f.properties.name : undefined,
+          neighbours,
         };
+        buildingRef.current = info;
+        paintFloor();
+        applyLevelLook(levelRef.current);
+        scene = { ...scene, building: info };
       }
       scene = { ...scene, buildingChecked: true };
       cb.current.onScene(scene);
@@ -507,10 +635,11 @@ const HubMap = forwardRef<HubMapHandle, Props>(function HubMap(props, ref) {
       map.off('idle', onIdle);
       marker.remove();
       try {
-        for (const id of ['unit-building-3d', 'unit-area-fill', 'unit-area-line', 'view-cone-fill']) {
+        buildingRef.current = null;
+        for (const id of ['unit-floor-3d', 'unit-building-3d', 'unit-area-fill', 'unit-area-line', 'view-cone-fill']) {
           if (map.getLayer(id)) map.removeLayer(id);
         }
-        for (const id of ['unit-building', 'unit-area', 'view-cone']) {
+        for (const id of ['unit-floor', 'unit-building', 'unit-area', 'view-cone']) {
           if (map.getSource(id)) map.removeSource(id);
         }
         if (map.getLayer('buildings-3d')) {
@@ -523,6 +652,18 @@ const HubMap = forwardRef<HubMapHandle, Props>(function HubMap(props, ref) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, point, subject?.id]);
+
+  // L'étage choisi : la tranche se déplace dans la tour, et au niveau
+  // « appartement » la caméra la suit.
+  useEffect(() => {
+    paintFloor();
+    const map = mapRef.current;
+    if (map && levelRef.current === 'unit' && buildingRef.current && floor) {
+      stopOrbit();
+      aimAt(floorAltitude(), 450);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [floor]);
 
   return <div ref={containerRef} className="hub-map" aria-label="Carte 3D de Dubaï" />;
 });

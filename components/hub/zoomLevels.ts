@@ -137,3 +137,47 @@ export function placeWithoutOverlap(boxes: Array<Box | null>, gap = 4): Set<numb
   });
   return out;
 }
+
+// ── L'appartement dans la tour ────────────────────────────────────────────
+
+export type FloorGuess = {
+  floor: number;
+  /** 'listing' : l'annonce donne l'étage ; 'hint' : elle dit « étage élevé / bas » ; 'unknown' : rien. */
+  source: 'listing' | 'hint' | 'unknown';
+};
+
+/**
+ * Étage de l'appartement d'après le titre de l'annonce. Sans indication, on
+ * part du milieu de la tour et l'interface dit clairement que c'est au
+ * visiteur de le régler : on n'invente pas un étage.
+ */
+export function floorFromListing(title: string, floors: number): FloorGuess {
+  const clamp = (n: number) => Math.min(Math.max(1, Math.round(n)), Math.max(1, floors));
+  const t = title.toLowerCase();
+  const exact =
+    t.match(/(\d{1,3})\s*(?:st|nd|rd|th|e|er|ème|eme)?\s*(?:floor|étage|etage)\b/) ?? t.match(/(?:floor|étage|etage)\s*(?:n°|no\.?|#)?\s*(\d{1,3})\b/);
+  if (exact) {
+    const n = Number(exact[1]);
+    if (n >= 1 && n <= 200) return { floor: clamp(n), source: 'listing' };
+  }
+  if (/penthouse|top floor|dernier étage/.test(t)) return { floor: clamp(floors), source: 'hint' };
+  if (/high(?:er)? floor|étage élevé|etage eleve/.test(t)) return { floor: clamp(floors * 0.8), source: 'hint' };
+  if (/mid(?:dle)? floor|étage intermédiaire/.test(t)) return { floor: clamp(floors * 0.5), source: 'hint' };
+  if (/low(?:er)? floor|étage bas|ground floor|rez-de-chaussée/.test(t)) return { floor: clamp(floors * 0.15), source: 'hint' };
+  return { floor: clamp(floors * 0.5), source: 'unknown' };
+}
+
+/** Altitudes (m) du plancher et du plafond d'un étage, pour une tour de hauteur connue. */
+export function floorSpan(floor: number, floors: number, heightM: number, baseM = 0): { bottom: number; top: number } {
+  const n = Math.max(1, floors);
+  const per = Math.max(0, heightM - baseM) / n;
+  const f = Math.min(Math.max(1, floor), n);
+  return { bottom: baseM + (f - 1) * per, top: baseM + f * per };
+}
+
+/** Part (0-100) des immeubles voisins dont le sommet est sous une altitude donnée. */
+export function dominance(altitudeM: number, neighbourHeights: number[]): number | null {
+  if (neighbourHeights.length < 5) return null;
+  const below = neighbourHeights.filter(h => h < altitudeM).length;
+  return Math.round((below / neighbourHeights.length) * 100);
+}

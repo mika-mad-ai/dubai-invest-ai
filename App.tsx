@@ -306,7 +306,7 @@ function App() {
     setIsChatLoading(false);
   };
 
-  const handleProfileSubmit = async (profile: UserProfile, from: MorphRect | null = null) => {
+  const handleProfileSubmit = async (profile: UserProfile, from: MorphRect | null = null, notes: string[] = []) => {
     setMorphFrom(from);
     gtm.funnelComplete(profile);
     const withAdvisor: UserProfile = { ...profile, advisorId: selectedAgentId ?? profile.advisorId };
@@ -327,7 +327,9 @@ function App() {
       consentSource: 'web_form',
     }).then(result => setLeadResult(result));
 
-    await runAdvisorTurn(withAdvisor);
+    // Ce que le visiteur a écrit librement pendant la qualification ouvre la
+    // conversation : le conseiller y répond dès son premier message.
+    await runAdvisorTurn(withAdvisor, notes.length ? notes.join('\n') : undefined);
   };
 
   const handleSendMessage = async (text: string) => {
