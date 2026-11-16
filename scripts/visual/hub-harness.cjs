@@ -97,14 +97,14 @@ const shot = async (page, name) => {
   await page.locator('.cc-more').click(); await page.waitForTimeout(500); await shot(page, 'a1b-guides');
   await page.locator('[role=dialog] button[aria-label=Fermer]').click(); await page.waitForTimeout(300);
   // 1re question au clavier (rapprochement local), les suivantes au clic.
-  await page.locator('.cc-input input').fill('je veux investir pour louer');
+  await page.locator('.cc-input input').fill('300 000 €, je veux un loyer mensuel');
   await page.keyboard.press('Enter');
   await page.waitForTimeout(900);
   await shot(page, 'a2-chat-conseiller');
   // une réponse incomprise, puis un budget tapé en chiffres
-  await page.locator('.cc-opt').first().click(); await page.waitForTimeout(800);
+  log.push('après message libre: ' + (await page.locator('.cc-log').innerText()).replace(/\s+/g, ' ').slice(0, 600));
   await page.locator('.cc-input input').fill('blabla'); await page.keyboard.press('Enter'); await page.waitForTimeout(500);
-  await page.locator('.cc-input input').fill('environ 650k'); await page.keyboard.press('Enter'); await page.waitForTimeout(900);
+  await page.waitForTimeout(500);
   await shot(page, 'a3-chat-budget');
   for (let i = 0; i < 12; i++) {
     if (await page.locator('.cc-contact').count()) break;
@@ -151,8 +151,23 @@ const shot = async (page, name) => {
   await shot(page, '03-arrivee-immeuble'); await state('arrivee');
   await openAnalyses(); await shot(page, '04-immeuble-panneau'); await closeSheet();
 
+  // On se place sur un bien localisé exactement (immeuble connu) pour le niveau Appartement.
+  if (MODE !== 'mobile') {
+    for (let i = 0; i < 5; i++) {
+      if (/Marina Gate/.test(await page.locator('.hub-card h3').innerText())) break;
+      await page.locator('.hub-pager button[aria-label="Bien suivant"]').click();
+      await wait(MODE === 'reduced' ? 2500 : 7500);
+    }
+    await state('bien-exact');
+  }
   await clickStep('Appartement'); await state('appartement');
   await openAnalyses(); await shot(page, '05-appartement-bien');
+  // L'appartement dans la tour : on monte le curseur d'étage et la tranche suit.
+  const floorInfo = async () => page.evaluate(() => ({ etage: document.querySelector('.hub-floor-n')?.textContent, bloc: document.querySelector('.hub-floor')?.innerText.replace(/\s+/g, ' ').slice(0, 260) }));
+  log.push('étage initial: ' + JSON.stringify(await floorInfo()));
+  await page.evaluate(() => { const el = document.querySelector('.hub-floor input[type=range]'); if (!el) return; const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(el, String(Math.round(Number(el.max) * 0.85))); el.dispatchEvent(new Event('input', { bubbles: true })); });
+  await wait(1500); log.push('étage réglé: ' + JSON.stringify(await floorInfo()));
+  await shot(page, '05b-appartement-etage-haut');
   await tab('Trésorerie'); await shot(page, '06-appartement-tresorerie');
   await tab('Frais'); await shot(page, '07-appartement-frais'); await closeSheet();
 

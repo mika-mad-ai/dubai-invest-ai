@@ -135,9 +135,15 @@
     projet, qui désigne le conseiller (locatif / résidence / location) ; puis
     son parcours ; puis nom + e-mail + consentement. Réponses en un clic (elles
     glissent de côté à chaque question) ou au clavier
-  - `answerMatch.ts` : rapproche une réponse tapée d'une option **sans appel à
-    un modèle** (numéro, montant dans une tranche, mots en commun) ; si rien de
-    fiable, le chat redemande. Testé par `scripts/verify-concierge.mjs`
+  - `answerMatch.ts` : comprend un message libre **sans appel à un modèle**.
+    `detectProject` déduit le projet (donc le conseiller) ; `extractAnswers`
+    remplit d'un coup toutes les questions que le message renseigne (montant →
+    la question à tranches plausible, mots des libellés), dans n'importe quel
+    ordre. Rien n'est refusé : ce qui n'est pas compris est gardé dans `notes`
+    et ouvre la conversation avec le vrai conseiller (1er message de
+    `runAdvisorTurn`). Testé par `scripts/verify-concierge.mjs`
+  - État du chat = un seul objet `Convo` (conseiller, réponses, fil, notes) ;
+    chaque réponse empile une copie → « revenir » dépile
   - `steps.ts` : les questions (parcours générique + un par conseiller),
     partagées avec `DecisionTree` (conservé mais plus affiché)
   - Transformation chat → carte : `App` mémorise le rectangle de la fenêtre de
@@ -159,6 +165,13 @@
   - Répartition des analyses : Ville = marché / projection / fiscalité ;
     Quartier = prix DLD / location ; Immeuble = tour et vues ; Appartement =
     le bien / trésorerie / frais
+  - Niveau Appartement = **l'étage dans la tour** : tranche claire
+    (`unit-floor-3d`) à l'altitude de l'étage, tour dorée translucide, caméra
+    qui vise l'étage (`setCenterElevation`, interpolé par `aimAt` — `flyTo`
+    n'anime pas l'altitude). Étage lu dans le titre de l'annonce
+    (`floorFromListing`), sinon milieu de tour, réglable au curseur ; le
+    panneau dit toujours d'où vient l'étage. Sans immeuble identifié, pas de
+    tranche et le panneau l'explique
   - Pièges : MapLibre écrit une opacité en ligne sur ses marqueurs (`!important`
     pour les masquer) ; `setBearing` de l'orbite coupe un `flyTo` en cours
     (`flyingRef`) ; l'immeuble doré ne se cherche qu'au repos, zoom ≥ 14,6

@@ -17,6 +17,9 @@ import { buildRationale, matchPercent } from '../AITopPick';
 import {
   HUB_LEVELS,
   districtOf,
+  dominance,
+  floorFromListing,
+  floorSpan,
   districtPoints,
   pricePercentile,
   type DistrictPoint,
@@ -167,6 +170,8 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
   const readoutRef = useRef<((c: CameraReadout) => void) | null>(null);
   const [arrived, setArrived] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
+  /** Étage choisi par le visiteur ; null = celui déduit de l'annonce. */
+  const [floorPick, setFloorPick] = useState<number | null>(null);
   const [focusDistrict, setFocusDistrict] = useState<DistrictPoint | null>(null);
   const [tabs, setTabs] = useState<Record<HubLevel, string>>({ city: 'marche', district: 'prix', building: 'immeuble', unit: 'bien' });
 
@@ -228,6 +233,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
   // Un nouveau bien repart de son propre quartier et rejoue sa sortie de carte.
   useEffect(() => {
     setFocusDistrict(null);
+    setFloorPick(null);
     setArrived(false);
     if (!featured) return;
     // Filet de sécurité : si la carte ne signale jamais l'arrivée (WebGL absent,
@@ -235,6 +241,12 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
     const timer = window.setTimeout(() => setArrived(true), 9000);
     return () => clearTimeout(timer);
   }, [featured?.id]);
+
+  // L'appartement dans la tour : étage de l'annonce s'il est connu, sinon le
+  // milieu, réglable par le visiteur.
+  const tower = scene.building;
+  const guess = useMemo(() => (featured && tower ? floorFromListing(featured.title, tower.floors) : null), [featured, tower]);
+  const floor = tower && guess ? floorPick ?? guess.floor : null;
 
   const located = !!scene.point && scene.point !== 'pending';
   const point = located ? (scene.point as Exclude<SceneInfo['point'], null | 'pending'>) : null;
@@ -502,8 +514,57 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
       );
     }
     const eurM2 = featured.sqm ? featured.price / featured.sqm : null;
+    const span = tower && floor ? floorSpan(floor, tower.floors, tower.heightM, tower.baseM) : null;
+    const above = tower && span ? dominance(span.bottom, tower.neighbours) : null;
     return (
       <>
+        <div className="hub-box hub-floor">
+          <p className="hub-eyebrow" style={{ margin: 0 }}>L’appartement dans la tour</p>
+          {tower && floor && span ? (
+            <>
+              <div className="hub-between" style={{ margin: '6px 0 8px' }}>
+                <b className="hub-floor-n">
+                  Étage {floor} <span>sur ~{tower.floors}</span>
+                </b>
+                <span className="hub-k">≈ {Math.round(span.bottom)} m du sol</span>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={tower.floors}
+                step={1}
+                value={floor}
+                onChange={e => setFloorPick(parseInt(e.target.value))}
+                className="modern-slider slider-gold"
+                aria-label="Étage de l’appartement"
+              />
+              {above != null && (
+                <p className="hub-lead" style={{ marginTop: 8 }}>
+                  À cette hauteur, l’appartement est au-dessus de <b>{above} %</b> des immeubles dans un rayon de 300 m.
+                </p>
+              )}
+              <p className="hub-src" style={{ marginTop: 6 }}>
+                {floorPick != null
+                  ? 'Étage choisi par vous. La tranche claire sur la carte montre ce niveau.'
+                  : guess?.source === 'listing'
+                    ? 'Étage indiqué dans l’annonce. La tranche claire sur la carte montre ce niveau.'
+                    : guess?.source === 'hint'
+                      ? 'Étage estimé d’après l’annonce (« étage élevé », « bas »…). Ajustez-le avec le curseur.'
+                      : 'L’annonce ne précise pas l’étage : déplacez le curseur pour situer l’appartement dans la tour.'}
+              </p>
+            </>
+          ) : (
+            <p className="hub-lead" style={{ marginTop: 6 }}>
+              {!point
+                ? 'Localisation de l’immeuble en cours…'
+                : point.precision === 'approx'
+                  ? 'Immeuble non identifié : impossible de situer l’étage. Seul le quartier est connu.'
+                  : scene.buildingChecked
+                    ? 'Cette tour n’est pas encore dessinée dans OpenStreetMap : impossible d’y situer l’étage.'
+                    : 'Zoomez sur l’immeuble pour charger sa silhouette.'}
+            </p>
+          )}
+        </div>
         {verdict && price && (
           <div className={`hub-verdict ${verdict.tone}`}>
             <b>
@@ -709,6 +770,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
               districts={districts}
               activeDistrictKey={district?.key}
               others={others}
+              floor={floor}
               padding={padding}
               onLevel={setLevel}
               onScene={setScene}
@@ -849,6 +911,8 @@ const HUB_CSS = `
 .hub-v { font-size: 0.76rem; font-weight: 700; color: ${IVORY}; text-align: right; }
 .hub-between { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 10px; }
 .hub-box { padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); font-size: 0.78rem; }
+.hub-floor-n { font: 700 1.15rem ${display}; color: ${IVORY}; }
+.hub-floor-n span { font: 600 0.72rem ${sans}; color: rgba(240,235,224,0.6); }
 .hub-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .hub-tag { padding: 5px 10px; border-radius: 999px; font-size: 0.68rem; font-weight: 700; color: rgba(240,235,224,0.85); background: rgba(255,255,255,0.055); border: 1px solid rgba(255,255,255,0.1); }
 .hub-view { display: inline-flex; flex-direction: column; gap: 1px; padding: 6px 10px; border-radius: 10px; font-size: 0.7rem; font-weight: 700; }

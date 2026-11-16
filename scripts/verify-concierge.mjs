@@ -57,6 +57,27 @@ check('« je veux investir pour louer » → investissement', m.matchAnswer(proj
 check('« je cherche une location » → location', m.matchAnswer(project, 'je cherche une location')?.index === 2);
 check('« y vivre avec ma famille » → résidence', m.matchAnswer(project, 'y vivre avec ma famille')?.index === 1);
 
+console.log('\nCHAT D\'ACCUEIL — message libre');
+const T = m.AGENT_TREES;
+const labels = (id, text, current) => Object.fromEntries(m.extractAnswers(T[id], text, current).map(a => [a.stepId, T[id].find(s => s.id === a.stepId).options[a.index].label]));
+check('« 300 000 €, je veux un loyer mensuel » → projet investissement', m.detectProject('300 000 €, je veux un loyer mensuel') === 'locatif');
+{
+  const got = labels('locatif', '300 000 €, je veux un loyer mensuel', 'rental_type');
+  check('… et renseigne le budget', got.budget === '200 000 – 400 000 €', JSON.stringify(got));
+  check('… et le type de loyer', got.rental_type === 'Loyer stable longue durée', JSON.stringify(got));
+  check('… avec le montant exact', m.extractAnswers(T.locatif, '300 000 €, je veux un loyer mensuel').find(a => a.stepId === 'budget')?.amount === 300000);
+}
+check('« y vivre avec ma famille, budget 800k » → projet résidence', m.detectProject('je cherche un 2 chambres à Marina pour y vivre avec ma famille, budget 800k') === 'residence');
+check('… budget 700 k€ – 1,5 M€', labels('residence', 'pour y vivre avec ma famille, budget 800k').budget?.startsWith('700 000'));
+check('« louer un studio, 1500 euros par mois max » → projet location', m.detectProject('je veux louer un studio, 1500 euros par mois max') === 'location');
+check('… le montant va au loyer mensuel, pas ailleurs', Object.keys(labels('location', 'je veux louer un studio, 1500 euros par mois max')).join() === 'monthly_budget');
+check('« investir 500k en airbnb » → budget + Airbnb', (() => { const g = labels('locatif', 'investir 500k en airbnb'); return g.budget === '400 000 – 700 000 €' && g.rental_type?.includes('Airbnb'); })());
+check('« bonjour » → aucun projet deviné', m.detectProject('bonjour') === null);
+check('« appartement à dubai marina » → aucun projet deviné', m.detectProject('appartement à dubai marina') === null);
+check('charabia → aucune réponse inventée', m.extractAnswers(T.locatif, 'blabla', 'first_rent').length === 0);
+check('« 2 chambres » n\'est pas pris pour un budget', !m.extractAnswers(T.locatif, 'un 2 chambres').some(a => a.stepId === 'budget'));
+check('une question ne reçoit qu\'une réponse', (() => { const a = m.extractAnswers(T.locatif, '300k ou 500k en airbnb'); return new Set(a.map(x => x.stepId)).size === a.length; })());
+
 console.log('\nCHAT D\'ACCUEIL — parcours de questions');
 for (const [id, steps] of Object.entries(m.AGENT_TREES)) {
   check(`parcours « ${id} » : 4 à 7 questions`, steps.length >= 4 && steps.length <= 7, String(steps.length));
