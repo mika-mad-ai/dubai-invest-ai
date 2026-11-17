@@ -71,7 +71,7 @@ const shot = async (page, name) => {
     return route.abort();
   });
 
-  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + (process.env.UI_LANG ? '/' + process.env.UI_LANG : ''), { waitUntil: 'domcontentloaded' });
   await page.locator('.cc-stage').waitFor({ timeout: 20000 });
 
   // Parcours d'accueil : le chat de qualification, puis sa transformation en carte.
@@ -98,7 +98,8 @@ const shot = async (page, name) => {
   await page.locator('[role=dialog] button[aria-label=Fermer]').click(); await page.waitForTimeout(300);
   if ((process.env.FLOW || 'typed') === 'typed') {
     // Recherche écrite : le conseiller part chercher tout de suite, sans autre question.
-    await page.locator('.cc-input input').fill('300 000 €, je veux un loyer mensuel');
+    log.push('accueil: ' + (await page.locator('.cc-card').innerText()).replace(/\s+/g, ' ').slice(0, 500));
+    await page.locator('.cc-input input').fill(process.env.UI_LANG ? '€300,000, I want rental income every month' : '300 000 €, je veux un loyer mensuel');
     await page.keyboard.press('Enter');
     await page.waitForTimeout(250);
     log.push('fil (recherche): ' + (await page.evaluate(() => document.querySelector('.cc-log')?.innerText || '(déjà sur la carte)')).replace(/\s+/g, ' ').slice(0, 400));
@@ -156,6 +157,14 @@ const shot = async (page, name) => {
   await shot(page, '02-travelling');
   await wait(MODE === 'reduced' ? 1500 : 6500);
   await shot(page, '03-arrivee-immeuble'); await state('arrivee');
+  if (process.env.UI_LANG) {
+    // Contrôle de langue : on relève tout le texte affiché, niveau par niveau, puis on s'arrête.
+    if (await page.locator('.hub-reopen.left').count()) { await page.locator('.hub-reopen.left').click(); await wait(600); }
+    const dump = async label => log.push(`texte ${label}: ` + (await page.evaluate(() => [...document.querySelectorAll('.hub-stepper, .hub-panel, .hub-card, .hub-dock .hub-tabs, .hub-reopen')].map(e => e.innerText).join(' | '))).replace(/\s+/g, ' ').slice(0, 900));
+    await dump('immeuble'); await shot(page, 'en-immeuble');
+    for (const i of [3, 1, 0]) { await page.locator('.hub-stepper > button').nth(i).click(); await wait(MODE === 'reduced' ? 1200 : 5200); await dump('niveau ' + (i + 1)); if (i === 3) await shot(page, 'en-appartement'); }
+    fs.writeFileSync(path.join(OUT, `${MODE}-log.txt`), log.join('\n')); console.log(log.join('\n')); await browser.close(); return;
+  }
   // Arrivé par une recherche écrite, le conseiller est ouvert et les analyses repliées : on les rouvre pour la suite.
   if (await page.locator('.hub-reopen.left').count()) { await page.locator('.hub-reopen.left').click(); await wait(600); await shot(page, '03b-deux-volets'); }
   await openAnalyses(); await shot(page, '04-immeuble-panneau'); await closeSheet();

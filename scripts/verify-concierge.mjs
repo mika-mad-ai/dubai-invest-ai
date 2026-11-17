@@ -13,10 +13,11 @@ const out = mkdtempSync(join(tmpdir(), 'verify-concierge-'));
 const entry = join(out, 'entry.ts');
 writeFileSync(entry, `
 export * from '${ROOT}/components/qualification/answerMatch';
+export * from '${ROOT}/components/qualification/chatI18n';
 export { AGENT_TREES, TREE_STEPS } from '${ROOT}/components/qualification/steps';
 `);
 const bundlePath = join(out, 'bundle.mjs');
-await build({ entryPoints: [entry], bundle: true, format: 'esm', platform: 'node', outfile: bundlePath, logLevel: 'error', jsx: 'automatic' });
+await build({ entryPoints: [entry], bundle: true, format: 'esm', platform: 'node', outfile: bundlePath, logLevel: 'error', jsx: 'automatic', loader: { '.png': 'dataurl', '.jpg': 'dataurl', '.webp': 'dataurl', '.mp4': 'dataurl' } });
 const m = await import(pathToFileURL(bundlePath).href);
 
 let pass = 0, fail = 0;
@@ -77,6 +78,31 @@ check('« appartement à dubai marina » → aucun projet deviné', m.detectProj
 check('charabia → aucune réponse inventée', m.extractAnswers(T.locatif, 'blabla', 'first_rent').length === 0);
 check('« 2 chambres » n\'est pas pris pour un budget', !m.extractAnswers(T.locatif, 'un 2 chambres').some(a => a.stepId === 'budget'));
 check('une question ne reçoit qu\'une réponse', (() => { const a = m.extractAnswers(T.locatif, '300k ou 500k en airbnb'); return new Set(a.map(x => x.stepId)).size === a.length; })());
+
+console.log('\nCHAT D\'ACCUEIL — anglais');
+check('« €300,000 » (virgule de milliers) → 300 000', eq(m.parseAmounts('€300,000'), [300000]));
+check('« 1.2 million » → 1 200 000', eq(m.parseAmounts('1.2 million'), [1200000]));
+check('« 1,5 M€ » reste 1 500 000 (virgule décimale française)', eq(m.parseAmounts('1,5 M€'), [1500000]));
+check('« Under €200,000 » → tranche 0–200 000', eq(m.optionRange('Under €200,000'), [0, 200000]));
+check('« €700,000 – €1.5M » → tranche', eq(m.optionRange('€700,000 – €1.5M'), [700000, 1500000]));
+check('« I want rental income every month » → investissement, pas location', m.detectProject('€300,000, I want rental income every month') === 'locatif');
+check('« to live in with my family » → résidence', m.detectProject('looking for a 2 bed in Marina to live in with my family, budget 800k') === 'residence');
+check('« rent a studio, 1,500 euros per month » → location', m.detectProject('I want to rent a studio, 1,500 euros per month max') === 'location');
+check('« hello » → aucun projet deviné', m.detectProject('hello') === null);
+for (const id of Object.keys(T)) {
+  const en = m.localizedTree(id, 'en');
+  check(`parcours « ${id} » traduit : mêmes questions, mêmes réponses, mêmes effets`, en.length === T[id].length && en.every((s, i) => s.id === T[id][i].id && s.options.length === T[id][i].options.length && s.options.every((o, j) => o.value === T[id][i].options[j].value && JSON.stringify(o.updates) === JSON.stringify(T[id][i].options[j].updates))));
+  check(`parcours « ${id} » traduit : aucune question restée en français`, en.every((s, i) => s.question !== T[id][i].question && s.sub !== T[id][i].sub));
+  check(`parcours « ${id} » en français : inchangé`, m.localizedTree(id, 'fr') === T[id]);
+}
+{
+  const en = m.localizedTree('locatif', 'en');
+  const got = Object.fromEntries(m.extractAnswers(en, '€300,000, I want rental income every month').map(a => [a.stepId, en.find(s => s.id === a.stepId).options[a.index].label]));
+  check('message anglais → budget €200,000 – €400,000', got.budget === '€200,000 – €400,000', JSON.stringify(got));
+  check('… sans réponse inventée sur un mot banal (« every »)', !Object.values(got).some(v => /every night/.test(v)), JSON.stringify(got));
+  check('tranches de budget lisibles en anglais', en.find(s => s.id === 'budget').options.every(o => m.optionRange(o.label)));
+}
+check('autre langue du site → anglais', m.chatLang('es') === 'en' && m.chatLang('fr') === 'fr');
 
 console.log('\nCHAT D\'ACCUEIL — parcours de questions');
 for (const [id, steps] of Object.entries(m.AGENT_TREES)) {

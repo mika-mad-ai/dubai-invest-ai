@@ -82,43 +82,54 @@ export type ResultsHubProps = {
 const GOLD = '#D4AF37';
 const SQM_TO_SQFT = 10.7639;
 
-const VERDICT: Record<PriceVerdictCode, { text: string; tone: 'good' | 'neutral' | 'warn' | 'bad' | 'mute' }> = {
-  well_below: { text: 'Nettement sous la médiane DLD', tone: 'good' },
-  below: { text: 'Sous la médiane DLD', tone: 'good' },
-  fair: { text: 'Aligné sur la médiane DLD', tone: 'neutral' },
-  above: { text: 'Au-dessus de la médiane DLD', tone: 'warn' },
-  well_above: { text: 'Surévalué face à la médiane DLD', tone: 'bad' },
-  unknown: { text: 'Prix non vérifiable', tone: 'mute' },
+type Bi = [fr: string, en: string];
+
+const VERDICT: Record<PriceVerdictCode, { text: Bi; tone: 'good' | 'neutral' | 'warn' | 'bad' | 'mute' }> = {
+  well_below: { text: ['Nettement sous la médiane DLD', 'Well below the DLD median'], tone: 'good' },
+  below: { text: ['Sous la médiane DLD', 'Below the DLD median'], tone: 'good' },
+  fair: { text: ['Aligné sur la médiane DLD', 'In line with the DLD median'], tone: 'neutral' },
+  above: { text: ['Au-dessus de la médiane DLD', 'Above the DLD median'], tone: 'warn' },
+  well_above: { text: ['Surévalué face à la médiane DLD', 'Overpriced against the DLD median'], tone: 'bad' },
+  unknown: { text: ['Prix non vérifiable', 'Price cannot be checked'], tone: 'mute' },
 };
 
-const OBJECTIVES: Record<string, string> = {
-  rental_income: 'Revenus locatifs',
-  capital_gains: 'Plus-value',
-  secondary_residence: 'Résidence secondaire',
-  golden_visa: 'Golden Visa',
-  diversification: 'Diversification',
+const OBJECTIVES: Record<string, Bi> = {
+  rental_income: ['Revenus locatifs', 'Rental income'],
+  capital_gains: ['Plus-value', 'Capital gain'],
+  secondary_residence: ['Résidence secondaire', 'Second home'],
+  golden_visa: ['Golden Visa', 'Golden Visa'],
+  diversification: ['Diversification', 'Diversification'],
 };
 
-const TABS: Record<HubLevel, Array<{ id: string; label: string }>> = {
+const TABS: Record<HubLevel, Array<{ id: string; label: Bi }>> = {
   city: [
-    { id: 'marche', label: 'Marché' },
-    { id: 'projection', label: 'Projection' },
-    { id: 'fiscalite', label: 'Fiscalité' },
+    { id: 'marche', label: ['Marché', 'Market'] },
+    { id: 'projection', label: ['Projection', 'Projection'] },
+    { id: 'fiscalite', label: ['Fiscalité', 'Tax'] },
   ],
   district: [
-    { id: 'prix', label: 'Prix DLD' },
-    { id: 'location', label: 'Location' },
+    { id: 'prix', label: ['Prix DLD', 'DLD prices'] },
+    { id: 'location', label: ['Location', 'Renting out'] },
   ],
-  building: [{ id: 'immeuble', label: 'Immeuble & vues' }],
+  building: [{ id: 'immeuble', label: ['Immeuble & vues', 'Building & views'] }],
   unit: [
-    { id: 'bien', label: 'Le bien' },
-    { id: 'tresorerie', label: 'Trésorerie' },
-    { id: 'frais', label: 'Frais' },
+    { id: 'bien', label: ['Le bien', 'The property'] },
+    { id: 'tresorerie', label: ['Trésorerie', 'Cash flow'] },
+    { id: 'frais', label: ['Frais', 'Costs'] },
   ],
+};
+
+const LEVEL_EN: Record<HubLevel, { label: string; hint: string }> = {
+  city: { label: 'City', hint: 'The Dubai market against your profile' },
+  district: { label: 'District', hint: 'DLD prices and rentals in the area' },
+  building: { label: 'Building', hint: 'The tower, its views, its surroundings' },
+  unit: { label: 'Apartment', hint: 'The property: price, cash flow, costs' },
 };
 
 const signed = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(Math.round(n))} %`;
 const nf = (n: number) => Math.round(n).toLocaleString('fr-FR');
+/** Texte du relevé caméra avant le premier mouvement, par langue. */
+const READOUT_IDLE: Bi = ['Zoomez, ou choisissez un niveau', 'Zoom, or pick a level'];
 
 class MapBoundary extends React.Component<{ onFail: () => void; children: React.ReactNode }, { failed: boolean }> {
   state = { failed: false };
@@ -134,7 +145,7 @@ class MapBoundary extends React.Component<{ onFail: () => void; children: React.
   }
 }
 
-const Readout: React.FC<{ feed: React.MutableRefObject<((c: CameraReadout) => void) | null> }> = ({ feed }) => {
+const Readout: React.FC<{ feed: React.MutableRefObject<((c: CameraReadout) => void) | null>; idle: string }> = ({ feed, idle }) => {
   const [camera, setCamera] = useState<CameraReadout | null>(null);
   useEffect(() => {
     feed.current = setCamera;
@@ -146,7 +157,7 @@ const Readout: React.FC<{ feed: React.MutableRefObject<((c: CameraReadout) => vo
     <p className="hub-readout" aria-hidden>
       {camera
         ? `${camera.lat.toFixed(4)}° N · ${camera.lng.toFixed(4)}° E · zoom ${camera.zoom.toFixed(1)} · cap ${Math.round(((camera.bearing % 360) + 360) % 360)}°`
-        : 'Zoomez, ou choisissez un niveau'}
+        : idle}
     </p>
   );
 };
@@ -162,7 +173,11 @@ const Row: React.FC<{ k: string; children: React.ReactNode }> = ({ k, children }
 
 const ResultsHub: React.FC<ResultsHubProps> = props => {
   const { profile, ranked, featured, scoreOf, onFeature, onContact, simParams, setSimParams, calc } = props;
-  const { money, t } = useI18n();
+  const { money, t, locale } = useI18n();
+  // L'interface suit la langue du site : français, sinon anglais.
+  const en = locale !== 'fr';
+  const L = (fr: string, english: string) => (en ? english : fr);
+  const yrs = (n: number | string) => (en ? `${n} years` : `${n} ans`);
   const mapRef = useRef<HubMapHandle>(null);
 
   const [level, setLevel] = useState<HubLevel>('city');
@@ -285,18 +300,22 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
 
   const tab = tabs[level];
   const setTab = (id: string) => setTabs(prev => ({ ...prev, [level]: id }));
-  const levelMeta = HUB_LEVELS.find(l => l.id === level)!;
+  const levelText = (id: HubLevel) => {
+    const l = HUB_LEVELS.find(x => x.id === id)!;
+    return en ? LEVEL_EN[id] : { label: l.label, hint: l.hint };
+  };
+  const levelMeta = levelText(level);
 
   // ── Contenu des panneaux, par niveau ─────────────────────────────────────
   const cityBody = () => {
     if (tab === 'projection') {
       return (
         <>
-          <p className="hub-lead">Votre patrimoine à Dubaï face au même capital placé en France, année après année.</p>
+          <p className="hub-lead">{L('Votre patrimoine à Dubaï face au même capital placé en France, année après année.', 'Your wealth in Dubai against the same capital invested in France, year after year.')}</p>
           <div className="hub-box">
             <div className="hub-between">
               <span className="hub-k">{t.app.s2Slider}</span>
-              <b style={{ color: GOLD }}>{simParams.duration} ans</b>
+              <b style={{ color: GOLD }}>{yrs(simParams.duration)}</b>
             </div>
             <input
               type="range"
@@ -306,7 +325,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
               value={simParams.duration}
               onChange={e => setSimParams({ ...simParams, duration: parseInt(e.target.value) })}
               className="modern-slider slider-gold"
-              aria-label="Horizon de projection en années"
+              aria-label={L('Horizon de projection en années', 'Projection horizon in years')}
             />
           </div>
           <div style={{ height: 340 }}>
@@ -318,7 +337,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
     if (tab === 'fiscalite') {
       return (
         <>
-          <p className="hub-lead">Ce que vous gardez de vos loyers selon votre pays de résidence fiscale.</p>
+          <p className="hub-lead">{L('Ce que vous gardez de vos loyers selon votre pays de résidence fiscale.', 'What you keep of your rent depending on your country of tax residence.')}</p>
           <FiscalitySimulator params={simParams} onChange={res => setSimParams({ ...simParams, taxResidence: res })} annualRent={calc.annualRent} />
         </>
       );
@@ -328,17 +347,19 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
       <>
         <div className="hub-chips">
           <span className="hub-tag">Budget {money(parseFloat(profile.totalBudget) || 0)}</span>
-          <span className="hub-tag">Horizon {profile.duration} ans</span>
-          {profile.objective && OBJECTIVES[profile.objective] && <span className="hub-tag">{OBJECTIVES[profile.objective]}</span>}
+          <span className="hub-tag">{L('Horizon', 'Horizon')} {yrs(profile.duration)}</span>
+          {profile.objective && OBJECTIVES[profile.objective] && <span className="hub-tag">{L(...OBJECTIVES[profile.objective])}</span>}
         </div>
         {m?.avgPriceSqft ? (
-          <Row k="Référence marché (DLD)">
+          <Row k={L('Référence marché (DLD)', 'Market reference (DLD)')}>
             {nf(m.avgPriceSqft)} AED/sqft{m.volume ? ` · ${nf(m.volume)} transactions` : ''}
           </Row>
         ) : null}
         <p className="hub-lead">
-          Chaque étiquette de la carte donne la médiane de revente d’un quartier, en AED par pied carré. Cliquez sur un
-          quartier pour y descendre.
+          {L(
+            'Chaque étiquette de la carte donne la médiane de revente d’un quartier, en AED par pied carré. Cliquez sur un quartier pour y descendre.',
+            'Each label on the map gives a district’s median resale price, in AED per square foot. Click a district to fly down to it.'
+          )}
         </p>
         <InvestmentDecisionCharts profile={profile} />
       </>
@@ -349,7 +370,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
     if (tab === 'location') {
       return (
         <>
-          <div className="hub-seg" role="group" aria-label="Type de location">
+          <div className="hub-seg" role="group" aria-label={L('Type de location', 'Type of rental')}>
             {(['long_term', 'short_term'] as const).map(s => (
               <button key={s} type="button" className={simParams.strategy === s ? 'on' : ''} onClick={() => setSimParams({ ...simParams, strategy: s })}>
                 {s === 'long_term' ? t.app.s3LongTerm : t.app.s3ShortTerm}
@@ -373,7 +394,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
       );
     }
     if (!district) {
-      return <p className="hub-lead">Quartier non reconnu dans la grille DLD. Cliquez sur une étiquette de la carte pour voir ses prix.</p>;
+      return <p className="hub-lead">{L('Quartier non reconnu dans la grille DLD. Cliquez sur une étiquette de la carte pour voir ses prix.', 'District not found in the DLD grid. Click a label on the map to see its prices.')}</p>;
     }
     const pct = pricePercentile(district, districts);
     const eurM2 = (district.aedSqft * SQM_TO_SQFT) / EUR_TO_AED;
@@ -386,20 +407,22 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
       <>
         <div className="hub-kpis">
           <div>
-            <span className="hub-k">Médiane de revente</span>
+            <span className="hub-k">{L('Médiane de revente', 'Median resale price')}</span>
             <b>{nf(district.aedSqft)} AED/sqft</b>
             <small>≈ {money(eurM2)} / m²</small>
           </div>
           <div>
-            <span className="hub-k">Transactions, 12 mois</span>
+            <span className="hub-k">{L('Transactions, 12 mois', 'Transactions, 12 months')}</span>
             <b>{nf(district.volume12m)}</b>
-            <small>{district.volume12m < 100 ? 'échantillon mince' : 'marché liquide'}</small>
+            <small>{district.volume12m < 100 ? L('échantillon mince', 'thin sample') : L('marché liquide', 'liquid market')}</small>
           </div>
         </div>
-        <Row k="Niveau de prix">
-          {pct >= 50 ? `plus cher que ${pct} % des quartiers suivis` : `moins cher que ${100 - pct} % des quartiers suivis`}
+        <Row k={L('Niveau de prix', 'Price level')}>
+          {pct >= 50
+            ? L(`plus cher que ${pct} % des quartiers suivis`, `pricier than ${pct}% of tracked districts`)
+            : L(`moins cher que ${100 - pct} % des quartiers suivis`, `cheaper than ${100 - pct}% of tracked districts`)}
         </Row>
-        <div className="hub-bars" aria-label="Quartiers de prix voisin">
+        <div className="hub-bars" aria-label={L('Quartiers de prix voisin', 'Districts at a similar price')}>
           {around.map(d => (
             <button key={d.key} type="button" className={d.key === district.key ? 'on' : ''} onClick={() => pickDistrict(d)}>
               <span>{d.label}</span>
@@ -413,50 +436,57 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
         {districtIsProperty && featured && price?.askingAedSqft && price.benchmarkAedSqft && price.deltaPct != null && verdict && (
           <div className={`hub-verdict ${verdict.tone}`}>
             <b>
-              {verdict.text} · {signed(price.deltaPct)}
+              {L(...verdict.text)} · {signed(price.deltaPct)}
             </b>
             <span>
-              Le bien est demandé {nf(price.askingAedSqft)} AED/sqft, pour une médiane de {nf(price.benchmarkAedSqft)} à nombre de
-              chambres égal.
+              {L(
+                `Le bien est demandé ${nf(price.askingAedSqft)} AED/sqft, pour une médiane de ${nf(price.benchmarkAedSqft)} à nombre de chambres égal.`,
+                `The property is asking ${nf(price.askingAedSqft)} AED/sqft, against a median of ${nf(price.benchmarkAedSqft)} for the same number of bedrooms.`
+              )}
             </span>
           </div>
         )}
         {!districtIsProperty && propDistrict && (
           <button type="button" className="hub-link" onClick={() => pickDistrict(propDistrict)}>
-            ← Revenir au quartier du bien ({propDistrict.label})
+            ← {L('Revenir au quartier du bien', 'Back to the property’s district')} ({propDistrict.label})
           </button>
         )}
         <p className="hub-src">
-          Zone DLD « {district.zone} » · médiane revente appartements, 12 mois, au {DLD_BENCHMARK_AS_OF}.
+          {L(
+            `Zone DLD « ${district.zone} » · médiane revente appartements, 12 mois, au ${DLD_BENCHMARK_AS_OF}.`,
+            `DLD zone “${district.zone}” · median apartment resale price, 12 months, as of ${DLD_BENCHMARK_AS_OF}.`
+          )}
         </p>
       </>
     );
   };
 
   const buildingBody = () => {
-    if (!featured) return <p className="hub-lead">Aucun bien sélectionné pour l’instant.</p>;
-    if (!point) return <p className="hub-lead">{scene.point === null ? 'Impossible de localiser cette annonce avec les sources publiques (OpenStreetMap).' : 'Localisation de l’immeuble…'}</p>;
+    if (!featured) return <p className="hub-lead">{L('Aucun bien sélectionné pour l’instant.', 'No property selected yet.')}</p>;
+    if (!point) return <p className="hub-lead">{scene.point === null
+      ? L('Impossible de localiser cette annonce avec les sources publiques (OpenStreetMap).', 'This listing cannot be located with public sources (OpenStreetMap).')
+      : L('Localisation de l’immeuble…', 'Locating the building…')}</p>;
     const sea = scene.views.find(v => v.kind === 'sea');
     const marks: Array<[string, number]> = [
       ['Burj Khalifa', haversineKm(point.lat, point.lng, 25.1972, 55.2744)],
-      ['Aéroport DXB', haversineKm(point.lat, point.lng, 25.2532, 55.3657)],
+      [L('Aéroport DXB', 'DXB airport'), haversineKm(point.lat, point.lng, 25.2532, 55.3657)],
     ];
     return (
       <>
         {point.precision === 'approx' && (
-          <p className="hub-note">Immeuble non identifié dans OpenStreetMap : position au centre du quartier, à affiner avec l’annonce source.</p>
+          <p className="hub-note">{L('Immeuble non identifié dans OpenStreetMap : position au centre du quartier, à affiner avec l’annonce source.', 'Building not identified in OpenStreetMap: shown at the centre of the district, to be refined with the source listing.')}</p>
         )}
         {point.precision === 'exact' && scene.buildingChecked && !scene.building && (
-          <p className="hub-note">Adresse localisée, mais la tour n’est pas encore dessinée dans OpenStreetMap (souvent un immeuble récent) : hauteur et étages indisponibles.</p>
+          <p className="hub-note">{L('Adresse localisée, mais la tour n’est pas encore dessinée dans OpenStreetMap (souvent un immeuble récent) : hauteur et étages indisponibles.', 'Address located, but the tower is not drawn in OpenStreetMap yet (often a recent building): height and floors unavailable.')}</p>
         )}
         {scene.building && (
-          <Row k="Tour (OpenStreetMap)">
-            ≈ {scene.building.heightM} m · ~{scene.building.floors} étages
+          <Row k={L('Tour (OpenStreetMap)', 'Tower (OpenStreetMap)')}>
+            ≈ {scene.building.heightM} m · ~{scene.building.floors} {L('étages', 'floors')}
           </Row>
         )}
         {scene.views.length > 0 && (
           <>
-            <p className="hub-eyebrow">Vues selon étage et orientation</p>
+            <p className="hub-eyebrow">{L('Vues selon étage et orientation', 'Views, depending on floor and orientation')}</p>
             <div className="hub-chips">
               {scene.views.map(v => (
                 <span key={v.label} className={`hub-view ${v.likelihood}`}>
@@ -467,7 +497,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
                 </span>
               ))}
             </div>
-            <p className="hub-src">Le faisceau bleu sur la carte pointe vers la vue la plus probable.</p>
+            <p className="hub-src">{L('Le faisceau bleu sur la carte pointe vers la vue la plus probable.', 'The blue beam on the map points to the most likely view.')}</p>
           </>
         )}
         <p className="hub-eyebrow">Distances</p>
@@ -477,17 +507,17 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
           </Row>
         ))}
         {sea && (
-          <Row k="Mer">
+          <Row k={L('Mer', 'Sea')}>
             {sea.distanceKm} km ({sea.direction})
           </Row>
         )}
-        <p className="hub-src">Bâti et hauteurs : OpenStreetMap. Les vues sont estimées, jamais garanties.</p>
+        <p className="hub-src">{L('Bâti et hauteurs : OpenStreetMap. Les vues sont estimées, jamais garanties.', 'Buildings and heights: OpenStreetMap. Views are estimated, never guaranteed.')}</p>
       </>
     );
   };
 
   const unitBody = () => {
-    if (!featured) return <p className="hub-lead">Aucun bien sélectionné pour l’instant.</p>;
+    if (!featured) return <p className="hub-lead">{L('Aucun bien sélectionné pour l’instant.', 'No property selected yet.')}</p>;
     if (tab === 'tresorerie') {
       return (
         <>
@@ -524,14 +554,14 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
     return (
       <>
         <div className="hub-box hub-floor">
-          <p className="hub-eyebrow" style={{ margin: 0 }}>L’appartement dans la tour</p>
+          <p className="hub-eyebrow" style={{ margin: 0 }}>{L('L’appartement dans la tour', 'The apartment inside the tower')}</p>
           {tower && floor && span ? (
             <>
               <div className="hub-between" style={{ margin: '6px 0 8px' }}>
                 <b className="hub-floor-n">
-                  Étage {floor} <span>sur ~{tower.floors}</span>
+                  {L('Étage', 'Floor')} {floor} <span>{L('sur', 'of')} ~{tower.floors}</span>
                 </b>
-                <span className="hub-k">≈ {Math.round(span.bottom)} m du sol</span>
+                <span className="hub-k">≈ {Math.round(span.bottom)} m {L('du sol', 'above ground')}</span>
               </div>
               <input
                 type="range"
@@ -541,55 +571,56 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
                 value={floor}
                 onChange={e => setFloorPick(parseInt(e.target.value))}
                 className="modern-slider slider-gold"
-                aria-label="Étage de l’appartement"
+                aria-label={L('Étage de l’appartement', 'Floor of the apartment')}
               />
               {above != null && (
                 <p className="hub-lead" style={{ marginTop: 8 }}>
-                  À cette hauteur, l’appartement est au-dessus de <b>{above} %</b> des immeubles dans un rayon de 300 m.
+                  {L('À cette hauteur, l’appartement est au-dessus de', 'At this height, the apartment is above')} <b>{above} %</b>{' '}
+                  {L('des immeubles dans un rayon de 300 m.', 'of the buildings within 300 m.')}
                 </p>
               )}
               <p className="hub-src" style={{ marginTop: 6 }}>
                 {floorPick != null
-                  ? 'Étage choisi par vous. La tranche claire sur la carte montre ce niveau.'
+                  ? L('Étage choisi par vous. La tranche claire sur la carte montre ce niveau.', 'Floor chosen by you. The bright slice on the map shows this level.')
                   : guess?.source === 'listing'
-                    ? 'Étage indiqué dans l’annonce. La tranche claire sur la carte montre ce niveau.'
+                    ? L('Étage indiqué dans l’annonce. La tranche claire sur la carte montre ce niveau.', 'Floor stated in the listing. The bright slice on the map shows this level.')
                     : guess?.source === 'hint'
-                      ? 'Étage estimé d’après l’annonce (« étage élevé », « bas »…). Ajustez-le avec le curseur.'
-                      : 'L’annonce ne précise pas l’étage : déplacez le curseur pour situer l’appartement dans la tour.'}
+                      ? L('Étage estimé d’après l’annonce (« étage élevé », « bas »…). Ajustez-le avec le curseur.', 'Floor estimated from the listing (“high floor”, “low floor”…). Adjust it with the slider.')
+                      : L('L’annonce ne précise pas l’étage : déplacez le curseur pour situer l’appartement dans la tour.', 'The listing does not give the floor: move the slider to place the apartment in the tower.')}
               </p>
             </>
           ) : (
             <p className="hub-lead" style={{ marginTop: 6 }}>
               {!point
-                ? 'Localisation de l’immeuble en cours…'
+                ? L('Localisation de l’immeuble en cours…', 'Locating the building…')
                 : point.precision === 'approx'
-                  ? 'Immeuble non identifié : impossible de situer l’étage. Seul le quartier est connu.'
+                  ? L('Immeuble non identifié : impossible de situer l’étage. Seul le quartier est connu.', 'Building not identified: the floor cannot be placed. Only the district is known.')
                   : scene.buildingChecked
-                    ? 'Cette tour n’est pas encore dessinée dans OpenStreetMap : impossible d’y situer l’étage.'
-                    : 'Zoomez sur l’immeuble pour charger sa silhouette.'}
+                    ? L('Cette tour n’est pas encore dessinée dans OpenStreetMap : impossible d’y situer l’étage.', 'This tower is not drawn in OpenStreetMap yet: the floor cannot be placed in it.')
+                    : L('Zoomez sur l’immeuble pour charger sa silhouette.', 'Zoom in on the building to load its outline.')}
             </p>
           )}
         </div>
         {verdict && price && (
           <div className={`hub-verdict ${verdict.tone}`}>
             <b>
-              {verdict.text}
+              {L(...verdict.text)}
               {price.deltaPct != null ? ` · ${signed(price.deltaPct)}` : ''}
             </b>
             {price.askingAedSqft && price.benchmarkAedSqft ? (
               <span>
-                Demandé {nf(price.askingAedSqft)} AED/sqft · médiane {nf(price.benchmarkAedSqft)} ({price.zone ?? 'Dubaï'}, au {price.asOf})
+                {L('Demandé', 'Asking')} {nf(price.askingAedSqft)} AED/sqft · {L('médiane', 'median')} {nf(price.benchmarkAedSqft)} ({price.zone ?? L('Dubaï', 'Dubai')}, {L('au', 'as of')} {price.asOf})
               </span>
             ) : null}
           </div>
         )}
-        <Row k="Prix demandé">{money(featured.price)}</Row>
-        <Row k="Surface">{featured.sqm ? `${featured.sqm} m²` : '—'}{eurM2 ? ` · ${money(eurM2)} / m²` : ''}</Row>
-        <Row k="Chambres">{featured.beds === 0 ? 'Studio' : featured.beds}</Row>
-        <Row k="Rendement brut annoncé">{featured.yield} %</Row>
-        {net != null && <Row k="Rendement net estimé">{net} %</Row>}
-        <Row k="Livraison">{featured.completion || '—'}</Row>
-        <p className="hub-eyebrow">Adéquation à votre profil : {score} / 100</p>
+        <Row k={L('Prix demandé', 'Asking price')}>{money(featured.price)}</Row>
+        <Row k={L('Surface', 'Size')}>{featured.sqm ? `${featured.sqm} m²` : '—'}{eurM2 ? ` · ${money(eurM2)} / m²` : ''}</Row>
+        <Row k={L('Chambres', 'Bedrooms')}>{featured.beds === 0 ? 'Studio' : featured.beds}</Row>
+        <Row k={L('Rendement brut annoncé', 'Advertised gross yield')}>{featured.yield} %</Row>
+        {net != null && <Row k={L('Rendement net estimé', 'Estimated net yield')}>{net} %</Row>}
+        <Row k={L('Livraison', 'Handover')}>{featured.completion || '—'}</Row>
+        <p className="hub-eyebrow">{L('Adéquation à votre profil', 'Match with your profile')} : {score} / 100</p>
         {reasons.length > 0 && (
           <ul className="hub-why">
             {reasons.map(r => (
@@ -599,33 +630,33 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
         )}
         <div className="hub-actions">
           <button type="button" className="hub-btn gold" onClick={() => onContact(featured)}>
-            Être contacté pour ce bien
+            {L('Être contacté pour ce bien', 'Get contacted about this property')}
           </button>
           {featured.sourceUrl && (
             <a className="hub-btn" href={featured.sourceUrl} target="_blank" rel="noopener noreferrer">
-              Annonce source ↗
+              {L('Annonce source', 'Source listing')} ↗
             </a>
           )}
         </div>
-        <p className="hub-src">Rendement net : après charges de copropriété, vacance et gestion locative.</p>
+        <p className="hub-src">{L('Rendement net : après charges de copropriété, vacance et gestion locative.', 'Net yield: after service charges, vacancy and rental management.')}</p>
       </>
     );
   };
 
   const panelTitle =
     level === 'city'
-      ? 'Dubaï'
+      ? L('Dubaï', 'Dubai')
       : level === 'district'
-        ? district?.label ?? 'Quartier'
+        ? district?.label ?? L('Quartier', 'District')
         : level === 'building'
-          ? scene.building?.name ?? featured?.title ?? 'Immeuble'
-          : featured?.title ?? 'Appartement';
+          ? scene.building?.name ?? featured?.title ?? L('Immeuble', 'Building')
+          : featured?.title ?? L('Appartement', 'Apartment');
 
   const panel = (
     <>
       <header className="hub-head">
         <p className="hub-eyebrow" style={{ margin: 0 }}>
-          Niveau {HUB_LEVELS.findIndex(l => l.id === level) + 1} / 4 · {levelMeta.label}
+          {L('Niveau', 'Level')} {HUB_LEVELS.findIndex(l => l.id === level) + 1} / 4 · {levelMeta.label}
         </p>
         <h2>{panelTitle}</h2>
         <p className="hub-hint">{levelMeta.hint}</p>
@@ -633,7 +664,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
           <div className="hub-tabs" role="tablist">
             {TABS[level].map(x => (
               <button key={x.id} type="button" role="tab" aria-selected={tab === x.id} className={tab === x.id ? 'on' : ''} onClick={() => setTab(x.id)}>
-                {x.label}
+                {L(...x.label)}
               </button>
             ))}
           </div>
@@ -651,10 +682,10 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
     <>
       <div className="hub-tabs dock" role="tablist">
         <button type="button" role="tab" aria-selected={dockTab === 'chat'} className={dockTab === 'chat' ? 'on' : ''} onClick={() => setDockTab('chat')}>
-          Conseiller
+          {L('Conseiller', 'Advisor')}
         </button>
         <button type="button" role="tab" aria-selected={dockTab === 'selection'} className={dockTab === 'selection' ? 'on' : ''} onClick={() => setDockTab('selection')}>
-          Sa sélection{props.matchedListings.length ? ` (${props.matchedListings.length})` : ''}
+          {L('Sa sélection', 'Shortlist')}{props.matchedListings.length ? ` (${props.matchedListings.length})` : ''}
         </button>
       </div>
       <div className="hub-dock-body">
@@ -675,7 +706,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
                 isLoading={props.isChatLoading}
               />
               {!props.isChatLoading && !props.matchedListings.length && (
-                <p className="hub-lead">Le conseiller n’a pas encore retenu de biens pour ce dossier.</p>
+                <p className="hub-lead">{L('Le conseiller n’a pas encore retenu de biens pour ce dossier.', 'The advisor has not shortlisted any property for this file yet.')}</p>
               )}
             </div>
           )}
@@ -686,7 +717,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
 
   // ── Le bien, sorti de la carte ───────────────────────────────────────────
   const card = featured ? (
-    <article className={`hub-card ${arrived ? 'in' : ''}`} aria-label="Bien le plus pertinent pour votre profil">
+    <article className={`hub-card ${arrived ? 'in' : ''}`} aria-label={L('Bien le plus pertinent pour votre profil', 'Most relevant property for your profile')}>
       <span className="hub-stem" aria-hidden />
       <div className="hub-photo">
         {featured.image ? <img src={featured.image} alt="" loading="lazy" onError={e => ((e.currentTarget.style.display = 'none'))} /> : null}
@@ -694,31 +725,32 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
       </div>
       <div className="hub-card-main">
         <p className="hub-eyebrow" style={{ margin: 0 }}>
-          {rank === 0 ? 'N° 1 pour votre profil' : `Choix n° ${rank + 1}`} · {ranked.length} biens analysés
+          {rank === 0 ? L('N° 1 pour votre profil', 'No. 1 for your profile') : L(`Choix n° ${rank + 1}`, `Choice no. ${rank + 1}`)} · {ranked.length}{' '}
+          {L('biens analysés', 'properties analysed')}
         </p>
         <h3>{featured.title}</h3>
         <p className="hub-loc">{featured.location}</p>
         <div className="hub-facts">
           <b>{money(featured.price)}</b>
-          <span>{featured.yield} % brut</span>
-          <span>{featured.beds === 0 ? 'Studio' : `${featured.beds} ch.`}</span>
+          <span>{featured.yield} % {L('brut', 'gross')}</span>
+          <span>{featured.beds === 0 ? 'Studio' : L(`${featured.beds} ch.`, `${featured.beds} bed`)}</span>
           {featured.sqm ? <span>{featured.sqm} m²</span> : null}
           {verdict && price?.deltaPct != null && <span className={`hub-badge ${verdict.tone}`}>{signed(price.deltaPct)} vs DLD</span>}
         </div>
         <div className="hub-card-actions">
           <button type="button" className="hub-btn gold" onClick={() => goTo('unit')} disabled={!located && !mapFailed}>
-            Voir sur la carte
+            {L('Voir sur la carte', 'See on the map')}
           </button>
           <button type="button" className="hub-btn" onClick={() => onContact(featured)}>
-            Être contacté
+            {L('Être contacté', 'Get contacted')}
           </button>
           {ranked.length > 1 && (
             <span className="hub-pager">
-              <button type="button" onClick={() => step(-1)} aria-label="Bien précédent">‹</button>
+              <button type="button" onClick={() => step(-1)} aria-label={L('Bien précédent', 'Previous property')}>‹</button>
               <em>
                 {rank + 1} / {ranked.length}
               </em>
-              <button type="button" onClick={() => step(1)} aria-label="Bien suivant">›</button>
+              <button type="button" onClick={() => step(1)} aria-label={L('Bien suivant', 'Next property')}>›</button>
             </span>
           )}
         </div>
@@ -729,7 +761,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
       {props.listingsLoading ? (
         <>
           <span className="hub-radar" aria-hidden />
-          <p>Collecte des annonces en direct et classement pour votre profil…</p>
+          <p>{L('Collecte des annonces en direct et classement pour votre profil…', 'Collecting live listings and ranking them for your profile…')}</p>
         </>
       ) : (
         <p>{props.listingsStatus || t.app.s6Empty}</p>
@@ -738,7 +770,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
   );
 
   const stepper = (
-    <nav className="hub-stepper" aria-label="Niveau d’analyse">
+    <nav className="hub-stepper" aria-label={L('Niveau d’analyse', 'Analysis level')}>
       {HUB_LEVELS.map((l, i) => {
         const disabled = l.id !== 'city' && !located && !mapFailed;
         return (
@@ -751,21 +783,21 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
             onClick={() => goTo(l.id)}
           >
             <i>{i + 1}</i>
-            {l.label}
+            {levelText(l.id).label}
           </button>
         );
       })}
       {!mapFailed && (
         <span className="hub-zoom">
-          <button type="button" onClick={() => mapRef.current?.zoomBy(-1)} aria-label="Dézoomer">−</button>
-          <button type="button" onClick={() => mapRef.current?.zoomBy(1)} aria-label="Zoomer">+</button>
+          <button type="button" onClick={() => mapRef.current?.zoomBy(-1)} aria-label={L('Dézoomer', 'Zoom out')}>−</button>
+          <button type="button" onClick={() => mapRef.current?.zoomBy(1)} aria-label={L('Zoomer', 'Zoom in')}>+</button>
         </span>
       )}
     </nav>
   );
 
   return (
-    <section className={`hub-stage ${isMobile ? 'mobile' : 'desktop'}`} data-level={level} aria-label="Votre analyse sur la carte de Dubaï">
+    <section className={`hub-stage ${isMobile ? 'mobile' : 'desktop'}`} data-level={level} aria-label={L('Votre analyse sur la carte de Dubaï', 'Your analysis on the map of Dubai')}>
       {!mapFailed ? (
         <MapBoundary onFail={() => setMapFailed(true)}>
           <Suspense fallback={<div className="hub-map hub-wait"><span className="hub-radar" aria-hidden /></div>}>
@@ -791,7 +823,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
         </MapBoundary>
       ) : (
         <div className="hub-map hub-wait">
-          <p>La carte 3D n’a pas pu démarrer (connexion ou carte graphique non prise en charge). Les analyses restent accessibles par niveau.</p>
+          <p>{L('La carte 3D n’a pas pu démarrer (connexion ou carte graphique non prise en charge). Les analyses restent accessibles par niveau.', 'The 3D map could not start (connection or unsupported graphics card). The analyses remain available by level.')}</p>
         </div>
       )}
       <div className="hub-vignette" aria-hidden />
@@ -799,7 +831,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
       <div className="hub-free" style={isMobile ? undefined : { left: padding.left, right: padding.right }}>
         <div className="hub-top">
           {stepper}
-          <Readout feed={readoutRef} />
+          <Readout feed={readoutRef} idle={L(...READOUT_IDLE)} />
         </div>
         {!isMobile && card}
       </div>
@@ -807,23 +839,23 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
       {!isMobile && (
         <>
           {panelOpen ? (
-            <aside className="hub-panel" aria-label="Analyses du niveau courant">
-              <button type="button" className="hub-fold" onClick={() => setPanelOpen(false)} aria-label="Masquer les analyses">‹</button>
+            <aside className="hub-panel" aria-label={L('Analyses du niveau courant', 'Analyses for the current level')}>
+              <button type="button" className="hub-fold" onClick={() => setPanelOpen(false)} aria-label={L('Masquer les analyses', 'Hide the analyses')}>‹</button>
               {panel}
             </aside>
           ) : (
             <button type="button" className="hub-reopen left" onClick={() => setPanelOpen(true)}>
-              Analyses ›
+              {L('Analyses', 'Analyses')} ›
             </button>
           )}
           {dockOpen ? (
-            <aside className="hub-dock" aria-label="Votre conseiller">
-              <button type="button" className="hub-fold right" onClick={() => setDockOpen(false)} aria-label="Masquer le conseiller">›</button>
+            <aside className="hub-dock" aria-label={L('Votre conseiller', 'Your advisor')}>
+              <button type="button" className="hub-fold right" onClick={() => setDockOpen(false)} aria-label={L('Masquer le conseiller', 'Hide the advisor')}>›</button>
               {advisor}
             </aside>
           ) : (
             <button type="button" className="hub-reopen right" onClick={() => setDockOpen(true)}>
-              ‹ Conseiller{props.isChatLoading ? ' …' : ''}
+              ‹ {L('Conseiller', 'Advisor')}{props.isChatLoading ? ' …' : ''}
             </button>
           )}
         </>
@@ -833,10 +865,10 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
         <div className={`hub-sheet ${sheet}`}>
           <div className="hub-sheet-bar">
             <button type="button" className={sheet === 'analyses' ? 'on' : ''} onClick={() => setSheet(sheet === 'analyses' ? 'peek' : 'analyses')}>
-              Analyses · {levelMeta.label}
+              {L('Analyses', 'Analyses')} · {levelMeta.label}
             </button>
             <button type="button" className={sheet === 'advisor' ? 'on' : ''} onClick={() => setSheet(sheet === 'advisor' ? 'peek' : 'advisor')}>
-              Conseiller
+              {L('Conseiller', 'Advisor')}
             </button>
           </div>
           {sheet === 'peek' && card}

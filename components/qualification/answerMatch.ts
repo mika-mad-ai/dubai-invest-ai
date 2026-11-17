@@ -17,14 +17,14 @@ const norm = (s: string) =>
 /** Montants cités dans un texte : « 300k », « 1,5 M€ », « 200 000 », « 2 millions ». */
 export function parseAmounts(text: string): number[] {
   const out: number[] = [];
-  const re = /(\d{1,3}(?:[   .]\d{3})+|\d+)(?:[.,](\d{1,2}))?\s*(millions?|mille|k|m)?(?![a-z])/gi;
+  const re = /(\d{1,3}(?:[   .,]\d{3})+|\d+)(?:[.,](\d{1,2})(?!\d))?\s*(millions?|mille|thousand|k|m)?(?![a-z])/gi;
   let m: RegExpExecArray | null;
   const t = norm(text);
   while ((m = re.exec(t))) {
-    const whole = Number(m[1].replace(/[   .]/g, ''));
+    const whole = Number(m[1].replace(/[   .,]/g, ''));
     const value = m[2] ? whole + Number(`0.${m[2]}`) : whole;
     const unit = (m[3] || '').toLowerCase();
-    const mult = unit.startsWith('m') && unit !== 'mille' ? 1_000_000 : unit === 'k' || unit === 'mille' ? 1_000 : 1;
+    const mult = unit.startsWith('m') && unit !== 'mille' ? 1_000_000 : unit === 'k' || unit === 'mille' || unit === 'thousand' ? 1_000 : 1;
     out.push(Math.round(value * mult));
   }
   return out;
@@ -35,8 +35,8 @@ export function optionRange(label: string): [number, number] | null {
   const amounts = parseAmounts(label);
   if (!amounts.length) return null;
   const t = norm(label);
-  if (/moins de|jusqu a|under/.test(t)) return [0, amounts[0]];
-  if (/plus de|au-dela|over/.test(t)) return [amounts[0], Infinity];
+  if (/moins de|jusqu a|under|less than|up to|below/.test(t)) return [0, amounts[0]];
+  if (/plus de|au-dela|over|more than|above/.test(t)) return [amounts[0], Infinity];
   if (amounts.length >= 2) return [Math.min(amounts[0], amounts[1]), Math.max(amounts[0], amounts[1])];
   return null;
 }
@@ -44,6 +44,9 @@ export function optionRange(label: string): [number, number] | null {
 const STOP = new Set([
   'les', 'des', 'une', 'pour', 'avec', 'dans', 'que', 'qui', 'est', 'sur', 'mon', 'mes', 'par', 'pas', 'plus', 'moins',
   'veux', 'voudrais', 'aimerais', 'cherche', 'souhaite', 'bien', 'tres', 'peu', 'aux', 'ses', 'son', 'vous', 'nous', 'moi',
+  // anglais
+  'the', 'and', 'for', 'with', 'want', 'would', 'like', 'looking', 'need', 'from', 'that', 'this', 'into', 'have', 'some', 'year', 'years', 'month',
+  'every', 'each', 'all', 'very', 'more', 'most', 'best', 'good', 'out', 'about', 'around', 'income', 'budget',
 ]);
 const stem = (w: string) => (w.length > 5 ? w.slice(0, 5) : w);
 const tokens = (s: string) =>
@@ -112,14 +115,23 @@ const PROJECT_CUES: Record<ProjectId, RegExp[]> = {
   locatif: [
     /invest/, /rendement/, /rentab/, /placer|placement/, /airbnb/, /cash ?flow/, /plus[- ]value/, /revenus? (locatif|passif|complementaire)/,
     /(toucher|percevoir|encaisser|generer|recevoir)\b.{0,25}\bloyers?/, /loyers? (mensuel|chaque mois|tous les mois)/, /mettre en location/, /pour (le |la )?louer/,
+    // anglais
+    /\byield/, /\breturns?\b|\broi\b/, /rental income|passive income|monthly income/, /rent(ing)? (it )?out/, /buy[- ]to[- ]let/, /capital (gain|growth|appreciation)/,
+    /(collect|earn|receive|get)\b.{0,25}\brent\b/, /\blandlord/,
   ],
   residence: [
     /y vivre|vivre a|vivre la[- ]bas/, /habiter/, /m ?installer|nous installer|s ?installer/, /residence (principale|secondaire)/, /pied[- ]a[- ]terre/,
     /expatri/, /demenag/, /(ma|notre) famille/, /pour (moi|nous)\b/,
+    // anglais
+    /\blive (in|there)\b|to live\b|living in/, /\bmove (to|in)\b|\bmoving\b|relocat/, /(main|primary|second) (home|residence)/, /\b(my|our) (family|kids|children)/,
+    /for (myself|ourselves|me|us)\b/, /\bown home\b|\ba home\b/, /golden visa/,
   ],
   location: [
     /louer un|louer une/, /(cherche|trouver|besoin d ?une?) .{0,20}location/, /a louer/, /locataire/, /en location\b/, /loyer (max|maximum)/,
     /budget .{0,15}(par mois|mensuel)/, /\d\s*(€|euros?|aed)?\s*(par mois|\/ ?mois|mensuel)\b.{0,20}(max|loyer)/,
+    // anglais
+    /\brent (a|an)\b/, /(looking for|find|need) .{0,20}(a rental|to rent|for rent)/, /\bto rent\b|\bfor rent\b/, /\btenant\b/, /\blease\b/,
+    /\d\s*(€|eur|euros?|aed|usd|\$|£)?\s*(per month|a month|\/ ?month|monthly|pcm)/,
   ],
 };
 
