@@ -458,3 +458,4 @@ Détail et ordre de branchement : `docs/AGENCY_SETUP.md`.
 - `answerMatch.ts` reconnaît le projet dans un message tapé dans ces langues (mots-clés par langue).
 - Traductions rédigées par Claude : à faire relire par un natif (arabe et afrikaans surtout).
 - Restent en français : graphiques hérités, noms de vues (`viewAnalysis`), message d'erreur du conseiller (`agentService.ts`).
+- Le conseiller parle TOUJOURS à la première personne (« Je lance la recherche », « Je suis spécialiste… »), y compris dans les messages d'erreur ; jamais « Karim lance… » ni « Il identifie… ». Vérifié par `verify-concierge`.

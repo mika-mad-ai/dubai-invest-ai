@@ -89,7 +89,7 @@ export async function streamAdvisor(
   } catch (err) {
     if ((err as Error)?.name === 'AbortError') return;
     console.warn('[conseiller] requête impossible', err);
-    handlers.onError?.('Connexion au conseiller impossible. Vérifiez votre réseau puis renvoyez votre message.');
+    handlers.onError?.('Je n’arrive pas à me connecter. Vérifiez votre réseau puis renvoyez votre message.');
     return;
   }
 
@@ -99,7 +99,7 @@ export async function streamAdvisor(
     // Seuls 413 (message trop long) et 429 (débit) portent un motif rédigé
     // pour le visiteur ; les autres motifs sont techniques (config, quota)
     // et restent en console.
-    let reason = 'Le conseiller est momentanément indisponible. Réessayez dans quelques minutes.';
+    let reason = 'Je suis momentanément indisponible. Réessayez dans quelques minutes.';
     try {
       const data = await response.json();
       if (data?.reason && (response.status === 413 || response.status === 429)) reason = data.reason;

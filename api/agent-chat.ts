@@ -96,7 +96,7 @@ export default async function handler(req: any, res: any) {
     console.warn(`[agent-chat] budget quotidien atteint : ${budget.spent.toFixed(2)} / ${budget.budget} $`);
     res.status(503).json({
       ok: false,
-      reason: 'Le conseiller est momentanément indisponible. Réessayez plus tard.',
+      reason: 'Je suis momentanément indisponible. Réessayez plus tard.',
     });
     return;
   }
