@@ -1,17 +1,44 @@
 /**
  * Textes du chat d'accueil par langue. Le français est la source (les
  * questions vivent dans `steps.ts`) ; l'anglais est traduit ici, dans le même
- * ordre de questions et de réponses. Les autres langues du site reçoivent
- * l'anglais plutôt que le français.
+ * ordre de questions et de réponses ; l'espagnol, le russe, le chinois,
+ * l'arabe et l'afrikaans viennent de `chatI18nMore.ts`.
  */
 import { AGENTS } from '../AgentsSection';
 import { AGENT_TREES, type TreeStep } from './steps';
+import { CHAT_MORE, type ChatPack } from './chatI18nMore';
 
-export type ChatLang = 'fr' | 'en';
+export type ChatLang = 'fr' | 'en' | 'es' | 'ru' | 'zh' | 'ar' | 'af';
 
-export const chatLang = (locale: string): ChatLang => (locale === 'fr' ? 'fr' : 'en');
+const MORE = CHAT_MORE as Record<string, ChatPack | undefined>;
 
-export const CHAT_TEXT = {
+/** Langue du chat pour une langue du site ; une langue inconnue reçoit l'anglais. */
+export const chatLang = (locale: string): ChatLang => (locale === 'fr' || locale === 'en' || MORE[locale] ? (locale as ChatLang) : 'en');
+
+export type ChatText = {
+  stage: string;
+  greeting: string;
+  projectQuestion: string;
+  contactQuestion: string;
+  intro: (name: string, role: string, desc: string) => string;
+  noted: (items: string) => string;
+  searching: (first: string, noted: string) => string;
+  defaultAdvisor: string;
+  brand: string;
+  placeholderFirst: string;
+  placeholder: string;
+  answerAria: string;
+  optionsAria: string;
+  sendAria: string;
+  backAria: string;
+  progressAria: (n: number, total: number) => string;
+  proofAria: string;
+  opening: string;
+  go: string;
+  more: string;
+};
+
+const BASE_TEXT: Record<'fr' | 'en', ChatText> = {
   fr: {
     stage: 'Votre conseiller IA',
     greeting: 'Bonjour. Écrivez ce que vous cherchez à Dubaï et je lance la recherche — ou choisissez une réponse pour être guidé.',
@@ -56,9 +83,57 @@ export const CHAT_TEXT = {
     go: 'Show my map of Dubai',
     more: 'Guides & legal notices',
   },
-} as const;
+};
+
+/** Ordre des 20 textes d'interface dans `ChatPack.ui`. */
+const fill = (template: string, vars: Record<string, string | number>) => template.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ''));
+const fromPack = (ui: string[]): ChatText => ({
+  stage: ui[0],
+  greeting: ui[1],
+  projectQuestion: ui[2],
+  contactQuestion: ui[3],
+  intro: (name, role, desc) => fill(ui[4], { name, role, desc }),
+  noted: items => fill(ui[5], { items }),
+  searching: (first, noted) => fill(ui[6], { first, noted }),
+  defaultAdvisor: ui[7],
+  brand: ui[8],
+  placeholderFirst: ui[9],
+  placeholder: ui[10],
+  answerAria: ui[11],
+  optionsAria: ui[12],
+  sendAria: ui[13],
+  backAria: ui[14],
+  progressAria: (n, total) => fill(ui[15], { n, total }),
+  proofAria: ui[16],
+  opening: ui[17],
+  go: ui[18],
+  more: ui[19],
+});
+
+export const CHAT_TEXT: Record<ChatLang, ChatText> = {
+  ...BASE_TEXT,
+  es: fromPack(CHAT_MORE.es.ui),
+  ru: fromPack(CHAT_MORE.ru.ui),
+  zh: fromPack(CHAT_MORE.zh.ui),
+  ar: fromPack(CHAT_MORE.ar.ui),
+  af: fromPack(CHAT_MORE.af.ui),
+};
+
+const AGENT_ORDER = ['locatif', 'residence', 'location'];
+const projectsFromPack = (lines: string[]) => AGENT_ORDER.map((agentId, i) => ({ agentId, label: lines[i * 2], desc: lines[i * 2 + 1] }));
+
+/** Tranches chiffrées : écrites en symboles, donc identiques dans toutes ces langues. */
+const NEUTRAL_RANGES: Record<string, string[]> = {
+  budget: ['< 200 000 €', '200 000 – 400 000 €', '400 000 – 700 000 €', '700 000 € – 1.5 M€', '> 1.5 M€'],
+  monthly_budget: ['< 1 500 €', '1 500 – 3 000 €', '3 000 – 6 000 €', '> 6 000 €'],
+};
 
 export const PROJECT_TEXT: Record<ChatLang, Array<{ agentId: string; label: string; desc: string }>> = {
+  es: projectsFromPack(CHAT_MORE.es.projects),
+  ru: projectsFromPack(CHAT_MORE.ru.projects),
+  zh: projectsFromPack(CHAT_MORE.zh.projects),
+  ar: projectsFromPack(CHAT_MORE.ar.projects),
+  af: projectsFromPack(CHAT_MORE.af.projects),
   fr: [
     { agentId: 'locatif', label: 'Investir pour louer', desc: 'Acheter un bien et encaisser des loyers, en longue durée ou en Airbnb.' },
     { agentId: 'residence', label: 'Acheter pour y vivre', desc: 'Résidence principale, pied-à-terre ou installation en famille.' },
@@ -90,8 +165,10 @@ const AGENT_EN: Record<string, { role: string; desc: string }> = {
 export function agentText(agentId: string, lang: ChatLang): { name: string; first: string; role: string; desc: string } | null {
   const a = AGENTS.find(x => x.id === agentId);
   if (!a) return null;
-  const en = lang === 'en' ? AGENT_EN[agentId] : undefined;
-  return { name: a.name, first: a.name.split(' ')[0], role: en?.role ?? a.role, desc: en?.desc ?? a.desc };
+  const pack = MORE[lang];
+  const i = AGENT_ORDER.indexOf(agentId);
+  const tr = lang === 'en' ? AGENT_EN[agentId] : pack && i >= 0 ? { role: pack.agents[i * 2], desc: pack.agents[i * 2 + 1] } : undefined;
+  return { name: a.name, first: a.name.split(' ')[0], role: tr?.role ?? a.role, desc: tr?.desc ?? a.desc };
 }
 
 type StepEn = { question: string; sub: string; options: Array<[label: string, desc: string]> };
@@ -267,6 +344,8 @@ const STEPS_EN: Record<string, Record<string, StepEn>> = {
 export function localizedTree(agentId: string, lang: ChatLang): TreeStep[] {
   const tree = AGENT_TREES[agentId] ?? [];
   if (lang === 'fr') return tree;
+  const pack = MORE[lang];
+  if (pack) return treeFromPack(agentId, pack.steps) ?? localizedTree(agentId, 'en');
   const en = STEPS_EN[agentId] ?? {};
   return tree.map(step => {
     const tr = en[step.id];
@@ -278,4 +357,30 @@ export function localizedTree(agentId: string, lang: ChatLang): TreeStep[] {
       options: step.options.map((o, i) => ({ ...o, label: tr.options[i][0], desc: tr.options[i][1] })),
     };
   });
+}
+
+/**
+ * Relit les lignes `ChatPack.steps` (ordre décrit dans chatI18nMore.ts). Rend
+ * null si le compte de lignes ne correspond pas aux questions — on préfère
+ * alors l'anglais à un parcours décalé d'une ligne.
+ */
+function treeFromPack(agentId: string, lines: string[]): TreeStep[] | null {
+  let cursor = 0;
+  let result: TreeStep[] | null = null;
+  for (const id of AGENT_ORDER) {
+    const built = (AGENT_TREES[id] ?? []).map(step => {
+      const question = lines[cursor++];
+      const sub = lines[cursor++];
+      const neutral = NEUTRAL_RANGES[step.id];
+      const options = step.options.map((o, i) => {
+        const label = neutral ? neutral[i] : lines[cursor++];
+        const desc = lines[cursor++];
+        return { ...o, label, desc };
+      });
+      return { ...step, question, sub, options };
+    });
+    if (id === agentId) result = built;
+  }
+  if (cursor !== lines.length || !result) return null;
+  return result.every(s => s.question && s.options.every(o => o.label && o.desc)) ? result : null;
 }

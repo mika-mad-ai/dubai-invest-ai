@@ -35,8 +35,8 @@ export function optionRange(label: string): [number, number] | null {
   const amounts = parseAmounts(label);
   if (!amounts.length) return null;
   const t = norm(label);
-  if (/moins de|jusqu a|under|less than|up to|below/.test(t)) return [0, amounts[0]];
-  if (/plus de|au-dela|over|more than|above/.test(t)) return [amounts[0], Infinity];
+  if (/moins de|jusqu a|under|less than|up to|below|</.test(t)) return [0, amounts[0]];
+  if (/plus de|au-dela|over|more than|above|>/.test(t)) return [amounts[0], Infinity];
   if (amounts.length >= 2) return [Math.min(amounts[0], amounts[1]), Math.max(amounts[0], amounts[1])];
   return null;
 }
@@ -51,7 +51,8 @@ const STOP = new Set([
 const stem = (w: string) => (w.length > 5 ? w.slice(0, 5) : w);
 const tokens = (s: string) =>
   norm(s)
-    .split(/[^a-z0-9]+/)
+    // Lettres de tous les alphabets (cyrillique, arabe…), pas seulement latin.
+    .split(/[^\p{L}\p{N}]+/u)
     .filter(w => w.length >= 3 && !STOP.has(w))
     .map(stem);
 
@@ -118,6 +119,12 @@ const PROJECT_CUES: Record<ProjectId, RegExp[]> = {
     // anglais
     /\byield/, /\breturns?\b|\broi\b/, /rental income|passive income|monthly income/, /rent(ing)? (it )?out/, /buy[- ]to[- ]let/, /capital (gain|growth|appreciation)/,
     /(collect|earn|receive|get)\b.{0,25}\brent\b/, /\blandlord/,
+    // espagnol, russe, chinois, arabe, afrikaans (texte déjà sans accents ni « й/ё »)
+    /invert|inversion/, /rentabilidad/, /ingresos? (por alquiler|pasivos)/, /cobrar .{0,20}alquiler/, /plusvalia/,
+    /инвест/, /доходност/, /сдавать/, /арендн\S* доход/, /пассивн/,
+    /投资/, /收益|回报/, /出租|收租|租金收入/,
+    /استثمار|استثمر|عائد|للتأجير|دخل ايجاري|دخل إيجاري/,
+    /bele|beleg/, /opbrengs/, /verhuur/, /huurinkomste/,
   ],
   residence: [
     /y vivre|vivre a|vivre la[- ]bas/, /habiter/, /m ?installer|nous installer|s ?installer/, /residence (principale|secondaire)/, /pied[- ]a[- ]terre/,
@@ -125,6 +132,11 @@ const PROJECT_CUES: Record<ProjectId, RegExp[]> = {
     // anglais
     /\blive (in|there)\b|to live\b|living in/, /\bmove (to|in)\b|\bmoving\b|relocat/, /(main|primary|second) (home|residence)/, /\b(my|our) (family|kids|children)/,
     /for (myself|ourselves|me|us)\b/, /\bown home\b|\ba home\b/, /golden visa/,
+    /\bvivir\b/, /mudar/, /mi familia/, /para (mi|nosotros)\b/,
+    /жить/, /переез/, /для себя/, /семь/,
+    /自住|居住|定居|搬家|全家|家人/,
+    /للسكن|أسكن|اسكن|أعيش|اعيش|الانتقال|عائلتي/,
+    /\bwoon\b|intrek|verhuis/, /my gesin/, /vir myself/,
   ],
   location: [
     /louer un|louer une/, /(cherche|trouver|besoin d ?une?) .{0,20}location/, /a louer/, /locataire/, /en location\b/, /loyer (max|maximum)/,
@@ -132,6 +144,11 @@ const PROJECT_CUES: Record<ProjectId, RegExp[]> = {
     // anglais
     /\brent (a|an)\b/, /(looking for|find|need) .{0,20}(a rental|to rent|for rent)/, /\bto rent\b|\bfor rent\b/, /\btenant\b/, /\blease\b/,
     /\d\s*(€|eur|euros?|aed|usd|\$|£)?\s*(per month|a month|\/ ?month|monthly|pcm)/,
+    /alquilar un|alquilar una/, /busco .{0,20}alquiler/, /en alquiler\b/, /inquilino/, /al mes\b/,
+    /снять|сниму/, /арендовать/, /в месяц/,
+    /租房|求租|想租|月租/,
+    /استئجار|أستأجر|استأجر|للإيجار|للايجار|شهريا/,
+    /huur\s+n\b/, /te huur\b/, /per maand/, /huurder/,
   ],
 };
 

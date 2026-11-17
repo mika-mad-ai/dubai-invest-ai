@@ -26,6 +26,7 @@ import {
   type HubLevel,
 } from './zoomLevels';
 import type { CameraReadout, HubMapHandle, HubSubject, MapPadding, SceneInfo } from './HubMap';
+import { HUB_I18N } from './hubI18n';
 
 // MapLibre (~300 kB gz) et les graphiques ne bloquent pas l'affichage de
 // l'interface : chacun arrive dans son propre morceau.
@@ -174,10 +175,13 @@ const Row: React.FC<{ k: string; children: React.ReactNode }> = ({ k, children }
 const ResultsHub: React.FC<ResultsHubProps> = props => {
   const { profile, ranked, featured, scoreOf, onFeature, onContact, simParams, setSimParams, calc } = props;
   const { money, t, locale } = useI18n();
-  // L'interface suit la langue du site : français, sinon anglais.
-  const en = locale !== 'fr';
-  const L = (fr: string, english: string) => (en ? english : fr);
-  const yrs = (n: number | string) => (en ? `${n} years` : `${n} ans`);
+  // L'interface suit la langue du site ; une phrase non traduite retombe sur l'anglais
+  // (le dictionnaire des autres langues est indexé par la phrase anglaise).
+  const L = (fr: string, english: string, vars?: Array<string | number>) => {
+    const base = locale === 'fr' ? fr : locale === 'en' ? english : HUB_I18N[locale]?.[english] ?? english;
+    return vars ? base.replace(/\{(\d)\}/g, (_, i) => String(vars[Number(i)])) : base;
+  };
+  const yrs = (n: number | string) => L('{0} ans', '{0} years', [n]);
   const mapRef = useRef<HubMapHandle>(null);
 
   const [level, setLevel] = useState<HubLevel>('city');
@@ -302,7 +306,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
   const setTab = (id: string) => setTabs(prev => ({ ...prev, [level]: id }));
   const levelText = (id: HubLevel) => {
     const l = HUB_LEVELS.find(x => x.id === id)!;
-    return en ? LEVEL_EN[id] : { label: l.label, hint: l.hint };
+    return { label: L(l.label, LEVEL_EN[id].label), hint: L(l.hint, LEVEL_EN[id].hint) };
   };
   const levelMeta = levelText(level);
 
@@ -419,8 +423,8 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
         </div>
         <Row k={L('Niveau de prix', 'Price level')}>
           {pct >= 50
-            ? L(`plus cher que ${pct} % des quartiers suivis`, `pricier than ${pct}% of tracked districts`)
-            : L(`moins cher que ${100 - pct} % des quartiers suivis`, `cheaper than ${100 - pct}% of tracked districts`)}
+            ? L('plus cher que {0} % des quartiers suivis', 'pricier than {0}% of tracked districts', [pct])
+            : L('moins cher que {0} % des quartiers suivis', 'cheaper than {0}% of tracked districts', [100 - pct])}
         </Row>
         <div className="hub-bars" aria-label={L('Quartiers de prix voisin', 'Districts at a similar price')}>
           {around.map(d => (
@@ -440,8 +444,9 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
             </b>
             <span>
               {L(
-                `Le bien est demandé ${nf(price.askingAedSqft)} AED/sqft, pour une médiane de ${nf(price.benchmarkAedSqft)} à nombre de chambres égal.`,
-                `The property is asking ${nf(price.askingAedSqft)} AED/sqft, against a median of ${nf(price.benchmarkAedSqft)} for the same number of bedrooms.`
+                'Le bien est demandé {0} AED/sqft, pour une médiane de {1} à nombre de chambres égal.',
+                'The property is asking {0} AED/sqft, against a median of {1} for the same number of bedrooms.',
+                [nf(price.askingAedSqft), nf(price.benchmarkAedSqft)]
               )}
             </span>
           </div>
@@ -453,8 +458,9 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
         )}
         <p className="hub-src">
           {L(
-            `Zone DLD « ${district.zone} » · médiane revente appartements, 12 mois, au ${DLD_BENCHMARK_AS_OF}.`,
-            `DLD zone “${district.zone}” · median apartment resale price, 12 months, as of ${DLD_BENCHMARK_AS_OF}.`
+            'Zone DLD « {0} » · médiane revente appartements, 12 mois, au {1}.',
+            'DLD zone “{0}” · median apartment resale price, 12 months, as of {1}.',
+            [district.zone, DLD_BENCHMARK_AS_OF]
           )}
         </p>
       </>
@@ -725,7 +731,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
       </div>
       <div className="hub-card-main">
         <p className="hub-eyebrow" style={{ margin: 0 }}>
-          {rank === 0 ? L('N° 1 pour votre profil', 'No. 1 for your profile') : L(`Choix n° ${rank + 1}`, `Choice no. ${rank + 1}`)} · {ranked.length}{' '}
+          {rank === 0 ? L('N° 1 pour votre profil', 'No. 1 for your profile') : L('Choix n° {0}', 'Choice no. {0}', [rank + 1])} · {ranked.length}{' '}
           {L('biens analysés', 'properties analysed')}
         </p>
         <h3>{featured.title}</h3>
@@ -733,7 +739,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
         <div className="hub-facts">
           <b>{money(featured.price)}</b>
           <span>{featured.yield} % {L('brut', 'gross')}</span>
-          <span>{featured.beds === 0 ? 'Studio' : L(`${featured.beds} ch.`, `${featured.beds} bed`)}</span>
+          <span>{featured.beds === 0 ? 'Studio' : L('{0} ch.', '{0} bed', [featured.beds])}</span>
           {featured.sqm ? <span>{featured.sqm} m²</span> : null}
           {verdict && price?.deltaPct != null && <span className={`hub-badge ${verdict.tone}`}>{signed(price.deltaPct)} vs DLD</span>}
         </div>

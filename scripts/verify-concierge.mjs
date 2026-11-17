@@ -102,7 +102,38 @@ for (const id of Object.keys(T)) {
   check('… sans réponse inventée sur un mot banal (« every »)', !Object.values(got).some(v => /every night/.test(v)), JSON.stringify(got));
   check('tranches de budget lisibles en anglais', en.find(s => s.id === 'budget').options.every(o => m.optionRange(o.label)));
 }
-check('autre langue du site → anglais', m.chatLang('es') === 'en' && m.chatLang('fr') === 'fr');
+check('langue inconnue → anglais', m.chatLang('xx') === 'en' && m.chatLang('fr') === 'fr');
+
+console.log('\nCHAT D\'ACCUEIL — toutes les langues du site');
+for (const lang of ['es', 'ru', 'zh', 'ar', 'af']) {
+  check(`${lang} : le chat a sa propre langue`, m.chatLang(lang) === lang);
+  const C = m.CHAT_TEXT[lang];
+  check(`${lang} : textes d'interface complets`, ['stage', 'greeting', 'projectQuestion', 'contactQuestion', 'placeholder', 'go', 'more'].every(k => C[k] && C[k] !== m.CHAT_TEXT.en[k]));
+  check(`${lang} : présentation du conseiller avec son nom`, C.intro('Karim Haddad', 'x', 'y').includes('Karim Haddad') && !/[{}]/.test(C.intro('a', 'b', 'c')));
+  check(`${lang} : messages à variables sans accolade oubliée`, !/[{}]/.test(C.noted('a') + C.searching('Karim', ' (b)') + C.progressAria(2, 7)));
+  check(`${lang} : trois projets, dans l'ordre des conseillers`, m.PROJECT_TEXT[lang].map(p => p.agentId).join() === 'locatif,residence,location' && m.PROJECT_TEXT[lang].every(p => p.label && p.desc));
+  for (const id of Object.keys(T)) {
+    const tr = m.localizedTree(id, lang);
+    check(`${lang}/${id} : mêmes questions, mêmes réponses, mêmes effets`, tr.length === T[id].length && tr.every((s, i) => s.id === T[id][i].id && s.options.length === T[id][i].options.length && s.options.every((o, j) => o.value === T[id][i].options[j].value && JSON.stringify(o.updates) === JSON.stringify(T[id][i].options[j].updates))));
+    check(`${lang}/${id} : rien n'est resté en français ni en anglais`, (() => { const en = m.localizedTree(id, 'en'); return tr.every((s, i) => s.question !== T[id][i].question && s.question !== en[i].question && s.options.every((o, j) => o.desc !== T[id][i].options[j].desc && o.desc !== en[i].options[j].desc)); })());
+    check(`${lang}/${id} : tranches chiffrées lisibles`, tr.filter(s => /budget/.test(s.id)).every(s => s.options.every(o => m.optionRange(o.label))));
+    const a = m.agentText(id, lang);
+    check(`${lang}/${id} : conseiller présenté dans la langue`, !!a && a.role !== m.agentText(id, 'en').role && a.desc !== m.agentText(id, 'en').desc);
+  }
+  const loc = m.localizedTree('locatif', lang);
+  check(`${lang} : un budget tapé (« 300 000 ») tombe dans la bonne tranche`, m.extractAnswers(loc, '300 000 €').find(x => x.stepId === 'budget')?.index === 1);
+}
+check('tranche « < 200 000 € » → 0–200 000', eq(m.optionRange('< 200 000 €'), [0, 200000]));
+check('tranche « > 1.5 M€ » → ouverte', m.optionRange('> 1.5 M€')?.[0] === 1500000);
+check('espagnol : « quiero invertir 300 000 € » → investissement', m.detectProject('quiero invertir 300 000 € para tener ingresos por alquiler') === 'locatif');
+check('espagnol : « para vivir con mi familia » → résidence', m.detectProject('busco un piso para vivir con mi familia') === 'residence');
+check('russe : « хочу инвестировать » → investissement', m.detectProject('хочу инвестировать 300 000 евро и сдавать квартиру') === 'locatif');
+check('russe : « снять квартиру » → location', m.detectProject('хочу снять квартиру на год') === 'location');
+check('chinois : « 投资 … 收租 » → investissement', m.detectProject('我想投资30万欧元，每月收租') === 'locatif');
+check('chinois : « 租房 » → location', m.detectProject('我想在迪拜租房') === 'location');
+check('arabe : « أريد الاستثمار » → investissement', m.detectProject('أريد استثمار 300000 يورو للتأجير') === 'locatif');
+check('afrikaans : « ek wil belê » → investissement', m.detectProject('ek wil €300 000 belê en huurinkomste kry') === 'locatif');
+check('afrikaans : « ek wil ’n woonstel huur » → location', m.detectProject('ek soek ’n woonstel te huur') === 'location');
 
 console.log('\nCHAT D\'ACCUEIL — parcours de questions');
 for (const [id, steps] of Object.entries(m.AGENT_TREES)) {

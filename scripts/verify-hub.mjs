@@ -11,7 +11,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { build } = await import(pathToFileURL(resolve(ROOT, 'node_modules/esbuild/lib/main.js')).href);
 const out = mkdtempSync(join(tmpdir(), 'verify-hub-'));
 const entry = join(out, 'entry.ts');
-writeFileSync(entry, `export * from '${ROOT}/components/hub/zoomLevels';`);
+writeFileSync(entry, `export * from '${ROOT}/components/hub/zoomLevels';\nexport { HUB_I18N } from '${ROOT}/components/hub/hubI18n';`);
 const bundlePath = join(out, 'bundle.mjs');
 await build({ entryPoints: [entry], bundle: true, format: 'esm', platform: 'node', outfile: bundlePath, logLevel: 'error' });
 const m = await import(pathToFileURL(bundlePath).href);
@@ -83,6 +83,26 @@ check('« 2 BR » n\'est pas pris pour un étage', m.floorFromListing('2 BR in M
 }
 check('dominance : 3 voisins sur 5 plus bas → 60 %', m.dominance(50, [10, 20, 30, 80, 90]) === 60);
 check('dominance : trop peu de voisins → non calculée', m.dominance(50, [10, 20]) === null);
+
+console.log('\nINTERFACE CARTE — traductions');
+{
+  const { readFileSync } = await import('fs');
+  const src = readFileSync(join(ROOT, 'components/hub/ResultsHub.tsx'), 'utf8');
+  const keys = new Set();
+  // Phrases anglaises passées à L('fr', 'en') et tables bilingues ['fr', 'en'].
+  for (const r of [/L\(\s*'(?:[^'\\]|\\.)*',\s*'((?:[^'\\]|\\.)*)'/g, /\['(?:[^'\\]|\\.)*', '((?:[^'\\]|\\.)*)'\]/g]) {
+    for (const hit of src.matchAll(r)) keys.add(hit[1].replace(/\\'/g, "'"));
+  }
+  keys.delete('short_term');
+  check('des phrases à traduire ont bien été trouvées', keys.size > 90, String(keys.size));
+  const dict = m.HUB_I18N;
+  for (const lang of ['es', 'ru', 'zh', 'ar', 'af']) {
+    const missing = [...keys].filter(k => !dict[lang]?.[k]);
+    check(`${lang} : toutes les phrases de l'interface carte sont traduites`, missing.length === 0, missing.slice(0, 3).join(' | '));
+    const broken = [...keys].filter(k => dict[lang]?.[k] && ['{0}', '{1}'].some(ph => k.includes(ph) !== dict[lang][k].includes(ph)));
+    check(`${lang} : les valeurs variables sont conservées`, broken.length === 0, broken.slice(0, 2).join(' | '));
+  }
+}
 
 console.log(`\n${pass} vérifications passées, ${fail} échec(s)`);
 process.exit(fail ? 1 : 0);
