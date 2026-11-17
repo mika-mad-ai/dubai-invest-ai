@@ -142,6 +142,13 @@
     ordre. Rien n'est refusé : ce qui n'est pas compris est gardé dans `notes`
     et ouvre la conversation avec le vrai conseiller (1er message de
     `runAdvisorTurn`). Testé par `scripts/verify-concierge.mjs`
+  - **Un message écrit = une recherche** : `sendTyped` déduit le conseiller
+    (investissement locatif par défaut), remplit ce que le message renseigne,
+    laisse les autres réponses à leurs valeurs par défaut et ouvre la carte
+    tout de suite (`launch`), sans coordonnées. Le message devient le 1er tour
+    du vrai conseiller, dont le volet s'ouvre d'emblée (`advisorFirst`). Pas
+    de dossier CRM sans e-mail : il se crée via « Être contacté ». Le parcours
+    guidé (clics → coordonnées) est inchangé
   - État du chat = un seul objet `Convo` (conseiller, réponses, fil, notes) ;
     chaque réponse empile une copie → « revenir » dépile
   - `steps.ts` : les questions (parcours générique + un par conseiller),

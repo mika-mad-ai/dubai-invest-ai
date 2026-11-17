@@ -52,7 +52,7 @@ type Msg = { who: 'ai' | 'me'; text: string };
 /** État de la conversation ; chaque réponse en empile une copie pour « revenir ». */
 type Convo = { agentId: string | null; answers: Answer[]; log: Msg[]; pending: string[]; notes: string[] };
 
-const GREETING = 'Bonjour. Dites-moi votre projet à Dubaï en une phrase, ou choisissez une réponse : je prépare votre analyse.';
+const GREETING = 'Bonjour. Écrivez ce que vous cherchez à Dubaï et je lance la recherche — ou choisissez une réponse pour être guidé.';
 const PROJECT_QUESTION = 'Quel est votre projet ?';
 
 const GOLD = '#D4AF37';
@@ -261,64 +261,75 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
     if (prev) setConvo(prev);
   };
 
+  /** Ouvre la carte avec le dossier tel qu'il est (les questions sans réponse gardent leurs valeurs par défaut). */
+  const launch = (id: string | null, all: Answer[], notes: string[], who?: { name: string; email: string; partners: boolean }) => {
+    const tree = id ? AGENT_TREES[id] ?? [] : [];
+    // Dans l'ordre des questions, pour un profil identique quel que soit
+    // l'ordre dans lequel les réponses sont arrivées.
+    const ordered = tree.map(s => all.find(a => a.stepId === s.id)).filter((a): a is Answer => !!a);
+    const profile: UserProfile = ordered.reduce<UserProfile>((acc, a) => ({ ...acc, ...a.updates }), { ...BASE_PROFILE });
+    profile.name = who?.name.trim() ?? '';
+    profile.email = who?.email.trim() ?? '';
+    profile.advisorId = id ?? undefined;
+    if (who) profile.consent = { whatsapp: false, partners: who.partners };
+    const r = cardRef.current?.getBoundingClientRect();
+    onSubmit(profile, r ? { top: r.top, left: r.left, width: r.width, height: r.height } : null, notes);
+  };
+
   /**
-   * Message libre. On y lit tout ce qu'il renseigne (projet, budget, type de
-   * bien…), on saute les questions devenues inutiles, et on garde le texte :
-   * le conseiller le reçoit avec le dossier. Rien n'est jamais refusé.
+   * Message libre = une recherche. On en tire le projet (donc le conseiller)
+   * et tout ce qu'il renseigne, puis on ouvre la carte tout de suite : le
+   * conseiller répond à la demande elle-même. Pas de questions
+   * supplémentaires, pas de coordonnées exigées — elles se donnent plus tard,
+   * via « Être contacté ».
    */
   const sendTyped = (e: React.FormEvent) => {
     e.preventDefault();
     const text = typed.trim();
-    if (!text || atContact || leaving) return;
+    if (!text || atContact || leaving || sending) return;
     begin();
     setTyped('');
     const notes = [...convo.notes, text];
-    const base: Msg[] = [...log, { who: 'ai', text: question.text }, { who: 'me', text }];
 
     let id = agentId;
-    let intro: Msg[] = [];
     if (!id) {
       const byOption = matchAnswer(PROJECT_OPTIONS, text);
-      id = byOption ? PROJECT_OPTIONS[byOption.index].agentId : detectProject(text);
-      if (!id) {
-        commit({ ...convo, notes, pending: [...convo.pending, text], log: [...base, { who: 'ai', text: 'C’est noté. Pour vous confier au bon conseiller, il me manque une chose.' }] });
-        return;
-      }
+      // Sans indice sur le projet, on part sur l'investissement locatif : c'est
+      // l'objet du site, et le conseiller réoriente si besoin.
+      id = (byOption ? PROJECT_OPTIONS[byOption.index].agentId : detectProject(text)) ?? 'locatif';
       onAgent?.(id);
       gtm.funnelStepComplete('project', 0, id);
-      intro = [{ who: 'ai', text: introOf(id) }];
     }
 
     const tree = AGENT_TREES[id] ?? [];
     const open = tree.filter(s => !answers.some(a => a.stepId === s.id));
-    const sources = agentId ? [text] : [...convo.pending, text];
-    const found = sources
+    const found = [...convo.pending, text]
       .flatMap(t => extractAnswers(open, t, agentId ? step?.id : undefined))
       .filter((a, i, all) => all.findIndex(x => x.stepId === a.stepId) === i);
     const filled = found.map(a => toAnswer(tree.find(s => s.id === a.stepId)!, a.index, a.amount));
     filled.forEach(a => gtm.funnelStepComplete(a.stepId, answers.length + 1, a.label));
+    const all = [...answers, ...filled];
 
-    const first = AGENTS.find(a => a.id === id)?.name.split(' ')[0] ?? 'votre conseiller';
-    const ack: Msg = filled.length
-      ? { who: 'ai', text: `J’ai bien noté : ${filled.map(a => a.label).join(' · ')}.` }
-      : { who: 'ai', text: `C’est noté : ${first} lira votre message avec le dossier.` };
-    commit({ agentId: id, answers: [...answers, ...filled], log: [...base, ...intro, ack], pending: [], notes });
+    const first = AGENTS.find(a => a.id === id)?.name.split(' ')[0] ?? 'Votre conseiller';
+    const noted = filled.length ? ` (${filled.map(a => a.label).join(' · ')})` : '';
+    history.current.push(convo);
+    setConvo({
+      agentId: id,
+      answers: all,
+      pending: [],
+      notes,
+      log: [...log, { who: 'me', text }, { who: 'ai', text: `${first} lance la recherche${noted}…` }],
+    });
+    setSending(true);
+    const finalId = id;
+    window.setTimeout(() => launch(finalId, all, notes), 900);
   };
 
   const finish = (e: React.FormEvent) => {
     e.preventDefault();
     if (sending) return;
     setSending(true);
-    // Dans l'ordre des questions, pour un profil identique quel que soit
-    // l'ordre dans lequel les réponses sont arrivées.
-    const ordered = steps.map(s => answers.find(a => a.stepId === s.id)).filter((a): a is Answer => !!a);
-    const profile: UserProfile = ordered.reduce<UserProfile>((acc, a) => ({ ...acc, ...a.updates }), { ...BASE_PROFILE });
-    profile.name = contact.name.trim();
-    profile.email = contact.email.trim();
-    profile.advisorId = agentId ?? undefined;
-    profile.consent = { whatsapp: false, partners: contact.partners };
-    const r = cardRef.current?.getBoundingClientRect();
-    onSubmit(profile, r ? { top: r.top, left: r.left, width: r.width, height: r.height } : null, convo.notes);
+    launch(agentId, answers, convo.notes, contact);
   };
 
   const railKey = !agentId ? 'project' : step ? step.id : 'contact';
@@ -381,10 +392,12 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
               <p>{m.text}</p>
             </div>
           ))}
-          <div key={`q-${log.length}`} className="cc-msg ai now">
-            <p>{question.text}</p>
-            {question.sub && <small>{question.sub}</small>}
-          </div>
+          {!(sending && !atContact) && (
+            <div key={`q-${log.length}`} className="cc-msg ai now">
+              <p>{question.text}</p>
+              {question.sub && <small>{question.sub}</small>}
+            </div>
+          )}
         </div>
 
         {!atContact ? (
@@ -413,7 +426,7 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
                 ref={inputRef}
                 value={typed}
                 onChange={e => setTyped(e.target.value)}
-                placeholder={agentId ? 'Cliquez une réponse, ou écrivez la vôtre…' : 'Ex. : 300 000 €, je veux un loyer chaque mois'}
+                placeholder={agentId ? 'Écrivez votre recherche, ou cliquez une réponse…' : 'Ex. : 300 000 €, je veux un loyer chaque mois'}
                 aria-label="Votre réponse"
                 autoComplete="off"
               />
@@ -516,6 +529,8 @@ const CSS = `
 .cc-stage.intro .cc-card { opacity: 0; transform: translateY(70px) scale(0.96); pointer-events: none; transition-delay: 0s; }
 .cc-card::before { content: ''; position: absolute; top: 0; left: 32px; width: 84px; height: 2px; background: ${GOLD}; border-radius: 2px; }
 .cc-card.sending { opacity: 0.85; pointer-events: none; transition: opacity 0.3s ease; }
+/* Recherche lancée : les réponses proposées n'ont plus lieu d'être. */
+.cc-card.sending .cc-rail-wrap { visibility: hidden; }
 
 .cc-head { display: flex; align-items: center; gap: 12px; padding: 18px 24px 14px; border-bottom: 1px solid rgba(255,255,255,0.07); }
 .cc-avatar { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; overflow: hidden; border: 2px solid ${GOLD}; background: linear-gradient(135deg, #1a2b55, #0d1527); display: flex; align-items: center; justify-content: center; }

@@ -96,31 +96,36 @@ const shot = async (page, name) => {
   await shot(page, 'a1-chat-accueil');
   await page.locator('.cc-more').click(); await page.waitForTimeout(500); await shot(page, 'a1b-guides');
   await page.locator('[role=dialog] button[aria-label=Fermer]').click(); await page.waitForTimeout(300);
-  // 1re question au clavier (rapprochement local), les suivantes au clic.
-  await page.locator('.cc-input input').fill('300 000 €, je veux un loyer mensuel');
-  await page.keyboard.press('Enter');
-  await page.waitForTimeout(900);
-  await shot(page, 'a2-chat-conseiller');
-  // une réponse incomprise, puis un budget tapé en chiffres
-  log.push('après message libre: ' + (await page.locator('.cc-log').innerText()).replace(/\s+/g, ' ').slice(0, 600));
-  await page.locator('.cc-input input').fill('blabla'); await page.keyboard.press('Enter'); await page.waitForTimeout(500);
-  await page.waitForTimeout(500);
-  await shot(page, 'a3-chat-budget');
-  for (let i = 0; i < 12; i++) {
-    if (await page.locator('.cc-contact').count()) break;
-    await page.locator('.cc-opt').first().click();
-    await page.waitForTimeout(160);
-    if (i === 0) await shot(page, 'a4-chat-glissement');
-    await page.waitForTimeout(700);
+  if ((process.env.FLOW || 'typed') === 'typed') {
+    // Recherche écrite : le conseiller part chercher tout de suite, sans autre question.
+    await page.locator('.cc-input input').fill('300 000 €, je veux un loyer mensuel');
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(250);
+    log.push('fil (recherche): ' + (await page.evaluate(() => document.querySelector('.cc-log')?.innerText || '(déjà sur la carte)')).replace(/\s+/g, ' ').slice(0, 400));
+    await shot(page, 'a3-chat-recherche');
+    await page.locator('.hub-stage').waitFor({ timeout: 20000 });
+    await page.waitForTimeout(250); await shot(page, 'a6-morph-1');
+    await page.waitForTimeout(350); await shot(page, 'a7-morph-2');
+    await page.waitForTimeout(450); await shot(page, 'a8-morph-3');
+  } else {
+    // Parcours guidé : uniquement des clics, puis les coordonnées.
+    for (let i = 0; i < 12; i++) {
+      if (await page.locator('.cc-contact').count()) break;
+      await page.locator('.cc-opt').first().click();
+      await page.waitForTimeout(160);
+      if (i === 1) await shot(page, 'a4-chat-glissement');
+      await page.waitForTimeout(700);
+      if (i === 1) await shot(page, 'a3-chat-budget');
+    }
+    log.push('fil (guidé): ' + (await page.locator('.cc-log').innerText()).replace(/\s+/g, ' ').slice(0, 700));
+    await page.locator('.cc-fields input[type=text]').fill('Test Fixture');
+    await page.locator('.cc-fields input[type=email]').fill('test@example.invalid');
+    await shot(page, 'a5-chat-coordonnees');
+    await page.locator('.cc-go').click();
+    await page.waitForTimeout(250); await shot(page, 'a6-morph-1');
+    await page.waitForTimeout(350); await shot(page, 'a7-morph-2');
+    await page.waitForTimeout(450); await shot(page, 'a8-morph-3');
   }
-  log.push('fil: ' + (await page.locator('.cc-log').innerText()).replace(/\s+/g, ' ').slice(0, 700));
-  await page.locator('.cc-fields input[type=text]').fill('Test Fixture');
-  await page.locator('.cc-fields input[type=email]').fill('test@example.invalid');
-  await shot(page, 'a5-chat-coordonnees');
-  await page.locator('.cc-go').click();
-  await page.waitForTimeout(250); await shot(page, 'a6-morph-1');
-  await page.waitForTimeout(350); await shot(page, 'a7-morph-2');
-  await page.waitForTimeout(450); await shot(page, 'a8-morph-3');
 
   await page.locator('.hub-stage').waitFor({ timeout: 20000 });
   const state = async label => {
@@ -133,6 +138,8 @@ const shot = async (page, name) => {
       dots: document.querySelectorAll('.hub-dot').length,
       readout: document.querySelector('.hub-readout')?.textContent,
       body: document.querySelector('.hub-body')?.innerText.replace(/\s+/g, ' ').slice(0, 260),
+      volets: (document.querySelector('.hub-panel') ? 'analyses ' : '') + (document.querySelector('.hub-dock') ? 'conseiller' : '') + (document.querySelector('.hub-sheet')?.className || ''),
+      chat: document.querySelector('.hub-dock, .hub-sheet-body.advisor')?.innerText.replace(/\s+/g, ' ').slice(0, 160),
       overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     }));
     log.push(`[${label}] ${JSON.stringify(s)}`);
@@ -149,6 +156,8 @@ const shot = async (page, name) => {
   await shot(page, '02-travelling');
   await wait(MODE === 'reduced' ? 1500 : 6500);
   await shot(page, '03-arrivee-immeuble'); await state('arrivee');
+  // Arrivé par une recherche écrite, le conseiller est ouvert et les analyses repliées : on les rouvre pour la suite.
+  if (await page.locator('.hub-reopen.left').count()) { await page.locator('.hub-reopen.left').click(); await wait(600); await shot(page, '03b-deux-volets'); }
   await openAnalyses(); await shot(page, '04-immeuble-panneau'); await closeSheet();
 
   // On se place sur un bien localisé exactement (immeuble connu) pour le niveau Appartement.

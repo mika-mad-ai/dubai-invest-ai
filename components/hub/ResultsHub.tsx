@@ -75,6 +75,8 @@ export type ResultsHubProps = {
   groundingSources: unknown[];
   matchedListings: MatchedListing[];
   advisorMeta: AgentMeta | null;
+  /** Le visiteur a posé une question : le volet du conseiller s'ouvre d'emblée. */
+  advisorFirst?: boolean;
 };
 
 const GOLD = '#D4AF37';
@@ -176,10 +178,13 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
   const [tabs, setTabs] = useState<Record<HubLevel, string>>({ city: 'marche', district: 'prix', building: 'immeuble', unit: 'bien' });
 
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 900);
-  const [panelOpen, setPanelOpen] = useState(true);
-  const [dockOpen, setDockOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1500);
+  // Sur un écran moyen, les deux volets ne tiennent pas avec la carte : quand
+  // le visiteur attend une réponse, le conseiller passe devant les analyses.
+  const wide = typeof window !== 'undefined' && window.innerWidth >= 1500;
+  const [panelOpen, setPanelOpen] = useState(wide || !props.advisorFirst);
+  const [dockOpen, setDockOpen] = useState(wide || !!props.advisorFirst);
   const [dockTab, setDockTab] = useState<'chat' | 'selection'>('chat');
-  const [sheet, setSheet] = useState<'peek' | 'analyses' | 'advisor'>('peek');
+  const [sheet, setSheet] = useState<'peek' | 'analyses' | 'advisor'>(props.advisorFirst ? 'advisor' : 'peek');
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 899px)');
