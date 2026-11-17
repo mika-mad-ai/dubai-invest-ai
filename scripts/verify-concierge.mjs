@@ -123,6 +123,12 @@ for (const lang of ['es', 'ru', 'zh', 'ar', 'af']) {
   const loc = m.localizedTree('locatif', lang);
   check(`${lang} : un budget tapé (« 300 000 ») tombe dans la bonne tranche`, m.extractAnswers(loc, '300 000 €').find(x => x.stepId === 'budget')?.index === 1);
 }
+console.log('\nCHAT D\'ACCUEIL — toujours à la première personne');
+for (const lang of ['fr', 'en', 'es', 'ru', 'zh', 'ar', 'af']) {
+  check(`${lang} : « je lance la recherche », jamais « Karim lance »`, !m.CHAT_TEXT[lang].searching('Karim', '').includes('Karim'));
+}
+check('fr : présentations à la première personne', ['locatif', 'residence', 'location'].every(id => /^Je /.test(m.agentText(id, 'fr').desc) && !/\b(Il|Elle) /.test(m.agentText(id, 'fr').desc)));
+check('en : présentations à la première personne', ['locatif', 'residence', 'location'].every(id => /^I /.test(m.agentText(id, 'en').desc) && !/\b(He|She) /.test(m.agentText(id, 'en').desc)));
 check('tranche « < 200 000 € » → 0–200 000', eq(m.optionRange('< 200 000 €'), [0, 200000]));
 check('tranche « > 1.5 M€ » → ouverte', m.optionRange('> 1.5 M€')?.[0] === 1500000);
 check('espagnol : « quiero invertir 300 000 € » → investissement', m.detectProject('quiero invertir 300 000 € para tener ingresos por alquiler') === 'locatif');

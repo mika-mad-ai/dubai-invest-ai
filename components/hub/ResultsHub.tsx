@@ -712,7 +712,7 @@ const ResultsHub: React.FC<ResultsHubProps> = props => {
                 isLoading={props.isChatLoading}
               />
               {!props.isChatLoading && !props.matchedListings.length && (
-                <p className="hub-lead">{L('Le conseiller n’a pas encore retenu de biens pour ce dossier.', 'The advisor has not shortlisted any property for this file yet.')}</p>
+                <p className="hub-lead">{L('Je n’ai pas encore retenu de biens pour ce dossier.', 'I have not shortlisted any property for this file yet.')}</p>
               )}
             </div>
           )}

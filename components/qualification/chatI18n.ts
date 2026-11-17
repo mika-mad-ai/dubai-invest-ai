@@ -46,7 +46,7 @@ const BASE_TEXT: Record<'fr' | 'en', ChatText> = {
     contactQuestion: 'Votre dossier est complet. À quel nom et à quelle adresse e-mail dois-je l’ouvrir ? La carte s’affiche juste après.',
     intro: (name: string, role: string, desc: string) => `Je suis ${name}, votre conseiller ${role.toLowerCase()}. ${desc}`,
     noted: (items: string) => `J’ai bien noté : ${items}.`,
-    searching: (first: string, noted: string) => `${first} lance la recherche${noted}…`,
+    searching: (first: string, noted: string) => `Je lance la recherche${noted}…`,
     defaultAdvisor: 'Votre conseiller',
     brand: 'Conseiller immobilier IA',
     placeholderFirst: 'Ex. : 300 000 €, je veux un loyer chaque mois',
@@ -68,7 +68,7 @@ const BASE_TEXT: Record<'fr' | 'en', ChatText> = {
     contactQuestion: 'Your file is complete. Which name and email address should I open it under? The map appears right after.',
     intro: (name: string, role: string, desc: string) => `I’m ${name}, your ${role.toLowerCase()} advisor. ${desc}`,
     noted: (items: string) => `Noted: ${items}.`,
-    searching: (first: string, noted: string) => `${first} is starting the search${noted}…`,
+    searching: (first: string, noted: string) => `I’m starting the search${noted}…`,
     defaultAdvisor: 'Your advisor',
     brand: 'AI property advisor',
     placeholderFirst: 'E.g. €300,000, I want rental income every month',
@@ -146,18 +146,28 @@ export const PROJECT_TEXT: Record<ChatLang, Array<{ agentId: string; label: stri
   ],
 };
 
+/**
+ * Dans le chat, le conseiller parle toujours à la première personne : ses
+ * présentations sont réécrites ici (celles d'AgentsSection sont à la 3e personne).
+ */
+const AGENT_FR_DESC: Record<string, string> = {
+  locatif: 'Je suis spécialiste du rendement locatif et du cashflow. J’identifie les biens au meilleur rendement selon votre budget et votre horizon.',
+  residence: 'Je vous guide pour acheter l’appartement où vous allez vivre à Dubaï : quartiers, écoles, Golden Visa et financement.',
+  location: 'Je vous trouve la location idéale, courte ou longue durée, dans le bon quartier et au juste prix, selon votre mode de vie.',
+};
+
 const AGENT_EN: Record<string, { role: string; desc: string }> = {
   locatif: {
     role: 'Rental investment',
-    desc: 'A specialist in rental yield and cash flow. He finds the properties with the best return for your budget and horizon.',
+    desc: 'I specialise in rental yield and cash flow. I find the properties with the best return for your budget and horizon.',
   },
   residence: {
     role: 'Home purchase',
-    desc: 'Your guide to buying the apartment you will live in: neighbourhoods, schools, Golden Visa and financing.',
+    desc: 'I guide you in buying the apartment you will live in: neighbourhoods, schools, Golden Visa and financing.',
   },
   location: {
     role: 'Rentals',
-    desc: 'She finds the right rental, short or long term, in the right neighbourhood and at a fair price, to match your lifestyle.',
+    desc: 'I find you the right rental, short or long term, in the right neighbourhood and at a fair price, to match your lifestyle.',
   },
 };
 
@@ -168,7 +178,7 @@ export function agentText(agentId: string, lang: ChatLang): { name: string; firs
   const pack = MORE[lang];
   const i = AGENT_ORDER.indexOf(agentId);
   const tr = lang === 'en' ? AGENT_EN[agentId] : pack && i >= 0 ? { role: pack.agents[i * 2], desc: pack.agents[i * 2 + 1] } : undefined;
-  return { name: a.name, first: a.name.split(' ')[0], role: tr?.role ?? a.role, desc: tr?.desc ?? a.desc };
+  return { name: a.name, first: a.name.split(' ')[0], role: tr?.role ?? a.role, desc: tr?.desc ?? AGENT_FR_DESC[agentId] ?? a.desc };
 }
 
 type StepEn = { question: string; sub: string; options: Array<[label: string, desc: string]> };
