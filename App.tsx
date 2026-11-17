@@ -48,6 +48,9 @@ function App() {
   // Rectangle (en px, repère fenêtre) de la fenêtre de chat au moment où le
   // dossier est validé : la carte se déploie à partir de lui.
   const [morphFrom, setMorphFrom] = useState<MorphRect | null>(null);
+  // Le visiteur est arrivé par une recherche écrite : la réponse du conseiller
+  // doit être visible d'emblée sur la carte.
+  const searchedRef = useRef(false);
   // Sur l'accueil, le pied de page n'est plus sous l'écran (la fin du
   // défilement doit être l'écran du chat) : il s'ouvre dans un volet.
   const [showFooter, setShowFooter] = useState(false);
@@ -308,6 +311,7 @@ function App() {
 
   const handleProfileSubmit = async (profile: UserProfile, from: MorphRect | null = null, notes: string[] = []) => {
     setMorphFrom(from);
+    searchedRef.current = notes.length > 0;
     gtm.funnelComplete(profile);
     const withAdvisor: UserProfile = { ...profile, advisorId: selectedAgentId ?? profile.advisorId };
     setUserProfile(withAdvisor);
@@ -317,7 +321,9 @@ function App() {
 
     // Capture du lead et ouverture du dossier en parallèle : le scoring CRM ne
     // doit pas retarder l'affichage de l'analyse.
-    void captureLead({
+    // Une recherche lancée au clavier arrive sans coordonnées : pas de dossier
+    // CRM tant que le visiteur ne les donne pas (« Être contacté »).
+    if (withAdvisor.email) void captureLead({
       profile: withAdvisor,
       advisorId: withAdvisor.advisorId,
       messageCount: 0,
@@ -377,7 +383,7 @@ function App() {
   return (
     <div className="min-h-screen font-sans" style={{ background: '#050505', color: 'rgba(240,235,224,0.88)' }}>
       <SmartNavbar
-        message={isChatLoading ? t.nav.aiAnalyzing : fmt(t.nav.aiReady, { name: userProfile?.name?.split(' ')[0] || '' })}
+        message={isChatLoading ? t.nav.aiAnalyzing : fmt(t.nav.aiReady, { name: userProfile?.name?.split(' ')[0] || '' }).replace(/\s{2,}/g, ' ')}
         isStreaming={isChatLoading}
         hasProfile={hasProfile}
         onReset={() => { setHasProfile(false); setUserProfile(null); setMessages([]); setSelectedAgentId(null); setMorphFrom(null); }}
@@ -435,6 +441,7 @@ function App() {
             groundingSources={groundingSources}
             matchedListings={matchedListings}
             advisorMeta={advisorMeta}
+            advisorFirst={searchedRef.current}
           />
           </div>
         </Suspense>
