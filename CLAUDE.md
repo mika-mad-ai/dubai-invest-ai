@@ -449,3 +449,12 @@ Détail et ordre de branchement : `docs/AGENCY_SETUP.md`.
   - `SALES_ALERT_WHATSAPP` (optionnel — alerte interne sur lead qualifié)
 - Veille:
   - `CRON_SECRET` (envoyé en Bearer par les crons Vercel)
+
+## Langues du chat d'accueil et de la carte (17 nov. 2026)
+
+- Le chat d'accueil et l'interface de la carte suivent les 7 langues du site (fr, en, es, ru, zh, ar, af).
+- Chat : français dans `steps.ts`, anglais dans `chatI18n.ts`, les cinq autres dans `chatI18nMore.ts` (listes de lignes dans un ordre fixe, relues par `treeFromPack` ; un compte de lignes faux fait retomber sur l'anglais). Les tranches de budget sont écrites en symboles (`< 200 000 €`) pour ces langues.
+- Carte : `L(fr, en, vars?)` dans `ResultsHub.tsx` ; les autres langues viennent de `components/hub/hubI18n.ts`, indexé par la phrase anglaise, avec `{0}`/`{1}` pour les valeurs. Toute nouvelle phrase `L(...)` doit y être ajoutée : `npm run verify` échoue sinon.
+- `answerMatch.ts` reconnaît le projet dans un message tapé dans ces langues (mots-clés par langue).
+- Traductions rédigées par Claude : à faire relire par un natif (arabe et afrikaans surtout).
+- Restent en français : graphiques hérités, noms de vues (`viewAnalysis`), message d'erreur du conseiller (`agentService.ts`).
