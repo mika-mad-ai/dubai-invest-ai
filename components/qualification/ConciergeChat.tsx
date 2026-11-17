@@ -4,7 +4,8 @@ import { AGENTS } from '../AgentsSection';
 import ConsentFields from '../ConsentFields';
 import { gtm } from '../../services/gtm';
 import { useI18n } from '../../i18n';
-import { AGENT_TREES, type StepOption, type TreeStep } from './steps';
+import type { StepOption, TreeStep } from './steps';
+import { CHAT_TEXT, PROJECT_TEXT, agentText, chatLang, localizedTree } from './chatI18n';
 import { detectProject, extractAnswers, matchAnswer } from './answerMatch';
 
 /**
@@ -40,25 +41,21 @@ const BASE_PROFILE: UserProfile = {
   investmentHorizon: 'medium',
 };
 
-/** Première question : elle désigne le conseiller, donc le parcours. */
-const PROJECT_OPTIONS: Array<{ agentId: string; label: string; desc: string }> = [
-  { agentId: 'locatif', label: 'Investir pour louer', desc: 'Acheter un bien et encaisser des loyers, en longue durée ou en Airbnb.' },
-  { agentId: 'residence', label: 'Acheter pour y vivre', desc: 'Résidence principale, pied-à-terre ou installation en famille.' },
-  { agentId: 'location', label: 'Louer un logement', desc: 'Trouver une location à Dubaï, pour quelques semaines ou plusieurs années.' },
-];
-
 type Answer = { stepId: string; label: string; updates: Partial<UserProfile> };
 type Msg = { who: 'ai' | 'me'; text: string };
 /** État de la conversation ; chaque réponse en empile une copie pour « revenir ». */
 type Convo = { agentId: string | null; answers: Answer[]; log: Msg[]; pending: string[]; notes: string[] };
 
-const GREETING = 'Bonjour. Écrivez ce que vous cherchez à Dubaï et je lance la recherche — ou choisissez une réponse pour être guidé.';
-const PROJECT_QUESTION = 'Quel est votre projet ?';
-
 const GOLD = '#D4AF37';
 
 const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
+  // Le chat suit la langue du site : français, sinon anglais.
+  const lang = chatLang(locale);
+  const C = CHAT_TEXT[lang];
+  // Première question : elle désigne le conseiller, donc le parcours.
+  const PROJECT_OPTIONS = PROJECT_TEXT[lang];
+  const treeOf = (id: string) => localizedTree(id, lang);
   const cardRef = useRef<HTMLDivElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -172,7 +169,8 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
   };
 
   const agent = AGENTS.find(a => a.id === agentId) ?? null;
-  const steps: TreeStep[] = agentId ? AGENT_TREES[agentId] ?? [] : [];
+  const agentTr = agentId ? agentText(agentId, lang) : null;
+  const steps: TreeStep[] = agentId ? treeOf(agentId) : [];
   // La question en cours est la première sans réponse : un message libre peut
   // en avoir renseigné plusieurs d'un coup, dans n'importe quel ordre.
   const step: TreeStep | null = agentId ? steps.find(s => !answers.some(a => a.stepId === s.id)) ?? null : null;
@@ -187,10 +185,10 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
       : [];
 
   const question = !agentId
-    ? { text: log.length ? PROJECT_QUESTION : GREETING, sub: undefined as string | undefined }
+    ? { text: log.length ? C.projectQuestion : C.greeting, sub: undefined as string | undefined }
     : step
       ? { text: step.question, sub: step.sub }
-      : { text: 'Votre dossier est complet. À quel nom et à quelle adresse e-mail dois-je l’ouvrir ? La carte s’affiche juste après.', sub: undefined };
+      : { text: C.contactQuestion, sub: undefined };
 
   // Le fil reste calé en bas à chaque nouveau message.
   useEffect(() => {
@@ -205,8 +203,8 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
   };
 
   const introOf = (id: string) => {
-    const a = AGENTS.find(x => x.id === id);
-    return a ? `Je suis ${a.name}, votre conseiller ${a.role.toLowerCase()}. ${a.desc}` : '';
+    const a = agentText(id, lang);
+    return a ? C.intro(a.name, a.role, a.desc) : '';
   };
 
   const toAnswer = (s: TreeStep, index: number, amount?: number): Answer => {
@@ -218,7 +216,7 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
       updates.totalBudget = String(amount);
       updates.initialInvestment = String(Math.round(amount * 0.25));
     }
-    return { stepId: s.id, label: exact ? `${amount.toLocaleString('fr-FR')} €` : o.label, updates };
+    return { stepId: s.id, label: exact ? (lang === 'fr' ? `${amount.toLocaleString('fr-FR')} €` : `€${amount.toLocaleString('en-GB')}`) : o.label, updates };
   };
 
   /** Applique un nouvel état en faisant glisser les options (sortie à gauche, entrée à droite). */
@@ -242,11 +240,11 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
       gtm.funnelStepComplete('project', 0, p.agentId);
       // Ce que le visiteur avait écrit avant de choisir son projet est relu
       // avec les questions de ce conseiller.
-      const tree = AGENT_TREES[p.agentId] ?? [];
+      const tree = treeOf(p.agentId);
       const found = convo.pending.flatMap(t => extractAnswers(tree, t)).filter((a, i, all) => all.findIndex(x => x.stepId === a.stepId) === i);
       const filled = found.map(a => toAnswer(tree.find(s => s.id === a.stepId)!, a.index, a.amount));
       const next: Msg[] = [...base, { who: 'me', text: p.label }, { who: 'ai', text: introOf(p.agentId) }];
-      if (filled.length) next.push({ who: 'ai', text: `J’ai bien noté : ${filled.map(a => a.label).join(' · ')}.` });
+      if (filled.length) next.push({ who: 'ai', text: C.noted(filled.map(a => a.label).join(' · ')) });
       commit({ ...convo, agentId: p.agentId, answers: filled, log: next, pending: [] });
     } else if (step) {
       const a = toAnswer(step, index);
@@ -263,7 +261,7 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
 
   /** Ouvre la carte avec le dossier tel qu'il est (les questions sans réponse gardent leurs valeurs par défaut). */
   const launch = (id: string | null, all: Answer[], notes: string[], who?: { name: string; email: string; partners: boolean }) => {
-    const tree = id ? AGENT_TREES[id] ?? [] : [];
+    const tree = id ? treeOf(id) : [];
     // Dans l'ordre des questions, pour un profil identique quel que soit
     // l'ordre dans lequel les réponses sont arrivées.
     const ordered = tree.map(s => all.find(a => a.stepId === s.id)).filter((a): a is Answer => !!a);
@@ -293,15 +291,16 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
 
     let id = agentId;
     if (!id) {
+      // Le sens de la phrase d'abord (« toucher un loyer » n'est pas « louer un
+      // logement ») ; à défaut, un mot d'une des trois réponses ; sinon
+      // l'investissement locatif, objet du site — le conseiller réoriente si besoin.
       const byOption = matchAnswer(PROJECT_OPTIONS, text);
-      // Sans indice sur le projet, on part sur l'investissement locatif : c'est
-      // l'objet du site, et le conseiller réoriente si besoin.
-      id = (byOption ? PROJECT_OPTIONS[byOption.index].agentId : detectProject(text)) ?? 'locatif';
+      id = detectProject(text) ?? (byOption ? PROJECT_OPTIONS[byOption.index].agentId : null) ?? 'locatif';
       onAgent?.(id);
       gtm.funnelStepComplete('project', 0, id);
     }
 
-    const tree = AGENT_TREES[id] ?? [];
+    const tree = treeOf(id);
     const open = tree.filter(s => !answers.some(a => a.stepId === s.id));
     const found = [...convo.pending, text]
       .flatMap(t => extractAnswers(open, t, agentId ? step?.id : undefined))
@@ -310,7 +309,7 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
     filled.forEach(a => gtm.funnelStepComplete(a.stepId, answers.length + 1, a.label));
     const all = [...answers, ...filled];
 
-    const first = AGENTS.find(a => a.id === id)?.name.split(' ')[0] ?? 'Votre conseiller';
+    const first = agentText(id, lang)?.first ?? C.defaultAdvisor;
     const noted = filled.length ? ` (${filled.map(a => a.label).join(' · ')})` : '';
     history.current.push(convo);
     setConvo({
@@ -318,7 +317,7 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
       answers: all,
       pending: [],
       notes,
-      log: [...log, { who: 'me', text }, { who: 'ai', text: `${first} lance la recherche${noted}…` }],
+      log: [...log, { who: 'me', text }, { who: 'ai', text: C.searching(first, noted) }],
     });
     setSending(true);
     const finalId = id;
@@ -336,7 +335,7 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
 
   return (
     <div ref={trackRef} className={`cc-track ${mode}`}>
-    <section id="concierge" className={`cc-stage ${intro ? 'intro' : 'ready'}`} aria-label="Votre conseiller IA">
+    <section id="concierge" className={`cc-stage ${intro ? 'intro' : 'ready'}`} aria-label={C.stage}>
       {mode === 'scrub' ? (
         <>
           <video ref={videoRef} className="cc-video" src="/hero-scrub.mp4" poster="/hero-poster.jpg" muted playsInline preload="auto" aria-hidden="true" />
@@ -353,7 +352,7 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
         <h1>
           <span>{t.hero.title1}</span> <em>{t.hero.title2}</em>
         </h1>
-        <ul className="cc-proof" aria-label="En bref">
+        <ul className="cc-proof" aria-label={C.proofAria}>
           {t.hero.subtitle
             .split(' · ')
             .slice(0, 3)
@@ -377,9 +376,9 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
           </span>
           <span className="cc-who">
             <b>{agent ? agent.name : 'DubaiInvest'}</b>
-            <em>{agent ? agent.role : 'Conseiller immobilier IA'}</em>
+            <em>{agentTr ? agentTr.role : C.brand}</em>
           </span>
-          <span className="cc-progress" aria-label={`Question ${position} sur ${total}`}>
+          <span className="cc-progress" aria-label={C.progressAria(position, total)}>
             {Array.from({ length: total }).map((_, i) => (
               <i key={i} className={i < position - 1 ? 'done' : i === position - 1 ? 'now' : ''} />
             ))}
@@ -403,7 +402,7 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
         {!atContact ? (
           <>
             <div className="cc-rail-wrap">
-              <div key={railKey} className={`cc-rail ${leaving ? 'out' : ''}`} role="group" aria-label="Réponses possibles">
+              <div key={railKey} className={`cc-rail ${leaving ? 'out' : ''}`} role="group" aria-label={C.optionsAria}>
                 {options.map((o, i) => {
                   const Icon = o.icon;
                   return (
@@ -418,7 +417,7 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
             </div>
             <form className="cc-input" onSubmit={sendTyped}>
               {log.length > 0 && (
-                <button type="button" className="cc-back" onClick={back} aria-label="Revenir à la question précédente">
+                <button type="button" className="cc-back" onClick={back} aria-label={C.backAria}>
                   ‹
                 </button>
               )}
@@ -426,11 +425,11 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
                 ref={inputRef}
                 value={typed}
                 onChange={e => setTyped(e.target.value)}
-                placeholder={agentId ? 'Écrivez votre recherche, ou cliquez une réponse…' : 'Ex. : 300 000 €, je veux un loyer chaque mois'}
-                aria-label="Votre réponse"
+                placeholder={agentId ? C.placeholder : C.placeholderFirst}
+                aria-label={C.answerAria}
                 autoComplete="off"
               />
-              <button type="submit" className="cc-send" disabled={!typed.trim()} aria-label="Envoyer">
+              <button type="submit" className="cc-send" disabled={!typed.trim()} aria-label={C.sendAria}>
                 ↑
               </button>
             </form>
@@ -464,11 +463,11 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
               accent={GOLD}
             />
             <div className="cc-contact-actions">
-              <button type="button" className="cc-back" onClick={back} aria-label="Revenir à la question précédente">
+              <button type="button" className="cc-back" onClick={back} aria-label={C.backAria}>
                 ‹
               </button>
               <button type="submit" className="cc-go" disabled={sending}>
-                {sending ? 'Ouverture de la carte…' : 'Afficher ma carte de Dubaï'}
+                {sending ? C.opening : C.go}
               </button>
             </div>
           </form>
@@ -477,7 +476,7 @@ const ConciergeChat: React.FC<Props> = ({ onSubmit, onAgent, onMore }) => {
 
       {onMore && (
         <button type="button" className="cc-more" onClick={onMore}>
-          Guides & mentions légales
+          {C.more}
         </button>
       )}
 

@@ -149,6 +149,14 @@
     du vrai conseiller, dont le volet s'ouvre d'emblée (`advisorFirst`). Pas
     de dossier CRM sans e-mail : il se crée via « Être contacté ». Le parcours
     guidé (clics → coordonnées) est inchangé
+  - **Langues** : `chatI18n.ts` porte les textes du chat (français source,
+    anglais traduit : conseillers, 3 parcours, 15 questions) ; les autres
+    langues du site reçoivent l'anglais (`chatLang`). `localizedTree` garde les
+    mêmes identifiants et effets sur le profil. `answerMatch` comprend aussi
+    l'anglais (« €300,000 », « rental income », « to live in »). L'interface
+    carte (`ResultsHub`) suit la même règle via `L(fr, en)`. Restent en
+    français : les graphiques hérités (`InvestmentDecisionCharts`…), les noms
+    de vues de `viewAnalysis`, et le libellé des étiquettes de la carte
   - État du chat = un seul objet `Convo` (conseiller, réponses, fil, notes) ;
     chaque réponse empile une copie → « revenir » dépile
   - `steps.ts` : les questions (parcours générique + un par conseiller),
